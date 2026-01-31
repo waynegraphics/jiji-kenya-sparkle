@@ -28,6 +28,8 @@ const Header = ({ onSearch }: HeaderProps) => {
   const handleSearch = () => {
     if (onSearch) {
       onSearch(searchQuery);
+    } else if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
