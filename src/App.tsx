@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import ProductDetail from "./pages/ProductDetail";
 import SearchResults from "./pages/SearchResults";
 import PostAd from "./pages/PostAd";
+import MyAds from "./pages/MyAds";
+import EditAd from "./pages/EditAd";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,8 @@ const App = () => (
             <Route path="/listing/:id" element={<ProductDetail />} />
             <Route path="/search" element={<SearchResults />} />
             <Route path="/post-ad" element={<PostAd />} />
+            <Route path="/my-ads" element={<MyAds />} />
+            <Route path="/edit-ad/:id" element={<EditAd />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
