@@ -1,8 +1,12 @@
 import { Heart, MapPin, Clock } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ProductCardProps {
-  id: number;
+  id: string;
   title: string;
   price: string;
   location: string;
@@ -10,9 +14,12 @@ interface ProductCardProps {
   image: string;
   isFeatured?: boolean;
   isUrgent?: boolean;
+  isFavorited?: boolean;
+  onFavoriteChange?: () => void;
 }
 
 const ProductCard = ({
+  id,
   title,
   price,
   location,
@@ -20,11 +27,48 @@ const ProductCard = ({
   image,
   isFeatured = false,
   isUrgent = false,
+  isFavorited = false,
+  onFavoriteChange,
 }: ProductCardProps) => {
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(isFavorited);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      toast.error("Please login to save favorites");
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        await supabase
+          .from("favorites")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("listing_id", id);
+        setIsFavorite(false);
+        toast.success("Removed from favorites");
+      } else {
+        await supabase
+          .from("favorites")
+          .insert({ user_id: user.id, listing_id: id });
+        setIsFavorite(true);
+        toast.success("Added to favorites");
+      }
+      onFavoriteChange?.();
+    } catch (error) {
+      toast.error("Failed to update favorites");
+    }
+  };
 
   return (
-    <div className="group bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-200 hover:-translate-y-1 cursor-pointer">
+    <div 
+      className="group bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-200 hover:-translate-y-1 cursor-pointer"
+      onClick={() => navigate(`/listing/${id}`)}
+    >
       {/* Image Container */}
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
@@ -49,10 +93,7 @@ const ProductCard = ({
 
         {/* Favorite Button */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsFavorite(!isFavorite);
-          }}
+          onClick={handleFavoriteClick}
           className="absolute top-2 right-2 w-8 h-8 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors"
         >
           <Heart
