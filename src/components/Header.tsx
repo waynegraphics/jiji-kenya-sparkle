@@ -128,6 +128,9 @@ const Header = ({ onSearch }: HeaderProps) => {
                       <DropdownMenuItem onClick={() => navigate("/my-ads")}>
                         My Ads
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate("/messages")}>
+                        Messages
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate("/favorites")}>
                         Favorites
                       </DropdownMenuItem>
@@ -200,9 +203,23 @@ const Header = ({ onSearch }: HeaderProps) => {
                     <Button
                       variant="ghost"
                       className="justify-start text-primary-foreground hover:bg-jiji-green-dark"
+                      onClick={() => { navigate("/messages"); setIsMenuOpen(false); }}
+                    >
+                      Messages
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start text-primary-foreground hover:bg-jiji-green-dark"
                       onClick={() => { navigate("/favorites"); setIsMenuOpen(false); }}
                     >
                       Favorites
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="justify-start text-primary-foreground hover:bg-jiji-green-dark"
+                      onClick={() => { navigate("/profile"); setIsMenuOpen(false); }}
+                    >
+                      Profile Settings
                     </Button>
                     <Button
                       variant="ghost"

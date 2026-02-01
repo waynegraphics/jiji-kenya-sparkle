@@ -415,7 +415,11 @@ const ProductDetail = () => {
                       setIsAuthModalOpen(true);
                       return;
                     }
-                    toast.info("Chat feature coming soon!");
+                    if (user.id === listing.user_id) {
+                      toast.info("You can't message yourself");
+                      return;
+                    }
+                    navigate(`/messages?user=${listing.user_id}&listing=${listing.id}`);
                   }}
                 >
                   <MessageCircle className="h-4 w-4 mr-2" />
