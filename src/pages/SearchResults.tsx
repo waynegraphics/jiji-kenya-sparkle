@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
+import Pagination from "@/components/Pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +54,8 @@ const sortOptions = [
   { value: "price_high", label: "Price: High to Low" },
 ];
 
+const ITEMS_PER_PAGE = 20;
+
 const SearchResults = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -61,30 +64,49 @@ const SearchResults = () => {
   const query = searchParams.get("q") || "";
   const category = searchParams.get("category") || "all";
   const sort = searchParams.get("sort") || "newest";
+  const pageParam = searchParams.get("page");
+  const currentPage = pageParam ? parseInt(pageParam, 10) : 1;
 
   const [listings, setListings] = useState<Listing[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
 
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
   const fetchListings = async () => {
     setLoading(true);
 
+    // First get the total count
+    let countQuery = supabase
+      .from("listings")
+      .select("*", { count: "exact", head: true });
+
+    if (query) {
+      countQuery = countQuery.ilike("title", `%${query}%`);
+    }
+
+    if (category && category !== "all") {
+      countQuery = countQuery.eq("category", category as "electronics" | "fashion" | "furniture" | "health" | "jobs" | "kids" | "pets" | "phones" | "property" | "services" | "sports" | "vehicles");
+    }
+
+    const { count } = await countQuery;
+    setTotalCount(count || 0);
+
+    // Then fetch the paginated data
     let queryBuilder = supabase
       .from("listings")
       .select("id, title, price, location, images, is_featured, is_urgent, created_at, category");
 
-    // Apply search filter
     if (query) {
       queryBuilder = queryBuilder.ilike("title", `%${query}%`);
     }
 
-    // Apply category filter
     if (category && category !== "all") {
       queryBuilder = queryBuilder.eq("category", category as "electronics" | "fashion" | "furniture" | "health" | "jobs" | "kids" | "pets" | "phones" | "property" | "services" | "sports" | "vehicles");
     }
 
-    // Apply sorting
     switch (sort) {
       case "oldest":
         queryBuilder = queryBuilder.order("created_at", { ascending: true });
@@ -99,7 +121,11 @@ const SearchResults = () => {
         queryBuilder = queryBuilder.order("created_at", { ascending: false });
     }
 
-    const { data, error } = await queryBuilder.limit(50);
+    const from = (currentPage - 1) * ITEMS_PER_PAGE;
+    const to = from + ITEMS_PER_PAGE - 1;
+    queryBuilder = queryBuilder.range(from, to);
+
+    const { data, error } = await queryBuilder;
 
     if (!error && data) {
       setListings(data as Listing[]);
@@ -122,7 +148,7 @@ const SearchResults = () => {
 
   useEffect(() => {
     fetchListings();
-  }, [query, category, sort]);
+  }, [query, category, sort, currentPage]);
 
   useEffect(() => {
     fetchFavorites();
@@ -135,6 +161,7 @@ const SearchResults = () => {
     } else {
       params.delete("q");
     }
+    params.delete("page");
     setSearchParams(params);
   };
 
@@ -145,13 +172,26 @@ const SearchResults = () => {
     } else {
       params.delete("category");
     }
+    params.delete("page");
     setSearchParams(params);
   };
 
   const handleSortChange = (value: string) => {
     const params = new URLSearchParams(searchParams);
     params.set("sort", value);
+    params.delete("page");
     setSearchParams(params);
+  };
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams);
+    if (page === 1) {
+      params.delete("page");
+    } else {
+      params.set("page", page.toString());
+    }
+    setSearchParams(params);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const clearFilters = () => {
@@ -182,7 +222,7 @@ const SearchResults = () => {
             </h1>
           </div>
           <p className="text-muted-foreground">
-            {loading ? "Searching..." : `${listings.length} ads found`}
+            {loading ? "Searching..." : `${totalCount} ads found`}
           </p>
         </div>
 
@@ -297,26 +337,37 @@ const SearchResults = () => {
             ))}
           </div>
         ) : listings.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {listings.map((listing) => (
-              <ProductCard
-                key={listing.id}
-                id={listing.id}
-                title={listing.title}
-                price={formatPrice(listing.price)}
-                location={listing.location}
-                time={formatTime(listing.created_at)}
-                image={
-                  listing.images[0] ||
-                  "https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=400&h=300&fit=crop"
-                }
-                isFeatured={listing.is_featured}
-                isUrgent={listing.is_urgent}
-                isFavorited={favorites.has(listing.id)}
-                onFavoriteChange={fetchFavorites}
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+              {listings.map((listing) => (
+                <ProductCard
+                  key={listing.id}
+                  id={listing.id}
+                  title={listing.title}
+                  price={formatPrice(listing.price)}
+                  location={listing.location}
+                  time={formatTime(listing.created_at)}
+                  image={
+                    listing.images[0] ||
+                    "https://images.unsplash.com/photo-1560393464-5c69a73c5770?w=400&h=300&fit=crop"
+                  }
+                  isFeatured={listing.is_featured}
+                  isUrgent={listing.is_urgent}
+                  isFavorited={favorites.has(listing.id)}
+                  onFavoriteChange={fetchFavorites}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            <div className="mt-8">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
               />
-            ))}
-          </div>
+            </div>
+          </>
         ) : (
           <div className="text-center py-16">
             <Search className="h-16 w-16 text-muted-foreground/50 mx-auto mb-4" />
