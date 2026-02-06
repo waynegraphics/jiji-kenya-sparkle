@@ -15,6 +15,8 @@ import Messages from "./pages/Messages";
 import Favorites from "./pages/Favorites";
 import SellerProfile from "./pages/SellerProfile";
 import AdminDashboard from "./pages/AdminDashboard";
+import Pricing from "./pages/Pricing";
+import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
