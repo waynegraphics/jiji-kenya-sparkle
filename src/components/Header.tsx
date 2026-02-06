@@ -213,10 +213,16 @@ const Header = ({ onSearch }: HeaderProps) => {
                     </Button>
                     <Button
                       variant="ghost"
-                      className="justify-start text-primary-foreground hover:bg-jiji-green-dark"
+                      className="justify-start text-primary-foreground hover:bg-jiji-green-dark w-full"
                       onClick={() => { navigate("/messages"); setIsMenuOpen(false); }}
                     >
+                      <MessageCircle className="h-4 w-4 mr-2" />
                       Messages
+                      {unreadCount > 0 && (
+                        <Badge className="ml-auto bg-destructive text-destructive-foreground text-xs h-5 min-w-[20px] flex items-center justify-center">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </Badge>
+                      )}
                     </Button>
                     <Button
                       variant="ghost"
