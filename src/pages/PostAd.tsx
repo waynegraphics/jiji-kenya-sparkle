@@ -72,6 +72,11 @@ const PostAd = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+  const incrementAdsUsed = useIncrementAdsUsed();
+  
+  // Subscription limits
+  const { data: limits, isLoading: limitsLoading } = useSubscriptionLimits();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -93,6 +98,13 @@ const PostAd = () => {
     navigate("/");
     return null;
   }
+
+  // Check if user can post in this category
+  const canPostInCategory = (category: string) => {
+    if (!limits?.hasActiveSubscription) return false;
+    if (!limits.allowedCategories || limits.allowedCategories.length === 0) return true;
+    return limits.allowedCategories.includes(category);
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
