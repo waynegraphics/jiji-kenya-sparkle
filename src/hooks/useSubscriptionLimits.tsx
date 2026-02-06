@@ -88,26 +88,27 @@ export const useIncrementAdsUsed = () => {
   const incrementAdsUsed = async () => {
     if (!user) return;
 
-    const { error } = await supabase.rpc("increment_ads_used", {
-      p_user_id: user.id,
-    });
+    // Get current subscription and increment ads_used
+    const { data: sub, error: fetchError } = await supabase
+      .from("seller_subscriptions")
+      .select("id, ads_used")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .eq("payment_status", "completed")
+      .single();
 
-    if (error) {
-      console.error("Error incrementing ads used:", error);
-      // Fallback: manual increment
-      const { data: sub } = await supabase
-        .from("seller_subscriptions")
-        .select("id, ads_used")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .single();
+    if (fetchError || !sub) {
+      console.error("Error fetching subscription:", fetchError);
+      return;
+    }
 
-      if (sub) {
-        await supabase
-          .from("seller_subscriptions")
-          .update({ ads_used: sub.ads_used + 1 })
-          .eq("id", sub.id);
-      }
+    const { error: updateError } = await supabase
+      .from("seller_subscriptions")
+      .update({ ads_used: sub.ads_used + 1 })
+      .eq("id", sub.id);
+
+    if (updateError) {
+      console.error("Error incrementing ads used:", updateError);
     }
   };
 
