@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -16,9 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscriptionLimits, useIncrementAdsUsed } from "@/hooks/useSubscriptionLimits";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Upload, X, ImagePlus, CheckCircle } from "lucide-react";
+import { Loader2, Upload, X, ImagePlus, CheckCircle, AlertCircle, Package } from "lucide-react";
 import { z } from "zod";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 
 const categories = [
   { value: "vehicles", label: "Vehicles" },
