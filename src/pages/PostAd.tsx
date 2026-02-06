@@ -227,183 +227,183 @@ const PostAd = () => {
   ) => {
     switch (slug) {
       case "vehicles":
-        await supabase.from("vehicle_listings").insert({
+        await supabase.from("vehicle_listings").insert([{
           id: listingId,
-          vehicle_type: data.vehicle_type || "car",
-          make_id: data.make_id || null,
-          model_id: data.model_id || null,
-          year_of_manufacture: data.year_of_manufacture || null,
-          trim: data.trim || null,
-          condition: data.condition || null,
-          exterior_color: data.exterior_color || null,
-          interior_color: data.interior_color || null,
-          transmission: data.transmission || null,
-          fuel_type: data.fuel_type || null,
-          drivetrain: data.drivetrain || null,
-          engine_size_cc: data.engine_size_cc || null,
-          cylinders: data.cylinders || null,
-          horsepower: data.horsepower || null,
-          mileage: data.mileage || null,
-          body_type: data.body_type || null,
-          seats: data.seats || null,
-          doors: data.doors || null,
-          vin_chassis: data.vin_chassis || null,
-          is_registered: data.is_registered || false,
-          registration_number: data.registration_number || null,
-          registration_year: data.registration_year || null,
-          exchange_possible: data.exchange_possible || false,
-          key_features: data.key_features || null,
-        });
+          vehicle_type: (data.vehicle_type as string) || "car",
+          make_id: (data.make_id as string) || null,
+          model_id: (data.model_id as string) || null,
+          year_of_manufacture: (data.year_of_manufacture as number) || null,
+          trim: (data.trim as string) || null,
+          condition: (data.condition as string) || null,
+          exterior_color: (data.exterior_color as string) || null,
+          interior_color: (data.interior_color as string) || null,
+          transmission: (data.transmission as string) || null,
+          fuel_type: (data.fuel_type as string) || null,
+          drivetrain: (data.drivetrain as string) || null,
+          engine_size_cc: (data.engine_size_cc as number) || null,
+          cylinders: (data.cylinders as number) || null,
+          horsepower: (data.horsepower as number) || null,
+          mileage: (data.mileage as number) || null,
+          body_type: (data.body_type as string) || null,
+          seats: (data.seats as number) || null,
+          doors: (data.doors as number) || null,
+          vin_chassis: (data.vin_chassis as string) || null,
+          is_registered: (data.is_registered as boolean) || false,
+          registration_number: (data.registration_number as string) || null,
+          registration_year: (data.registration_year as number) || null,
+          exchange_possible: (data.exchange_possible as boolean) || false,
+          key_features: (data.key_features as string[]) || null,
+        }]);
         break;
 
       case "property":
-        await supabase.from("property_listings").insert({
+        await supabase.from("property_listings").insert([{
           id: listingId,
-          property_type: data.property_type || "apartment",
-          listing_type: data.listing_type || "for_sale",
-          bedrooms: data.bedrooms || null,
-          bathrooms: data.bathrooms || null,
-          is_furnished: data.is_furnished || false,
-          furnishing_type: data.furnishing_type || null,
-          size_sqm: data.size_sqm || null,
-          plot_size_sqm: data.plot_size_sqm || null,
-          floor_number: data.floor_number || null,
-          total_floors: data.total_floors || null,
-          parking_spaces: data.parking_spaces || null,
-          year_built: data.year_built || null,
-          amenities: data.amenities || null,
-          nearby_facilities: data.nearby_facilities || null,
-          agency_fee: data.agency_fee || null,
-          service_charge: data.service_charge || null,
-        });
+          property_type: (data.property_type as string) || "apartment",
+          listing_type: (data.listing_type as string) || "for_sale",
+          bedrooms: (data.bedrooms as number) || null,
+          bathrooms: (data.bathrooms as number) || null,
+          is_furnished: (data.is_furnished as boolean) || false,
+          furnishing_type: (data.furnishing_type as string) || null,
+          size_sqm: (data.size_sqm as number) || null,
+          plot_size_sqm: (data.plot_size_sqm as number) || null,
+          floor_number: (data.floor_number as number) || null,
+          total_floors: (data.total_floors as number) || null,
+          parking_spaces: (data.parking_spaces as number) || null,
+          year_built: (data.year_built as number) || null,
+          amenities: (data.amenities as string[]) || null,
+          nearby_facilities: (data.nearby_facilities as string[]) || null,
+          agency_fee: (data.agency_fee as string) || null,
+          service_charge: (data.service_charge as number) || null,
+        }]);
         break;
 
       case "jobs":
-        await supabase.from("job_listings").insert({
+        await supabase.from("job_listings").insert([{
           id: listingId,
-          job_title: data.job_title || baseFormData.title,
-          job_type: data.job_type || "full_time",
-          industry: data.industry || "Other",
-          experience_level: data.experience_level || null,
-          min_experience_years: data.min_experience_years || null,
-          education_level: data.education_level || null,
-          salary_min: data.salary_min || null,
-          salary_max: data.salary_max || null,
-          salary_period: data.salary_period || null,
-          is_salary_negotiable: data.is_salary_negotiable ?? true,
-          company_name: data.company_name || "Company",
-          company_logo: data.company_logo || null,
-          company_website: data.company_website || null,
-          application_method: data.application_method || null,
-          application_email: data.application_email || null,
-          application_url: data.application_url || null,
-          application_deadline: data.application_deadline || null,
-          required_skills: data.required_skills || null,
-          benefits: data.benefits || null,
-          is_remote: data.is_remote || false,
-        });
+          job_title: (data.job_title as string) || baseFormData.title,
+          job_type: (data.job_type as string) || "full_time",
+          industry: (data.industry as string) || "Other",
+          experience_level: (data.experience_level as string) || null,
+          min_experience_years: (data.min_experience_years as number) || null,
+          education_level: (data.education_level as string) || null,
+          salary_min: (data.salary_min as number) || null,
+          salary_max: (data.salary_max as number) || null,
+          salary_period: (data.salary_period as string) || null,
+          is_salary_negotiable: (data.is_salary_negotiable as boolean) ?? true,
+          company_name: (data.company_name as string) || "Company",
+          company_logo: (data.company_logo as string) || null,
+          company_website: (data.company_website as string) || null,
+          application_method: (data.application_method as string) || null,
+          application_email: (data.application_email as string) || null,
+          application_url: (data.application_url as string) || null,
+          application_deadline: (data.application_deadline as string) || null,
+          required_skills: (data.required_skills as string[]) || null,
+          benefits: (data.benefits as string[]) || null,
+          is_remote: (data.is_remote as boolean) || false,
+        }]);
         break;
 
       case "electronics":
-        await supabase.from("electronics_listings").insert({
+        await supabase.from("electronics_listings").insert([{
           id: listingId,
-          device_type: data.device_type || "Other",
-          brand: data.brand || "Unknown",
-          model: data.model || "Unknown",
-          storage: data.storage || null,
-          ram: data.ram || null,
-          screen_size: data.screen_size || null,
-          processor: data.processor || null,
-          condition: data.condition || null,
-          has_warranty: data.has_warranty || false,
-          warranty_duration: data.warranty_duration || null,
-          accessories_included: data.accessories_included || null,
-        });
+          device_type: (data.device_type as string) || "Other",
+          brand: (data.brand as string) || "Unknown",
+          model: (data.model as string) || "Unknown",
+          storage: (data.storage as string) || null,
+          ram: (data.ram as string) || null,
+          screen_size: (data.screen_size as string) || null,
+          processor: (data.processor as string) || null,
+          condition: (data.condition as string) || null,
+          has_warranty: (data.has_warranty as boolean) || false,
+          warranty_duration: (data.warranty_duration as string) || null,
+          accessories_included: (data.accessories_included as string[]) || null,
+        }]);
         break;
 
       case "phones-tablets":
-        await supabase.from("phone_listings").insert({
+        await supabase.from("phone_listings").insert([{
           id: listingId,
-          device_type: data.device_type || "smartphone",
-          brand: data.brand || "Unknown",
-          model: data.model || "Unknown",
-          storage: data.storage || null,
-          ram: data.ram || null,
-          condition: data.condition || null,
-          has_warranty: data.has_warranty || false,
-          warranty_duration: data.warranty_duration || null,
-          color: data.color || null,
-          is_unlocked: data.is_unlocked ?? true,
-          accessories_included: data.accessories_included || null,
-        });
+          device_type: (data.device_type as string) || "smartphone",
+          brand: (data.brand as string) || "Unknown",
+          model: (data.model as string) || "Unknown",
+          storage: (data.storage as string) || null,
+          ram: (data.ram as string) || null,
+          condition: (data.condition as string) || null,
+          has_warranty: (data.has_warranty as boolean) || false,
+          warranty_duration: (data.warranty_duration as string) || null,
+          color: (data.color as string) || null,
+          is_unlocked: (data.is_unlocked as boolean) ?? true,
+          accessories_included: (data.accessories_included as string[]) || null,
+        }]);
         break;
 
       case "fashion":
-        await supabase.from("fashion_listings").insert({
+        await supabase.from("fashion_listings").insert([{
           id: listingId,
-          gender: data.gender || "unisex",
-          clothing_type: data.clothing_type || "Other",
-          size: data.size || null,
-          material: data.material || null,
-          brand: data.brand || null,
-          condition: data.condition || null,
-          color: data.color || null,
-          occasion: data.occasion || null,
-        });
+          gender: (data.gender as string) || "unisex",
+          clothing_type: (data.clothing_type as string) || "Other",
+          size: (data.size as string) || null,
+          material: (data.material as string) || null,
+          brand: (data.brand as string) || null,
+          condition: (data.condition as string) || null,
+          color: (data.color as string) || null,
+          occasion: (data.occasion as string) || null,
+        }]);
         break;
 
       case "furniture-appliances":
-        await supabase.from("furniture_listings").insert({
+        await supabase.from("furniture_listings").insert([{
           id: listingId,
-          item_type: data.item_type || "Other",
-          brand: data.brand || null,
-          material: data.material || null,
-          condition: data.condition || null,
-          dimensions: data.dimensions || null,
-          color: data.color || null,
-          style: data.style || null,
-          assembly_required: data.assembly_required || false,
-        });
+          item_type: (data.item_type as string) || "Other",
+          brand: (data.brand as string) || null,
+          material: (data.material as string) || null,
+          condition: (data.condition as string) || null,
+          dimensions: (data.dimensions as string) || null,
+          color: (data.color as string) || null,
+          style: (data.style as string) || null,
+          assembly_required: (data.assembly_required as boolean) || false,
+        }]);
         break;
 
       case "animals-pets":
-        await supabase.from("pet_listings").insert({
+        await supabase.from("pet_listings").insert([{
           id: listingId,
-          animal_type: data.animal_type || "Other",
-          breed: data.breed || null,
-          age_months: data.age_months || null,
-          gender: data.gender || null,
-          is_vaccinated: data.is_vaccinated || false,
-          is_neutered: data.is_neutered || false,
-          health_certificate: data.health_certificate || false,
-          includes: data.includes || null,
-        });
+          animal_type: (data.animal_type as string) || "Other",
+          breed: (data.breed as string) || null,
+          age_months: (data.age_months as number) || null,
+          gender: (data.gender as string) || null,
+          is_vaccinated: (data.is_vaccinated as boolean) || false,
+          is_neutered: (data.is_neutered as boolean) || false,
+          health_certificate: (data.health_certificate as boolean) || false,
+          includes: (data.includes as string[]) || null,
+        }]);
         break;
 
       case "babies-kids":
-        await supabase.from("kids_listings").insert({
+        await supabase.from("kids_listings").insert([{
           id: listingId,
-          item_type: data.item_type || "Other",
-          brand: data.brand || null,
-          age_range: data.age_range || null,
-          gender: data.gender || null,
-          condition: data.condition || null,
-          safety_certified: data.safety_certified || false,
-        });
+          item_type: (data.item_type as string) || "Other",
+          brand: (data.brand as string) || null,
+          age_range: (data.age_range as string) || null,
+          gender: (data.gender as string) || null,
+          condition: (data.condition as string) || null,
+          safety_certified: (data.safety_certified as boolean) || false,
+        }]);
         break;
 
       case "services":
-        await supabase.from("service_listings").insert({
+        await supabase.from("service_listings").insert([{
           id: listingId,
-          service_type: data.service_type || "Other",
-          availability: data.availability || null,
-          pricing_model: data.pricing_model || null,
-          experience_years: data.experience_years || null,
-          is_certified: data.is_certified || false,
-          certifications: data.certifications || null,
-          service_area: data.service_area || null,
-          languages: data.languages || null,
-        });
+          service_type: (data.service_type as string) || "Other",
+          availability: (data.availability as string) || null,
+          pricing_model: (data.pricing_model as string) || null,
+          experience_years: (data.experience_years as number) || null,
+          is_certified: (data.is_certified as boolean) || false,
+          certifications: (data.certifications as string[]) || null,
+          service_area: (data.service_area as string[]) || null,
+          languages: (data.languages as string[]) || null,
+        }]);
         break;
 
       default:

@@ -316,7 +316,7 @@ const CategoryPage = () => {
                       key={listing.id}
                       id={listing.id}
                       title={listing.title}
-                      price={listing.price}
+                      price={String(listing.price)}
                       location={listing.location}
                       image={listing.images?.[0] || "/placeholder.svg"}
                       isFeatured={listing.is_featured || false}
