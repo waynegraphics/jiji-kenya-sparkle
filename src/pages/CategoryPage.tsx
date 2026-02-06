@@ -317,8 +317,9 @@ const CategoryPage = () => {
                       key={listing.id}
                       id={listing.id}
                       title={listing.title}
-                      price={String(listing.price)}
+                      price={`KES ${listing.price.toLocaleString()}`}
                       location={listing.location}
+                      time={formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
                       image={listing.images?.[0] || "/placeholder.svg"}
                       isFeatured={listing.is_featured || false}
                       isUrgent={listing.is_urgent || false}
