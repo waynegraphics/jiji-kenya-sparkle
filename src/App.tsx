@@ -14,6 +14,7 @@ import ProfileSettings from "./pages/ProfileSettings";
 import Messages from "./pages/Messages";
 import Favorites from "./pages/Favorites";
 import SellerProfile from "./pages/SellerProfile";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/messages" element={<Messages />} />
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/seller/:userId" element={<SellerProfile />} />
+            <Route path="/admin" element={<AdminDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
