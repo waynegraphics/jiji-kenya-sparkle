@@ -13,6 +13,7 @@ import EditAd from "./pages/EditAd";
 import ProfileSettings from "./pages/ProfileSettings";
 import Messages from "./pages/Messages";
 import Favorites from "./pages/Favorites";
+import SellerProfile from "./pages/SellerProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
