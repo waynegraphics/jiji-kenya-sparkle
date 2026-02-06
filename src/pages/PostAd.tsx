@@ -284,10 +284,56 @@ const PostAd = () => {
           Post Your Ad
         </h1>
 
+        {/* Subscription Status Banner */}
+        {limitsLoading ? (
+          <div className="mb-6 bg-muted rounded-lg p-4 animate-pulse">
+            <div className="h-4 bg-muted-foreground/20 rounded w-1/3"></div>
+          </div>
+        ) : !limits?.hasActiveSubscription ? (
+          <Alert className="mb-6 border-destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>No Active Subscription</AlertTitle>
+            <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <span>You need an active subscription to post ads.</span>
+              <Link to="/pricing">
+                <Button size="sm" variant="default">
+                  <Package className="h-4 w-4 mr-2" />
+                  Get a Subscription
+                </Button>
+              </Link>
+            </AlertDescription>
+          </Alert>
+        ) : !limits.canPostAd ? (
+          <Alert className="mb-6 border-destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Ad Limit Reached</AlertTitle>
+            <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <span>You've used all {limits.maxAds} ads in your {limits.subscriptionName} plan.</span>
+              <Link to="/pricing">
+                <Button size="sm" variant="default">
+                  Upgrade Plan
+                </Button>
+              </Link>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">{limits.subscriptionName} - Ads Usage</span>
+              <span className="text-sm text-muted-foreground">{limits.adsUsed} / {limits.maxAds} used</span>
+            </div>
+            <Progress value={(limits.adsUsed / limits.maxAds) * 100} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-1">{limits.adsRemaining} ads remaining</p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Images Section */}
           <div className="bg-card rounded-xl p-6 shadow-card">
             <h2 className="text-lg font-semibold mb-4">Photos</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Add up to 8 photos. The first image will be the cover.
+            </p>
             <p className="text-sm text-muted-foreground mb-4">
               Add up to 8 photos. The first image will be the cover.
             </p>
