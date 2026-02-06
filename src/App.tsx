@@ -18,6 +18,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import SellerDashboard from "./pages/SellerDashboard";
 import Pricing from "./pages/Pricing";
 import Checkout from "./pages/Checkout";
+import CategoryPage from "./pages/CategoryPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,8 @@ const App = () => (
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/checkout/:type/:id" element={<Checkout />} />
             <Route path="/checkout/:type/:id/:tierId" element={<Checkout />} />
+            <Route path="/category/:categorySlug" element={<CategoryPage />} />
+            <Route path="/category/:categorySlug/:subCategorySlug" element={<CategoryPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
