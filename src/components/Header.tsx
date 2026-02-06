@@ -1,9 +1,11 @@
-import { Search, MapPin, Menu, User, ChevronDown, Plus, LogOut } from "lucide-react";
+import { Search, MapPin, Menu, User, ChevronDown, Plus, LogOut, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "./AuthModal";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
