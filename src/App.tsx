@@ -35,6 +35,7 @@ const App = () => (
             <Route path="/profile" element={<ProfileSettings />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/favorites" element={<Favorites />} />
+            <Route path="/seller/:userId" element={<SellerProfile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -26,6 +26,7 @@ const Header = ({ onSearch }: HeaderProps) => {
   const [authModalTab, setAuthModalTab] = useState<"login" | "register">("login");
   const { user, profile, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const unreadCount = useUnreadMessages();
 
   const handleSearch = () => {
     if (onSearch) {
