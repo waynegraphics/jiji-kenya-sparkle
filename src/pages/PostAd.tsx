@@ -188,6 +188,25 @@ const PostAd = () => {
     e.preventDefault();
     setErrors({});
 
+    // Check subscription limits first
+    if (!limits?.hasActiveSubscription) {
+      toast.error("You need an active subscription to post ads");
+      navigate("/pricing");
+      return;
+    }
+
+    if (!limits.canPostAd) {
+      toast.error(`You've reached your limit of ${limits.maxAds} ads. Please upgrade your plan.`);
+      navigate("/pricing");
+      return;
+    }
+
+    // Check category restriction
+    if (!canPostInCategory(formData.category)) {
+      toast.error("Your subscription doesn't allow posting in this category");
+      return;
+    }
+
     // Validate form
     const validationData = {
       title: formData.title.trim(),
