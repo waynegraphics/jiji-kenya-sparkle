@@ -261,6 +261,10 @@ const PostAd = () => {
 
       if (error) throw error;
 
+      // Increment ads used count
+      await incrementAdsUsed();
+      queryClient.invalidateQueries({ queryKey: ["subscription-limits"] });
+
       toast.success("Your ad has been posted!");
       navigate(`/listing/${listing.id}`);
     } catch (error) {
