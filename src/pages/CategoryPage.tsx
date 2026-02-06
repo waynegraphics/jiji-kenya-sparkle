@@ -27,6 +27,10 @@ import {
   Car, Home, Briefcase, Smartphone, Monitor, Shirt, Sofa,
   Dog, Baby, Heart, Wrench, Tractor, Gamepad, Hammer, Grid, Filter, X, ChevronRight
 } from "lucide-react";
+import VehicleFilters from "@/components/filters/VehicleFilters";
+import PropertyFilters from "@/components/filters/PropertyFilters";
+import JobFilters from "@/components/filters/JobFilters";
+import ElectronicsFilters from "@/components/filters/ElectronicsFilters";
 
 const categoryIcons: Record<string, React.ReactNode> = {
   vehicles: <Car className="h-5 w-5" />,
@@ -69,6 +73,7 @@ const CategoryPage = () => {
     sortBy: "newest" as "newest" | "oldest" | "price_asc" | "price_desc",
     page: 1,
   });
+  const [categoryFilters, setCategoryFilters] = useState<Record<string, string>>({});
   const [showFilters, setShowFilters] = useState(false);
 
   // Fetch category data
@@ -97,6 +102,11 @@ const CategoryPage = () => {
   const displaySubCategory = subCategory;
   const icon = categoryIcons[categorySlug || ""] || <Grid className="h-5 w-5" />;
 
+  const handleCategoryFilterChange = (key: string, value: string) => {
+    setCategoryFilters(prev => ({ ...prev, [key]: value }));
+    setFilters(prev => ({ ...prev, page: 1 }));
+  };
+
   const clearFilters = () => {
     setFilters({
       minPrice: "",
@@ -105,9 +115,26 @@ const CategoryPage = () => {
       sortBy: "newest",
       page: 1,
     });
+    setCategoryFilters({});
   };
 
-  const hasActiveFilters = filters.minPrice || filters.maxPrice || filters.location;
+  const hasActiveFilters = filters.minPrice || filters.maxPrice || filters.location || Object.values(categoryFilters).some(v => v && v !== "Any");
+
+  // Render category-specific filters
+  const renderCategoryFilters = () => {
+    switch (categorySlug) {
+      case "vehicles":
+        return <VehicleFilters filters={categoryFilters} onChange={handleCategoryFilterChange} />;
+      case "property":
+        return <PropertyFilters filters={categoryFilters} onChange={handleCategoryFilterChange} />;
+      case "jobs":
+        return <JobFilters filters={categoryFilters} onChange={handleCategoryFilterChange} />;
+      case "electronics":
+        return <ElectronicsFilters filters={categoryFilters} onChange={handleCategoryFilterChange} />;
+      default:
+        return null;
+    }
+  };
 
   if (categoryLoading) {
     return (
