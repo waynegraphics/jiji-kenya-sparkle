@@ -298,6 +298,9 @@ const CategoryPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Category-Specific Filters */}
+                {renderCategoryFilters()}
               </div>
             </div>
           </aside>
