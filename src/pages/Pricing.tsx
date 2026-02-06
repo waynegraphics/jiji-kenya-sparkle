@@ -125,25 +125,25 @@ const Pricing = () => {
                         
                         <ul className="space-y-3">
                           <li className="flex items-center gap-2">
-                            <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                            <Check className="h-5 w-5 text-primary flex-shrink-0" />
                             <span>Up to {pkg.max_ads} ads</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                            <Check className="h-5 w-5 text-primary flex-shrink-0" />
                             <span>
                               {pkg.analytics_access ? "Full analytics access" : "Basic analytics"}
                             </span>
                           </li>
                           {pkg.allowed_categories && pkg.allowed_categories.length > 0 && (
                             <li className="flex items-start gap-2">
-                              <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                              <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
                               <span>
                                 Categories: {pkg.allowed_categories.join(", ")}
                               </span>
                             </li>
                           )}
                           <li className="flex items-center gap-2">
-                            <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
+                            <Check className="h-5 w-5 text-primary flex-shrink-0" />
                             <span>Priority support</span>
                           </li>
                         </ul>

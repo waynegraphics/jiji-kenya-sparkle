@@ -40,6 +40,9 @@ const App = () => (
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/seller/:userId" element={<SellerProfile />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/checkout/:type/:id" element={<Checkout />} />
+            <Route path="/checkout/:type/:id/:tierId" element={<Checkout />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
