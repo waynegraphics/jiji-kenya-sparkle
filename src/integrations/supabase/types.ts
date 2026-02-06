@@ -103,6 +103,378 @@ export type Database = {
         }
         Relationships: []
       }
+      agriculture_listings: {
+        Row: {
+          certifications: string[] | null
+          created_at: string | null
+          harvest_date: string | null
+          id: string
+          is_organic: boolean | null
+          minimum_order: number | null
+          origin: string | null
+          product_type: string
+          quantity: number | null
+          unit: string | null
+        }
+        Insert: {
+          certifications?: string[] | null
+          created_at?: string | null
+          harvest_date?: string | null
+          id: string
+          is_organic?: boolean | null
+          minimum_order?: number | null
+          origin?: string | null
+          product_type: string
+          quantity?: number | null
+          unit?: string | null
+        }
+        Update: {
+          certifications?: string[] | null
+          created_at?: string | null
+          harvest_date?: string | null
+          id?: string
+          is_organic?: boolean | null
+          minimum_order?: number | null
+          origin?: string | null
+          product_type?: string
+          quantity?: number | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agriculture_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      base_listings: {
+        Row: {
+          bumped_at: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          expires_at: string | null
+          featured_until: string | null
+          id: string
+          images: string[] | null
+          is_featured: boolean | null
+          is_negotiable: boolean | null
+          is_urgent: boolean | null
+          latitude: number | null
+          location: string
+          longitude: number | null
+          main_category_id: string
+          price: number
+          status: string | null
+          sub_category_id: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          views: number | null
+        }
+        Insert: {
+          bumped_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          expires_at?: string | null
+          featured_until?: string | null
+          id?: string
+          images?: string[] | null
+          is_featured?: boolean | null
+          is_negotiable?: boolean | null
+          is_urgent?: boolean | null
+          latitude?: number | null
+          location?: string
+          longitude?: number | null
+          main_category_id: string
+          price?: number
+          status?: string | null
+          sub_category_id?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          views?: number | null
+        }
+        Update: {
+          bumped_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          expires_at?: string | null
+          featured_until?: string | null
+          id?: string
+          images?: string[] | null
+          is_featured?: boolean | null
+          is_negotiable?: boolean | null
+          is_urgent?: boolean | null
+          latitude?: number | null
+          location?: string
+          longitude?: number | null
+          main_category_id?: string
+          price?: number
+          status?: string | null
+          sub_category_id?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "base_listings_main_category_id_fkey"
+            columns: ["main_category_id"]
+            isOneToOne: false
+            referencedRelation: "main_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "base_listings_sub_category_id_fkey"
+            columns: ["sub_category_id"]
+            isOneToOne: false
+            referencedRelation: "sub_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      beauty_listings: {
+        Row: {
+          brand: string | null
+          condition: string | null
+          created_at: string | null
+          expiry_date: string | null
+          id: string
+          is_organic: boolean | null
+          product_type: string
+          skin_type: string | null
+          usage_type: string | null
+        }
+        Insert: {
+          brand?: string | null
+          condition?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          id: string
+          is_organic?: boolean | null
+          product_type: string
+          skin_type?: string | null
+          usage_type?: string | null
+        }
+        Update: {
+          brand?: string | null
+          condition?: string | null
+          created_at?: string | null
+          expiry_date?: string | null
+          id?: string
+          is_organic?: boolean | null
+          product_type?: string
+          skin_type?: string | null
+          usage_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beauty_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      construction_listings: {
+        Row: {
+          brand: string | null
+          condition: string | null
+          created_at: string | null
+          id: string
+          item_type: string
+          material_type: string | null
+          quantity: number | null
+          unit: string | null
+        }
+        Insert: {
+          brand?: string | null
+          condition?: string | null
+          created_at?: string | null
+          id: string
+          item_type: string
+          material_type?: string | null
+          quantity?: number | null
+          unit?: string | null
+        }
+        Update: {
+          brand?: string | null
+          condition?: string | null
+          created_at?: string | null
+          id?: string
+          item_type?: string
+          material_type?: string | null
+          quantity?: number | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "construction_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      electronics_listings: {
+        Row: {
+          accessories_included: string[] | null
+          brand: string
+          condition: string | null
+          created_at: string | null
+          device_type: string
+          has_warranty: boolean | null
+          id: string
+          model: string
+          processor: string | null
+          ram: string | null
+          screen_size: string | null
+          storage: string | null
+          warranty_duration: string | null
+        }
+        Insert: {
+          accessories_included?: string[] | null
+          brand: string
+          condition?: string | null
+          created_at?: string | null
+          device_type: string
+          has_warranty?: boolean | null
+          id: string
+          model: string
+          processor?: string | null
+          ram?: string | null
+          screen_size?: string | null
+          storage?: string | null
+          warranty_duration?: string | null
+        }
+        Update: {
+          accessories_included?: string[] | null
+          brand?: string
+          condition?: string | null
+          created_at?: string | null
+          device_type?: string
+          has_warranty?: boolean | null
+          id?: string
+          model?: string
+          processor?: string | null
+          ram?: string | null
+          screen_size?: string | null
+          storage?: string | null
+          warranty_duration?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "electronics_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_listings: {
+        Row: {
+          brand: string | null
+          capacity: string | null
+          condition: string | null
+          created_at: string | null
+          equipment_type: string
+          hours_used: number | null
+          id: string
+          model: string | null
+          power_source: string | null
+          year: number | null
+        }
+        Insert: {
+          brand?: string | null
+          capacity?: string | null
+          condition?: string | null
+          created_at?: string | null
+          equipment_type: string
+          hours_used?: number | null
+          id: string
+          model?: string | null
+          power_source?: string | null
+          year?: number | null
+        }
+        Update: {
+          brand?: string | null
+          capacity?: string | null
+          condition?: string | null
+          created_at?: string | null
+          equipment_type?: string
+          hours_used?: number | null
+          id?: string
+          model?: string | null
+          power_source?: string | null
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fashion_listings: {
+        Row: {
+          brand: string | null
+          clothing_type: string
+          color: string | null
+          condition: string | null
+          created_at: string | null
+          gender: string
+          id: string
+          material: string | null
+          occasion: string | null
+          size: string | null
+        }
+        Insert: {
+          brand?: string | null
+          clothing_type: string
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          gender: string
+          id: string
+          material?: string | null
+          occasion?: string | null
+          size?: string | null
+        }
+        Update: {
+          brand?: string | null
+          clothing_type?: string
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          gender?: string
+          id?: string
+          material?: string | null
+          occasion?: string | null
+          size?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fashion_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorites: {
         Row: {
           created_at: string
@@ -128,6 +500,212 @@ export type Database = {
             columns: ["listing_id"]
             isOneToOne: false
             referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      furniture_listings: {
+        Row: {
+          assembly_required: boolean | null
+          brand: string | null
+          color: string | null
+          condition: string | null
+          created_at: string | null
+          dimensions: string | null
+          id: string
+          item_type: string
+          material: string | null
+          style: string | null
+        }
+        Insert: {
+          assembly_required?: boolean | null
+          brand?: string | null
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          dimensions?: string | null
+          id: string
+          item_type: string
+          material?: string | null
+          style?: string | null
+        }
+        Update: {
+          assembly_required?: boolean | null
+          brand?: string | null
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          dimensions?: string | null
+          id?: string
+          item_type?: string
+          material?: string | null
+          style?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "furniture_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_listings: {
+        Row: {
+          application_deadline: string | null
+          application_email: string | null
+          application_method: string | null
+          application_url: string | null
+          benefits: string[] | null
+          company_logo: string | null
+          company_name: string
+          company_website: string | null
+          created_at: string | null
+          education_level: string | null
+          experience_level: string | null
+          id: string
+          industry: string
+          is_remote: boolean | null
+          is_salary_negotiable: boolean | null
+          job_title: string
+          job_type: string
+          min_experience_years: number | null
+          required_skills: string[] | null
+          salary_max: number | null
+          salary_min: number | null
+          salary_period: string | null
+        }
+        Insert: {
+          application_deadline?: string | null
+          application_email?: string | null
+          application_method?: string | null
+          application_url?: string | null
+          benefits?: string[] | null
+          company_logo?: string | null
+          company_name: string
+          company_website?: string | null
+          created_at?: string | null
+          education_level?: string | null
+          experience_level?: string | null
+          id: string
+          industry: string
+          is_remote?: boolean | null
+          is_salary_negotiable?: boolean | null
+          job_title: string
+          job_type: string
+          min_experience_years?: number | null
+          required_skills?: string[] | null
+          salary_max?: number | null
+          salary_min?: number | null
+          salary_period?: string | null
+        }
+        Update: {
+          application_deadline?: string | null
+          application_email?: string | null
+          application_method?: string | null
+          application_url?: string | null
+          benefits?: string[] | null
+          company_logo?: string | null
+          company_name?: string
+          company_website?: string | null
+          created_at?: string | null
+          education_level?: string | null
+          experience_level?: string | null
+          id?: string
+          industry?: string
+          is_remote?: boolean | null
+          is_salary_negotiable?: boolean | null
+          job_title?: string
+          job_type?: string
+          min_experience_years?: number | null
+          required_skills?: string[] | null
+          salary_max?: number | null
+          salary_min?: number | null
+          salary_period?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids_listings: {
+        Row: {
+          age_range: string | null
+          brand: string | null
+          condition: string | null
+          created_at: string | null
+          gender: string | null
+          id: string
+          item_type: string
+          safety_certified: boolean | null
+        }
+        Insert: {
+          age_range?: string | null
+          brand?: string | null
+          condition?: string | null
+          created_at?: string | null
+          gender?: string | null
+          id: string
+          item_type: string
+          safety_certified?: boolean | null
+        }
+        Update: {
+          age_range?: string | null
+          brand?: string | null
+          condition?: string | null
+          created_at?: string | null
+          gender?: string | null
+          id?: string
+          item_type?: string
+          safety_certified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leisure_listings: {
+        Row: {
+          brand: string | null
+          condition: string | null
+          created_at: string | null
+          id: string
+          includes: string[] | null
+          item_type: string
+        }
+        Insert: {
+          brand?: string | null
+          condition?: string | null
+          created_at?: string | null
+          id: string
+          includes?: string[] | null
+          item_type: string
+        }
+        Update: {
+          brand?: string | null
+          condition?: string | null
+          created_at?: string | null
+          id?: string
+          includes?: string[] | null
+          item_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leisure_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
             referencedColumns: ["id"]
           },
         ]
@@ -183,6 +761,48 @@ export type Database = {
           updated_at?: string
           user_id?: string
           views?: number | null
+        }
+        Relationships: []
+      }
+      main_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -296,6 +916,109 @@ export type Database = {
           },
         ]
       }
+      pet_listings: {
+        Row: {
+          age_months: number | null
+          animal_type: string
+          breed: string | null
+          created_at: string | null
+          gender: string | null
+          health_certificate: boolean | null
+          id: string
+          includes: string[] | null
+          is_neutered: boolean | null
+          is_vaccinated: boolean | null
+        }
+        Insert: {
+          age_months?: number | null
+          animal_type: string
+          breed?: string | null
+          created_at?: string | null
+          gender?: string | null
+          health_certificate?: boolean | null
+          id: string
+          includes?: string[] | null
+          is_neutered?: boolean | null
+          is_vaccinated?: boolean | null
+        }
+        Update: {
+          age_months?: number | null
+          animal_type?: string
+          breed?: string | null
+          created_at?: string | null
+          gender?: string | null
+          health_certificate?: boolean | null
+          id?: string
+          includes?: string[] | null
+          is_neutered?: boolean | null
+          is_vaccinated?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pet_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      phone_listings: {
+        Row: {
+          accessories_included: string[] | null
+          brand: string
+          color: string | null
+          condition: string | null
+          created_at: string | null
+          device_type: string
+          has_warranty: boolean | null
+          id: string
+          is_unlocked: boolean | null
+          model: string
+          ram: string | null
+          storage: string | null
+          warranty_duration: string | null
+        }
+        Insert: {
+          accessories_included?: string[] | null
+          brand: string
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          device_type: string
+          has_warranty?: boolean | null
+          id: string
+          is_unlocked?: boolean | null
+          model: string
+          ram?: string | null
+          storage?: string | null
+          warranty_duration?: string | null
+        }
+        Update: {
+          accessories_included?: string[] | null
+          brand?: string
+          color?: string | null
+          condition?: string | null
+          created_at?: string | null
+          device_type?: string
+          has_warranty?: boolean | null
+          id?: string
+          is_unlocked?: boolean | null
+          model?: string
+          ram?: string | null
+          storage?: string | null
+          warranty_duration?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -340,6 +1063,77 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      property_listings: {
+        Row: {
+          agency_fee: string | null
+          amenities: string[] | null
+          bathrooms: number | null
+          bedrooms: number | null
+          created_at: string | null
+          floor_number: number | null
+          furnishing_type: string | null
+          id: string
+          is_furnished: boolean | null
+          listing_type: string
+          nearby_facilities: string[] | null
+          parking_spaces: number | null
+          plot_size_sqm: number | null
+          property_type: string
+          service_charge: number | null
+          size_sqm: number | null
+          total_floors: number | null
+          year_built: number | null
+        }
+        Insert: {
+          agency_fee?: string | null
+          amenities?: string[] | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string | null
+          floor_number?: number | null
+          furnishing_type?: string | null
+          id: string
+          is_furnished?: boolean | null
+          listing_type: string
+          nearby_facilities?: string[] | null
+          parking_spaces?: number | null
+          plot_size_sqm?: number | null
+          property_type: string
+          service_charge?: number | null
+          size_sqm?: number | null
+          total_floors?: number | null
+          year_built?: number | null
+        }
+        Update: {
+          agency_fee?: string | null
+          amenities?: string[] | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          created_at?: string | null
+          floor_number?: number | null
+          furnishing_type?: string | null
+          id?: string
+          is_furnished?: boolean | null
+          listing_type?: string
+          nearby_facilities?: string[] | null
+          parking_spaces?: number | null
+          plot_size_sqm?: number | null
+          property_type?: string
+          service_charge?: number | null
+          size_sqm?: number | null
+          total_floors?: number | null
+          year_built?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seller_addons: {
         Row: {
@@ -457,6 +1251,106 @@ export type Database = {
           },
         ]
       }
+      service_listings: {
+        Row: {
+          availability: string | null
+          certifications: string[] | null
+          created_at: string | null
+          experience_years: number | null
+          id: string
+          is_certified: boolean | null
+          languages: string[] | null
+          pricing_model: string | null
+          service_area: string[] | null
+          service_type: string
+        }
+        Insert: {
+          availability?: string | null
+          certifications?: string[] | null
+          created_at?: string | null
+          experience_years?: number | null
+          id: string
+          is_certified?: boolean | null
+          languages?: string[] | null
+          pricing_model?: string | null
+          service_area?: string[] | null
+          service_type: string
+        }
+        Update: {
+          availability?: string | null
+          certifications?: string[] | null
+          created_at?: string | null
+          experience_years?: number | null
+          id?: string
+          is_certified?: boolean | null
+          languages?: string[] | null
+          pricing_model?: string | null
+          service_area?: string[] | null
+          service_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sub_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          main_category_id: string
+          name: string
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          main_category_id: string
+          name: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          main_category_id?: string
+          name?: string
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sub_categories_main_category_id_fkey"
+            columns: ["main_category_id"]
+            isOneToOne: false
+            referencedRelation: "main_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_packages: {
         Row: {
           allowed_categories: string[] | null
@@ -540,6 +1434,174 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vehicle_listings: {
+        Row: {
+          body_type: string | null
+          condition: string | null
+          created_at: string | null
+          cylinders: number | null
+          doors: number | null
+          drivetrain: string | null
+          engine_size_cc: number | null
+          exchange_possible: boolean | null
+          exterior_color: string | null
+          fuel_type: string | null
+          horsepower: number | null
+          id: string
+          interior_color: string | null
+          is_registered: boolean | null
+          key_features: string[] | null
+          make_id: string | null
+          mileage: number | null
+          model_id: string | null
+          registration_number: string | null
+          registration_year: number | null
+          seats: number | null
+          transmission: string | null
+          trim: string | null
+          vehicle_type: string
+          vin_chassis: string | null
+          year_of_manufacture: number | null
+        }
+        Insert: {
+          body_type?: string | null
+          condition?: string | null
+          created_at?: string | null
+          cylinders?: number | null
+          doors?: number | null
+          drivetrain?: string | null
+          engine_size_cc?: number | null
+          exchange_possible?: boolean | null
+          exterior_color?: string | null
+          fuel_type?: string | null
+          horsepower?: number | null
+          id: string
+          interior_color?: string | null
+          is_registered?: boolean | null
+          key_features?: string[] | null
+          make_id?: string | null
+          mileage?: number | null
+          model_id?: string | null
+          registration_number?: string | null
+          registration_year?: number | null
+          seats?: number | null
+          transmission?: string | null
+          trim?: string | null
+          vehicle_type: string
+          vin_chassis?: string | null
+          year_of_manufacture?: number | null
+        }
+        Update: {
+          body_type?: string | null
+          condition?: string | null
+          created_at?: string | null
+          cylinders?: number | null
+          doors?: number | null
+          drivetrain?: string | null
+          engine_size_cc?: number | null
+          exchange_possible?: boolean | null
+          exterior_color?: string | null
+          fuel_type?: string | null
+          horsepower?: number | null
+          id?: string
+          interior_color?: string | null
+          is_registered?: boolean | null
+          key_features?: string[] | null
+          make_id?: string | null
+          mileage?: number | null
+          model_id?: string | null
+          registration_number?: string | null
+          registration_year?: number | null
+          seats?: number | null
+          transmission?: string | null
+          trim?: string | null
+          vehicle_type?: string
+          vin_chassis?: string | null
+          year_of_manufacture?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_listings_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_listings_make_id_fkey"
+            columns: ["make_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_makes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_listings_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_makes: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+        }
+        Relationships: []
+      }
+      vehicle_models: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          make_id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          make_id: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          make_id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_models_make_id_fkey"
+            columns: ["make_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_makes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
