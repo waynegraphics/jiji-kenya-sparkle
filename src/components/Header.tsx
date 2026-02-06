@@ -131,8 +131,16 @@ const Header = ({ onSearch }: HeaderProps) => {
                       <DropdownMenuItem onClick={() => navigate("/my-ads")}>
                         My Ads
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate("/messages")}>
-                        Messages
+                      <DropdownMenuItem onClick={() => navigate("/messages")} className="flex items-center justify-between">
+                        <span className="flex items-center">
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Messages
+                        </span>
+                        {unreadCount > 0 && (
+                          <Badge className="bg-destructive text-destructive-foreground text-xs h-5 min-w-[20px] flex items-center justify-center">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </Badge>
+                        )}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate("/favorites")}>
                         Favorites
