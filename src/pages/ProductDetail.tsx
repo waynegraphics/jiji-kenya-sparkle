@@ -353,7 +353,10 @@ const ProductDetail = () => {
           <div className="space-y-4">
             {/* Seller Card */}
             <div className="bg-card rounded-xl p-6 shadow-card">
-              <div className="flex items-center gap-4 mb-4">
+              <div 
+                className="flex items-center gap-4 mb-4 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => navigate(`/seller/${listing.user_id}`)}
+              >
                 <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xl font-bold">
                   {seller?.avatar_url ? (
                     <img
@@ -367,7 +370,7 @@ const ProductDetail = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold">{seller?.display_name}</h3>
+                    <h3 className="font-semibold text-primary hover:underline">{seller?.display_name}</h3>
                     {seller?.is_verified && (
                       <Shield className="h-4 w-4 text-primary" />
                     )}

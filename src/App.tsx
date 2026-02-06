@@ -13,6 +13,7 @@ import EditAd from "./pages/EditAd";
 import ProfileSettings from "./pages/ProfileSettings";
 import Messages from "./pages/Messages";
 import Favorites from "./pages/Favorites";
+import SellerProfile from "./pages/SellerProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/profile" element={<ProfileSettings />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/favorites" element={<Favorites />} />
+            <Route path="/seller/:userId" element={<SellerProfile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

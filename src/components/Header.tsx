@@ -1,9 +1,11 @@
-import { Search, MapPin, Menu, User, ChevronDown, Plus, LogOut } from "lucide-react";
+import { Search, MapPin, Menu, User, ChevronDown, Plus, LogOut, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "./AuthModal";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +26,7 @@ const Header = ({ onSearch }: HeaderProps) => {
   const [authModalTab, setAuthModalTab] = useState<"login" | "register">("login");
   const { user, profile, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  const unreadCount = useUnreadMessages();
 
   const handleSearch = () => {
     if (onSearch) {
@@ -128,8 +131,16 @@ const Header = ({ onSearch }: HeaderProps) => {
                       <DropdownMenuItem onClick={() => navigate("/my-ads")}>
                         My Ads
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate("/messages")}>
-                        Messages
+                      <DropdownMenuItem onClick={() => navigate("/messages")} className="flex items-center justify-between">
+                        <span className="flex items-center">
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Messages
+                        </span>
+                        {unreadCount > 0 && (
+                          <Badge className="bg-destructive text-destructive-foreground text-xs h-5 min-w-[20px] flex items-center justify-center">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </Badge>
+                        )}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate("/favorites")}>
                         Favorites
@@ -202,10 +213,16 @@ const Header = ({ onSearch }: HeaderProps) => {
                     </Button>
                     <Button
                       variant="ghost"
-                      className="justify-start text-primary-foreground hover:bg-jiji-green-dark"
+                      className="justify-start text-primary-foreground hover:bg-jiji-green-dark w-full"
                       onClick={() => { navigate("/messages"); setIsMenuOpen(false); }}
                     >
+                      <MessageCircle className="h-4 w-4 mr-2" />
                       Messages
+                      {unreadCount > 0 && (
+                        <Badge className="ml-auto bg-destructive text-destructive-foreground text-xs h-5 min-w-[20px] flex items-center justify-center">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </Badge>
+                      )}
                     </Button>
                     <Button
                       variant="ghost"
