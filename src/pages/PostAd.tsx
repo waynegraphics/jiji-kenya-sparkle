@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -16,9 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscriptionLimits, useIncrementAdsUsed } from "@/hooks/useSubscriptionLimits";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Upload, X, ImagePlus, CheckCircle } from "lucide-react";
+import { Loader2, Upload, X, ImagePlus, CheckCircle, AlertCircle, Package } from "lucide-react";
 import { z } from "zod";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 
 const categories = [
   { value: "vehicles", label: "Vehicles" },
@@ -68,6 +72,11 @@ const PostAd = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+  const incrementAdsUsed = useIncrementAdsUsed();
+  
+  // Subscription limits
+  const { data: limits, isLoading: limitsLoading } = useSubscriptionLimits();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -89,6 +98,13 @@ const PostAd = () => {
     navigate("/");
     return null;
   }
+
+  // Check if user can post in this category
+  const canPostInCategory = (category: string) => {
+    if (!limits?.hasActiveSubscription) return false;
+    if (!limits.allowedCategories || limits.allowedCategories.length === 0) return true;
+    return limits.allowedCategories.includes(category);
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -172,6 +188,25 @@ const PostAd = () => {
     e.preventDefault();
     setErrors({});
 
+    // Check subscription limits first
+    if (!limits?.hasActiveSubscription) {
+      toast.error("You need an active subscription to post ads");
+      navigate("/pricing");
+      return;
+    }
+
+    if (!limits.canPostAd) {
+      toast.error(`You've reached your limit of ${limits.maxAds} ads. Please upgrade your plan.`);
+      navigate("/pricing");
+      return;
+    }
+
+    // Check category restriction
+    if (!canPostInCategory(formData.category)) {
+      toast.error("Your subscription doesn't allow posting in this category");
+      return;
+    }
+
     // Validate form
     const validationData = {
       title: formData.title.trim(),
@@ -226,6 +261,10 @@ const PostAd = () => {
 
       if (error) throw error;
 
+      // Increment ads used count
+      await incrementAdsUsed();
+      queryClient.invalidateQueries({ queryKey: ["subscription-limits"] });
+
       toast.success("Your ad has been posted!");
       navigate(`/listing/${listing.id}`);
     } catch (error) {
@@ -245,10 +284,56 @@ const PostAd = () => {
           Post Your Ad
         </h1>
 
+        {/* Subscription Status Banner */}
+        {limitsLoading ? (
+          <div className="mb-6 bg-muted rounded-lg p-4 animate-pulse">
+            <div className="h-4 bg-muted-foreground/20 rounded w-1/3"></div>
+          </div>
+        ) : !limits?.hasActiveSubscription ? (
+          <Alert className="mb-6 border-destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>No Active Subscription</AlertTitle>
+            <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <span>You need an active subscription to post ads.</span>
+              <Link to="/pricing">
+                <Button size="sm" variant="default">
+                  <Package className="h-4 w-4 mr-2" />
+                  Get a Subscription
+                </Button>
+              </Link>
+            </AlertDescription>
+          </Alert>
+        ) : !limits.canPostAd ? (
+          <Alert className="mb-6 border-destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Ad Limit Reached</AlertTitle>
+            <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <span>You've used all {limits.maxAds} ads in your {limits.subscriptionName} plan.</span>
+              <Link to="/pricing">
+                <Button size="sm" variant="default">
+                  Upgrade Plan
+                </Button>
+              </Link>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">{limits.subscriptionName} - Ads Usage</span>
+              <span className="text-sm text-muted-foreground">{limits.adsUsed} / {limits.maxAds} used</span>
+            </div>
+            <Progress value={(limits.adsUsed / limits.maxAds) * 100} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-1">{limits.adsRemaining} ads remaining</p>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Images Section */}
           <div className="bg-card rounded-xl p-6 shadow-card">
             <h2 className="text-lg font-semibold mb-4">Photos</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Add up to 8 photos. The first image will be the cover.
+            </p>
             <p className="text-sm text-muted-foreground mb-4">
               Add up to 8 photos. The first image will be the cover.
             </p>
