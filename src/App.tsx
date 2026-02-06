@@ -15,6 +15,7 @@ import Messages from "./pages/Messages";
 import Favorites from "./pages/Favorites";
 import SellerProfile from "./pages/SellerProfile";
 import AdminDashboard from "./pages/AdminDashboard";
+import SellerDashboard from "./pages/SellerDashboard";
 import Pricing from "./pages/Pricing";
 import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/seller/:userId" element={<SellerProfile />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/seller-dashboard" element={<SellerDashboard />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/checkout/:type/:id" element={<Checkout />} />
             <Route path="/checkout/:type/:id/:tierId" element={<Checkout />} />
