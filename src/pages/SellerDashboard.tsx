@@ -8,6 +8,9 @@ import SellerListings from "@/components/seller/SellerListings";
 import SellerAddonsPage from "@/components/seller/SellerAddonsPage";
 import SellerAnalytics from "@/components/seller/SellerAnalytics";
 import SellerBilling from "@/components/seller/SellerBilling";
+import SellerFollowers from "@/components/seller/SellerFollowers";
+import SellerSupport from "@/components/seller/SellerSupport";
+import SellerNotifications from "@/components/seller/SellerNotifications";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -70,6 +73,9 @@ const SellerDashboard = () => {
     if (path.includes('/addons')) return 'Add-ons';
     if (path.includes('/analytics')) return 'Analytics';
     if (path.includes('/billing')) return 'Billing';
+    if (path.includes('/followers')) return 'Followers';
+    if (path.includes('/support')) return 'Support';
+    if (path.includes('/notifications')) return 'Notifications';
     if (path.includes('/settings')) return 'Settings';
     return 'Dashboard';
   };
@@ -130,6 +136,9 @@ const SellerDashboard = () => {
                   )
                 } />
                 <Route path="billing" element={<SellerBilling />} />
+                <Route path="followers" element={<SellerFollowers />} />
+                <Route path="support" element={<SellerSupport />} />
+                <Route path="notifications" element={<SellerNotifications />} />
                 <Route path="settings" element={<SellerSettings />} />
               </Routes>
             </div>

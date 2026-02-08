@@ -1,20 +1,28 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Package, Puzzle, BarChart3, Users, Settings } from "lucide-react";
+import { Navigate, Routes, Route, useLocation } from "react-router-dom";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminOverview from "@/components/admin/AdminOverview";
 import AdminPackages from "@/components/admin/AdminPackages";
 import AdminAddons from "@/components/admin/AdminAddons";
+import AdminUsers from "@/components/admin/AdminUsers";
+import AdminListings from "@/components/admin/AdminListings";
+import AdminCategories from "@/components/admin/AdminCategories";
+import AdminSupport from "@/components/admin/AdminSupport";
+import AdminReports from "@/components/admin/AdminReports";
+import AdminMessaging from "@/components/admin/AdminMessaging";
+import AdminSettings from "@/components/admin/AdminSettings";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { Shield, Home } from "lucide-react";
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("packages");
+  const location = useLocation();
 
   // Check if user is admin
   const { data: isAdmin, isLoading } = useQuery({
@@ -28,22 +36,18 @@ const AdminDashboard = () => {
     enabled: !!user,
   });
 
-  if (isLoading) {
+  if (loading || isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto py-12 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!user || !isAdmin) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto py-12 text-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
           <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
           <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
           <p className="text-muted-foreground mb-4">
@@ -51,70 +55,76 @@ const AdminDashboard = () => {
           </p>
           <Button onClick={() => navigate("/")}>Go Home</Button>
         </div>
-        <Footer />
       </div>
     );
   }
 
+  // Determine page title
+  const getPageTitle = () => {
+    const path = location.pathname;
+    if (path.includes('/users')) return 'User Management';
+    if (path.includes('/listings')) return 'Listings Management';
+    if (path.includes('/categories')) return 'Categories';
+    if (path.includes('/packages')) return 'Subscription Packages';
+    if (path.includes('/addons')) return 'Add-ons';
+    if (path.includes('/support')) return 'Support Tickets';
+    if (path.includes('/reports')) return 'Reports & Moderation';
+    if (path.includes('/messaging')) return 'Messaging';
+    if (path.includes('/settings')) return 'System Settings';
+    return 'Overview';
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <main className="container mx-auto py-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Shield className="h-8 w-8 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage subscriptions, add-ons, and platform settings</p>
-          </div>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background">
+        <AdminSidebar />
+        
+        <div className="flex-1 flex flex-col">
+          {/* Top Header */}
+          <header className="h-14 border-b bg-card flex items-center justify-between px-4 sticky top-0 z-10">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              <nav className="flex items-center gap-2 text-sm">
+                <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
+                  <Home className="h-4 w-4" />
+                </Link>
+                <span className="text-muted-foreground">/</span>
+                <span className="text-muted-foreground">Admin</span>
+                <span className="text-muted-foreground">/</span>
+                <span className="font-medium">{getPageTitle()}</span>
+              </nav>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <Link to="/">
+                <Button variant="outline" size="sm">
+                  <Home className="h-4 w-4 mr-2" />
+                  Back to Site
+                </Button>
+              </Link>
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <main className="flex-1 p-6 overflow-auto">
+            <div className="max-w-7xl mx-auto">
+              <Routes>
+                <Route index element={<AdminOverview />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="listings" element={<AdminListings />} />
+                <Route path="categories" element={<AdminCategories />} />
+                <Route path="packages" element={<AdminPackages />} />
+                <Route path="addons" element={<AdminAddons />} />
+                <Route path="support/*" element={<AdminSupport />} />
+                <Route path="reports" element={<AdminReports />} />
+                <Route path="messaging" element={<AdminMessaging />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Routes>
+            </div>
+          </main>
         </div>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="packages" className="gap-2">
-              <Package className="h-4 w-4" />
-              <span className="hidden sm:inline">Packages</span>
-            </TabsTrigger>
-            <TabsTrigger value="addons" className="gap-2">
-              <Puzzle className="h-4 w-4" />
-              <span className="hidden sm:inline">Add-ons</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="gap-2">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Users</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="gap-2">
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Analytics</span>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="packages" className="mt-6">
-            <AdminPackages />
-          </TabsContent>
-
-          <TabsContent value="addons" className="mt-6">
-            <AdminAddons />
-          </TabsContent>
-
-          <TabsContent value="users" className="mt-6">
-            <div className="bg-card rounded-xl p-6 shadow-card">
-              <h2 className="text-xl font-semibold mb-4">User Management</h2>
-              <p className="text-muted-foreground">Coming soon - manage users and their subscriptions</p>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="analytics" className="mt-6">
-            <div className="bg-card rounded-xl p-6 shadow-card">
-              <h2 className="text-xl font-semibold mb-4">Analytics</h2>
-              <p className="text-muted-foreground">Coming soon - subscription and revenue analytics</p>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      <Footer />
-    </div>
+      </div>
+    </SidebarProvider>
   );
 };
 
