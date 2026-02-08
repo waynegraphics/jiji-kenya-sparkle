@@ -150,6 +150,42 @@ export type Database = {
           },
         ]
       }
+      announcements: {
+        Row: {
+          admin_id: string
+          content: string
+          created_at: string
+          ends_at: string | null
+          id: string
+          is_active: boolean | null
+          starts_at: string | null
+          target_audience: string
+          title: string
+        }
+        Insert: {
+          admin_id: string
+          content: string
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          starts_at?: string | null
+          target_audience?: string
+          title: string
+        }
+        Update: {
+          admin_id?: string
+          content?: string
+          created_at?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          starts_at?: string | null
+          target_audience?: string
+          title?: string
+        }
+        Relationships: []
+      }
       base_listings: {
         Row: {
           bumped_at: string | null
@@ -504,6 +540,27 @@ export type Database = {
           },
         ]
       }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       furniture_listings: {
         Row: {
           assembly_required: boolean | null
@@ -844,6 +901,47 @@ export type Database = {
           },
         ]
       }
+      moderation_logs: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          reason: string | null
+          target_listing_id: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          target_listing_id?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          target_listing_id?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_logs_target_listing_id_fkey"
+            columns: ["target_listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_transactions: {
         Row: {
           addon_purchase_id: string | null
@@ -1135,6 +1233,59 @@ export type Database = {
           },
         ]
       }
+      reports: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          report_type: string
+          reported_listing_id: string | null
+          reported_user_id: string | null
+          reporter_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          report_type: string
+          reported_listing_id?: string | null
+          reported_user_id?: string | null
+          reporter_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          report_type?: string
+          reported_listing_id?: string | null
+          reported_user_id?: string | null
+          reporter_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_reported_listing_id_fkey"
+            columns: ["reported_listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seller_addons: {
         Row: {
           addon_id: string
@@ -1414,6 +1565,103 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          attachments: string[] | null
+          category: Database["public"]["Enums"]["ticket_category"]
+          closed_at: string | null
+          created_at: string
+          description: string
+          id: string
+          listing_id: string | null
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          attachments?: string[] | null
+          category?: Database["public"]["Enums"]["ticket_category"]
+          closed_at?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          listing_id?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          attachments?: string[] | null
+          category?: Database["public"]["Enums"]["ticket_category"]
+          closed_at?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          listing_id?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ticket_responses: {
+        Row: {
+          attachments: string[] | null
+          content: string
+          created_at: string
+          id: string
+          is_admin_response: boolean | null
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          attachments?: string[] | null
+          content: string
+          created_at?: string
+          id?: string
+          is_admin_response?: boolean | null
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          attachments?: string[] | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_admin_response?: boolean | null
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_responses_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1431,6 +1679,75 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_suspensions: {
+        Row: {
+          admin_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_permanent: boolean | null
+          lifted_at: string | null
+          lifted_by: string | null
+          reason: string
+          suspended_until: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_permanent?: boolean | null
+          lifted_at?: string | null
+          lifted_by?: string | null
+          reason: string
+          suspended_until?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_permanent?: boolean | null
+          lifted_at?: string | null
+          lifted_by?: string | null
+          reason?: string
+          suspended_until?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_warnings: {
+        Row: {
+          admin_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          reason: string
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          reason: string
+          severity: string
+          user_id: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          reason?: string
+          severity?: string
           user_id?: string
         }
         Relationships: []
@@ -1635,6 +1952,15 @@ export type Database = {
         | "health"
       payment_status: "pending" | "completed" | "failed" | "refunded"
       subscription_status: "active" | "cancelled" | "expired" | "pending"
+      ticket_category:
+        | "account"
+        | "listing"
+        | "payment"
+        | "technical"
+        | "report"
+        | "other"
+      ticket_priority: "low" | "medium" | "high" | "urgent"
+      ticket_status: "open" | "in_progress" | "pending" | "resolved" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1780,6 +2106,16 @@ export const Constants = {
       ],
       payment_status: ["pending", "completed", "failed", "refunded"],
       subscription_status: ["active", "cancelled", "expired", "pending"],
+      ticket_category: [
+        "account",
+        "listing",
+        "payment",
+        "technical",
+        "report",
+        "other",
+      ],
+      ticket_priority: ["low", "medium", "high", "urgent"],
+      ticket_status: ["open", "in_progress", "pending", "resolved", "closed"],
     },
   },
 } as const

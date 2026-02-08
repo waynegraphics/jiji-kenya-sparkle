@@ -19,7 +19,10 @@ import {
   Zap, 
   Settings,
   CreditCard,
-  Plus
+  Plus,
+  Users,
+  LifeBuoy,
+  Bell
 } from "lucide-react";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +58,24 @@ const menuItems = [
     icon: BarChart3,
     description: "View performance",
     requiresAnalytics: true
+  },
+  { 
+    title: "Followers", 
+    url: "/seller-dashboard/followers", 
+    icon: Users,
+    description: "Your followers"
+  },
+  { 
+    title: "Support", 
+    url: "/seller-dashboard/support", 
+    icon: LifeBuoy,
+    description: "Get help"
+  },
+  { 
+    title: "Notifications", 
+    url: "/seller-dashboard/notifications", 
+    icon: Bell,
+    description: "View updates"
   },
   { 
     title: "Billing", 
