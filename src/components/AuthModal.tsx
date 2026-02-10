@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Mail, Lock, User } from "lucide-react";
 
@@ -20,6 +22,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
   const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +34,18 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
         if (error) {
           toast.error(error.message);
         } else {
+          // Check if user is admin and redirect accordingly
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: isAdmin } = await supabase.rpc('is_admin', { _user_id: user.id });
+            if (isAdmin) {
+              toast.success("Welcome back, Admin!");
+              onClose();
+              resetForm();
+              navigate('/admin');
+              return;
+            }
+          }
           toast.success("Welcome back!");
           onClose();
           resetForm();
