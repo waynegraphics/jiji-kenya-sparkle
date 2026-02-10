@@ -942,6 +942,45 @@ export type Database = {
           },
         ]
       }
+      mpesa_settings: {
+        Row: {
+          callback_url: string
+          consumer_key: string
+          consumer_secret: string
+          created_at: string
+          environment: string
+          id: string
+          is_enabled: boolean
+          passkey: string
+          shortcode: string
+          updated_at: string
+        }
+        Insert: {
+          callback_url?: string
+          consumer_key?: string
+          consumer_secret?: string
+          created_at?: string
+          environment?: string
+          id?: string
+          is_enabled?: boolean
+          passkey?: string
+          shortcode?: string
+          updated_at?: string
+        }
+        Update: {
+          callback_url?: string
+          consumer_key?: string
+          consumer_secret?: string
+          created_at?: string
+          environment?: string
+          id?: string
+          is_enabled?: boolean
+          passkey?: string
+          shortcode?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_transactions: {
         Row: {
           addon_purchase_id: string | null

@@ -17,7 +17,6 @@ interface STKPushRequest {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -31,12 +30,17 @@ serve(async (req) => {
       );
     }
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // User-scoped client for auth
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
+
+    // Service role client to read mpesa_settings (bypasses RLS)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Verify user
     const token = authHeader.replace("Bearer ", "");
@@ -50,41 +54,32 @@ serve(async (req) => {
 
     const userId = claimsData.claims.sub;
 
-    // Get M-Pesa credentials from environment
-    const consumerKey = Deno.env.get("MPESA_CONSUMER_KEY");
-    const consumerSecret = Deno.env.get("MPESA_CONSUMER_SECRET");
-    const passkey = Deno.env.get("MPESA_PASSKEY");
-    const shortcode = Deno.env.get("MPESA_SHORTCODE");
-    const callbackUrl = Deno.env.get("MPESA_CALLBACK_URL");
-    const environment = Deno.env.get("MPESA_ENVIRONMENT") || "sandbox";
+    // Fetch Daraja settings from database
+    const { data: settings, error: settingsError } = await supabaseAdmin
+      .from("mpesa_settings")
+      .select("*")
+      .limit(1)
+      .single();
 
-    if (!consumerKey) {
+    if (settingsError || !settings) {
       return new Response(
-        JSON.stringify({ error: "MPESA_CONSUMER_KEY is not configured" }),
+        JSON.stringify({ error: "M-Pesa settings not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    if (!consumerSecret) {
+
+    if (!settings.is_enabled) {
       return new Response(
-        JSON.stringify({ error: "MPESA_CONSUMER_SECRET is not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "M-Pesa payments are currently disabled" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    if (!passkey) {
+
+    const { consumer_key, consumer_secret, passkey, shortcode, callback_url, environment } = settings;
+
+    if (!consumer_key || !consumer_secret || !passkey || !shortcode || !callback_url) {
       return new Response(
-        JSON.stringify({ error: "MPESA_PASSKEY is not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    if (!shortcode) {
-      return new Response(
-        JSON.stringify({ error: "MPESA_SHORTCODE is not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    if (!callbackUrl) {
-      return new Response(
-        JSON.stringify({ error: "MPESA_CALLBACK_URL is not configured" }),
+        JSON.stringify({ error: "M-Pesa credentials are incomplete. Please configure in admin settings." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -104,7 +99,7 @@ serve(async (req) => {
       );
     }
 
-    // Format phone number (convert 0xxx to 254xxx)
+    // Format phone number
     let formattedPhone = phone_number.replace(/\s/g, "");
     if (formattedPhone.startsWith("0")) {
       formattedPhone = "254" + formattedPhone.substring(1);
@@ -113,14 +108,12 @@ serve(async (req) => {
     }
 
     // Step 1: Get access token
-    const auth = btoa(`${consumerKey}:${consumerSecret}`);
+    const auth = btoa(`${consumer_key}:${consumer_secret}`);
     const tokenResponse = await fetch(
       `${baseUrl}/oauth/v1/generate?grant_type=client_credentials`,
       {
         method: "GET",
-        headers: {
-          Authorization: `Basic ${auth}`,
-        },
+        headers: { Authorization: `Basic ${auth}` },
       }
     );
 
@@ -153,7 +146,7 @@ serve(async (req) => {
       PartyA: formattedPhone,
       PartyB: shortcode,
       PhoneNumber: formattedPhone,
-      CallBackURL: callbackUrl,
+      CallBackURL: callback_url,
       AccountReference: account_reference || "Subscription",
       TransactionDesc: transaction_desc || "Payment for subscription",
     };
