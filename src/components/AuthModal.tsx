@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Mail, Lock, User } from "lucide-react";
+import { Loader2, Mail, Lock, User, ShoppingBag, Store, Info } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -20,6 +20,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [accountType, setAccountType] = useState<"customer" | "seller">("customer");
   const [isLoading, setIsLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -34,7 +35,6 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
         if (error) {
           toast.error(error.message);
         } else {
-          // Check user role and redirect accordingly
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
             const { data: isAdmin } = await supabase.rpc('is_admin', { _user_id: user.id });
@@ -46,7 +46,6 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
               return;
             }
           }
-          // All non-admin users go to seller dashboard
           toast.success("Welcome back!");
           onClose();
           resetForm();
@@ -62,7 +61,20 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success("Check your email to verify your account!");
+          // Update the profile with account_type after signup
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase
+              .from("profiles")
+              .update({ account_type: accountType })
+              .eq("user_id", user.id);
+          }
+
+          if (accountType === "seller") {
+            toast.success("Account created! Please verify your email, then complete seller verification.");
+          } else {
+            toast.success("Account created! Check your email to verify.");
+          }
           onClose();
           resetForm();
         }
@@ -76,6 +88,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
     setEmail("");
     setPassword("");
     setDisplayName("");
+    setAccountType("customer");
   };
 
   return (
@@ -88,7 +101,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
         </DialogHeader>
 
         {/* Tabs */}
-        <div className="flex bg-muted rounded-lg p-1 mb-6">
+        <div className="flex bg-muted rounded-lg p-1 mb-4">
           <button
             type="button"
             className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
@@ -115,21 +128,62 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {activeTab === "register" && (
-            <div className="space-y-2">
-              <Label htmlFor="displayName">Full Name</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="displayName"
-                  type="text"
-                  placeholder="John Doe"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="pl-10"
-                  required
-                />
+            <>
+              {/* Account Type Selection */}
+              <div className="space-y-2">
+                <Label>I want to join as</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setAccountType("customer")}
+                    className={`p-3 rounded-lg border-2 text-center transition-all ${
+                      accountType === "customer"
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <ShoppingBag className={`h-6 w-6 mx-auto mb-1 ${accountType === "customer" ? "text-primary" : "text-muted-foreground"}`} />
+                    <p className="font-medium text-sm">Customer</p>
+                    <p className="text-xs text-muted-foreground">Browse & buy</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAccountType("seller")}
+                    className={`p-3 rounded-lg border-2 text-center transition-all ${
+                      accountType === "seller"
+                        ? "border-secondary bg-secondary/5"
+                        : "border-border hover:border-secondary/30"
+                    }`}
+                  >
+                    <Store className={`h-6 w-6 mx-auto mb-1 ${accountType === "seller" ? "text-secondary" : "text-muted-foreground"}`} />
+                    <p className="font-medium text-sm">Seller</p>
+                    <p className="text-xs text-muted-foreground">List & sell items</p>
+                  </button>
+                </div>
+                {accountType === "seller" && (
+                  <div className="flex items-start gap-2 p-2 bg-secondary/10 rounded-md text-xs text-muted-foreground">
+                    <Info className="h-3.5 w-3.5 mt-0.5 text-secondary flex-shrink-0" />
+                    <span>Sellers need to complete ID verification before posting listings.</span>
+                  </div>
+                )}
               </div>
-            </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="displayName">Full Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="displayName"
+                    type="text"
+                    placeholder="John Doe"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+            </>
           )}
 
           <div className="space-y-2">
@@ -206,6 +260,19 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
             </>
           )}
         </p>
+
+        {activeTab === "login" && (
+          <p className="text-center text-xs text-muted-foreground">
+            Want to sell?{" "}
+            <button
+              type="button"
+              className="text-secondary font-medium hover:underline"
+              onClick={() => setActiveTab("register")}
+            >
+              Apply as a seller
+            </button>
+          </p>
+        )}
       </DialogContent>
     </Dialog>
   );

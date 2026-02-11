@@ -691,6 +691,65 @@ export type Database = {
           },
         ]
       }
+      kenya_counties: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      kenya_towns: {
+        Row: {
+          county_id: string
+          created_at: string | null
+          display_order: number | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          county_id: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          county_id?: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kenya_towns_county_id_fkey"
+            columns: ["county_id"]
+            isOneToOne: false
+            referencedRelation: "kenya_counties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kids_listings: {
         Row: {
           age_range: string | null
@@ -981,6 +1040,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          related_id: string | null
+          related_type: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          related_id?: string | null
+          related_type?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          related_id?: string | null
+          related_type?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_transactions: {
         Row: {
           addon_purchase_id: string | null
@@ -1156,8 +1251,36 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          account_type: string
           avatar_url: string | null
           bio: string | null
           created_at: string
@@ -1172,6 +1295,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_type?: string
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -1186,6 +1310,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_type?: string
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
@@ -1440,6 +1565,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      seller_verifications: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          id_back_url: string | null
+          id_front_url: string | null
+          passport_photo_url: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          id_back_url?: string | null
+          id_front_url?: string | null
+          passport_photo_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          id_back_url?: string | null
+          id_front_url?: string | null
+          passport_photo_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       service_listings: {
         Row: {
