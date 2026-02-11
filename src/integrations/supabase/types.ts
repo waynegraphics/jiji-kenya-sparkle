@@ -103,6 +103,62 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_clicks: {
+        Row: {
+          affiliate_id: string
+          browser_name: string | null
+          converted: boolean | null
+          converted_user_id: string | null
+          country: string | null
+          created_at: string
+          device_type: string | null
+          id: string
+          ip_address: string | null
+          os_name: string | null
+          page_url: string | null
+          referral_code: string
+          user_agent: string | null
+        }
+        Insert: {
+          affiliate_id: string
+          browser_name?: string | null
+          converted?: boolean | null
+          converted_user_id?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          ip_address?: string | null
+          os_name?: string | null
+          page_url?: string | null
+          referral_code: string
+          user_agent?: string | null
+        }
+        Update: {
+          affiliate_id?: string
+          browser_name?: string | null
+          converted?: boolean | null
+          converted_user_id?: string | null
+          country?: string | null
+          created_at?: string
+          device_type?: string | null
+          id?: string
+          ip_address?: string | null
+          os_name?: string | null
+          page_url?: string | null
+          referral_code?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_clicks_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       affiliate_payouts: {
         Row: {
           affiliate_id: string
