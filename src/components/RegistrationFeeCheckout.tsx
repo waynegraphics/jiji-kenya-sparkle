@@ -29,7 +29,12 @@ const RegistrationFeeCheckout = ({ onPaymentSuccess }: RegistrationFeeCheckoutPr
         .select("value")
         .eq("key", "seller_registration_fee")
         .maybeSingle();
-      if (data) setFee(parseInt(data.value) || 250);
+      const feeValue = data ? parseInt(data.value) : 250;
+      setFee(feeValue);
+      // If fee is 0, auto-approve
+      if (feeValue === 0) {
+        onPaymentSuccess();
+      }
       setLoading(false);
     };
     fetchFee();

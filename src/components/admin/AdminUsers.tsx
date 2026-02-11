@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { 
   Search, Filter, MoreVertical, Shield, ShieldOff, Eye, Mail,
-  Ban, CheckCircle, AlertTriangle, FileText, MessageSquare, Package
+  Ban, CheckCircle, AlertTriangle, FileText, MessageSquare, Package, UserCog
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -33,6 +33,8 @@ interface UserProfile {
   created_at: string;
   rating: number;
   total_reviews: number;
+  account_type: string;
+  business_name: string | null;
 }
 
 const AdminUsers = () => {
@@ -41,6 +43,8 @@ const AdminUsers = () => {
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [assignPackageUser, setAssignPackageUser] = useState<UserProfile | null>(null);
   const [selectedPackageId, setSelectedPackageId] = useState("");
+  const [changeRoleUser, setChangeRoleUser] = useState<UserProfile | null>(null);
+  const [newAccountType, setNewAccountType] = useState("");
   const queryClient = useQueryClient();
 
   // Fetch users
@@ -53,6 +57,18 @@ const AdminUsers = () => {
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as UserProfile[];
+    }
+  });
+
+  // Fetch user emails via admin function
+  const { data: userEmails } = useQuery({
+    queryKey: ["admin-user-emails"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_user_emails");
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      data?.forEach((row: any) => { map[row.user_id] = row.email; });
+      return map;
     }
   });
 
@@ -117,14 +133,12 @@ const AdminUsers = () => {
       const pkg = packages?.find(p => p.id === packageId);
       if (!pkg) throw new Error("Package not found");
 
-      // Deactivate any existing active subscriptions
       await supabase
         .from("seller_subscriptions")
         .update({ status: "cancelled" as any })
         .eq("user_id", userId)
         .eq("status", "active");
 
-      // Create new subscription
       const now = new Date();
       const expiresAt = new Date(now.getTime() + pkg.duration_days * 24 * 60 * 60 * 1000);
       
@@ -171,15 +185,25 @@ const AdminUsers = () => {
     }
   });
 
-  const getUserRole = (userId: string) => {
-    const role = userRoles?.find(r => r.user_id === userId);
-    return role?.role || "user";
-  };
-
-  const getUserAccountType = (userId: string) => {
-    const u = users?.find(p => p.user_id === userId);
-    return (u as any)?.account_type || "customer";
-  };
+  // Change account type mutation
+  const changeAccountType = useMutation({
+    mutationFn: async ({ userId, accountType }: { userId: string; accountType: string }) => {
+      const { error } = await supabase.rpc("admin_set_account_type", {
+        target_user_id: userId,
+        new_account_type: accountType,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success("Account type updated successfully");
+      setChangeRoleUser(null);
+      setNewAccountType("");
+    },
+    onError: (err: Error) => {
+      toast.error("Failed to change account type: " + err.message);
+    }
+  });
 
   const getUserSubscription = (userId: string) => {
     const sub = userSubscriptions?.find(s => s.user_id === userId);
@@ -187,13 +211,14 @@ const AdminUsers = () => {
   };
 
   const filteredUsers = users?.filter(user => {
+    const email = userEmails?.[user.user_id] || "";
     const matchesSearch = 
       user.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.phone?.includes(searchQuery);
     if (roleFilter === "all") return matchesSearch;
-    const accountType = (user as any).account_type || "customer";
-    return matchesSearch && accountType === roleFilter;
+    return matchesSearch && user.account_type === roleFilter;
   });
 
   if (isLoading) {
@@ -224,7 +249,7 @@ const AdminUsers = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name, location, or phone..."
+                placeholder="Search by name, email, location, or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -253,7 +278,8 @@ const AdminUsers = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Account Type</TableHead>
                 <TableHead>Subscription</TableHead>
                 <TableHead>Listings</TableHead>
                 <TableHead>Status</TableHead>
@@ -282,8 +308,11 @@ const AdminUsers = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={((user as any).account_type === "business") ? "default" : "secondary"}>
-                      {((user as any).account_type === "business" ? "Business" : (user as any).account_type === "seller" ? "Seller" : "Customer")}
+                    <span className="text-sm">{userEmails?.[user.user_id] || "—"}</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={user.account_type === "business" ? "default" : user.account_type === "seller" ? "outline" : "secondary"}>
+                      {user.account_type === "business" ? "Business" : user.account_type === "seller" ? "Seller" : "Customer"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -323,6 +352,10 @@ const AdminUsers = () => {
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { setChangeRoleUser(user); setNewAccountType(user.account_type || "customer"); }}>
+                          <UserCog className="h-4 w-4 mr-2" />
+                          Change Account Type
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => setAssignPackageUser(user)}>
                           <Package className="h-4 w-4 mr-2" />
                           Assign Package
@@ -330,10 +363,6 @@ const AdminUsers = () => {
                         <DropdownMenuItem>
                           <Mail className="h-4 w-4 mr-2" />
                           Send Message
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          View Messages
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
@@ -372,6 +401,53 @@ const AdminUsers = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Change Account Type Dialog */}
+      <Dialog open={!!changeRoleUser} onOpenChange={() => { setChangeRoleUser(null); setNewAccountType(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Account Type</DialogTitle>
+            <DialogDescription>
+              Change the account type for <strong>{changeRoleUser?.display_name}</strong>
+              {userEmails?.[changeRoleUser?.user_id || ""] && (
+                <> ({userEmails[changeRoleUser!.user_id]})</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Current Type</Label>
+              <Badge variant="outline" className="text-sm">
+                {changeRoleUser?.account_type === "business" ? "Business" : changeRoleUser?.account_type === "seller" ? "Seller" : "Customer"}
+              </Badge>
+            </div>
+            <div className="space-y-2">
+              <Label>New Account Type</Label>
+              <Select value={newAccountType} onValueChange={setNewAccountType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select account type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="customer">Customer</SelectItem>
+                  <SelectItem value="seller">Seller</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setChangeRoleUser(null); setNewAccountType(""); }}>
+                Cancel
+              </Button>
+              <Button
+                disabled={!newAccountType || newAccountType === changeRoleUser?.account_type || changeAccountType.isPending}
+                onClick={() => changeRoleUser && changeAccountType.mutate({ userId: changeRoleUser.user_id, accountType: newAccountType })}
+              >
+                {changeAccountType.isPending ? "Updating..." : "Update Account Type"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Assign Package Dialog */}
       <Dialog open={!!assignPackageUser} onOpenChange={() => { setAssignPackageUser(null); setSelectedPackageId(""); }}>
@@ -432,13 +508,22 @@ const AdminUsers = () => {
                     {selectedUser.display_name}
                     {selectedUser.is_verified && <Badge className="bg-green-500/20 text-green-700">Verified</Badge>}
                   </h3>
-                  <p className="text-muted-foreground">{selectedUser.location}</p>
+                  <p className="text-sm text-muted-foreground">{userEmails?.[selectedUser.user_id] || "No email"}</p>
+                  <p className="text-sm text-muted-foreground">{selectedUser.location}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-muted">
+                  <div className="text-sm text-muted-foreground">Email</div>
+                  <div className="font-medium">{userEmails?.[selectedUser.user_id] || "Not available"}</div>
+                </div>
+                <div className="p-4 rounded-lg bg-muted">
                   <div className="text-sm text-muted-foreground">Phone</div>
                   <div className="font-medium">{selectedUser.phone || "Not provided"}</div>
+                </div>
+                <div className="p-4 rounded-lg bg-muted">
+                  <div className="text-sm text-muted-foreground">Account Type</div>
+                  <div className="font-medium capitalize">{selectedUser.account_type || "Customer"}</div>
                 </div>
                 <div className="p-4 rounded-lg bg-muted">
                   <div className="text-sm text-muted-foreground">Rating</div>
@@ -458,19 +543,11 @@ const AdminUsers = () => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1">
-                  <FileText className="h-4 w-4 mr-2" />
-                  View Listings
+                <Button variant="outline" className="flex-1" onClick={() => { setSelectedUser(null); setChangeRoleUser(selectedUser); setNewAccountType(selectedUser.account_type || "customer"); }}>
+                  <UserCog className="h-4 w-4 mr-2" />
+                  Change Role
                 </Button>
-                <Button variant="outline" className="flex-1">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Send Message
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => { setSelectedUser(null); setAssignPackageUser(selectedUser); }}
-                >
+                <Button variant="outline" className="flex-1" onClick={() => { setSelectedUser(null); setAssignPackageUser(selectedUser); }}>
                   <Package className="h-4 w-4 mr-2" />
                   Assign Package
                 </Button>

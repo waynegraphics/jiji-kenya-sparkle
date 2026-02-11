@@ -286,6 +286,12 @@ const SellerSettingsPage = () => {
                 </div>
               )}
 
+              {accountType !== (profile as any)?.account_type && accountType === "customer" && (
+                <div className="p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/5 text-sm text-muted-foreground">
+                  <strong className="text-foreground">Note:</strong> Switching back to Customer will remove your seller privileges. Your existing listings will remain but you won't be able to post new ones.
+                </div>
+              )}
+
               <Button onClick={handleSaveProfile} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}Save Account Type
               </Button>
