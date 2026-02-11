@@ -15,16 +15,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 15%;
 
-    --primary: 160 100% 33%;
+    --primary: 163 100% 20%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 30 100% 50%;
+    --secondary: 24 92% 55%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 220 15% 95%;
     --muted-foreground: 220 10% 45%;
 
-    --accent: 30 100% 50%;
+    --accent: 24 92% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -32,15 +32,15 @@
 
     --border: 220 15% 90%;
     --input: 220 15% 90%;
-    --ring: 160 100% 33%;
+    --ring: 163 100% 20%;
 
     --radius: 0.5rem;
 
-    /* Jiji specific tokens */
-    --jiji-green: 160 100% 33%;
-    --jiji-green-dark: 160 100% 28%;
-    --jiji-orange: 30 100% 50%;
-    --jiji-orange-hover: 30 100% 45%;
+    /* Brand tokens */
+    --jiji-green: 163 100% 20%;
+    --jiji-green-dark: 163 100% 15%;
+    --jiji-orange: 24 92% 55%;
+    --jiji-orange-hover: 24 92% 48%;
     --jiji-yellow: 45 100% 50%;
     --jiji-blue: 210 100% 50%;
     --jiji-purple: 270 70% 55%;
@@ -67,16 +67,16 @@
     --popover: 220 20% 12%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 160 100% 40%;
+    --primary: 163 100% 25%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 30 100% 50%;
+    --secondary: 24 92% 55%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 220 15% 20%;
     --muted-foreground: 220 10% 65%;
 
-    --accent: 30 100% 50%;
+    --accent: 24 92% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
@@ -84,7 +84,7 @@
 
     --border: 220 15% 25%;
     --input: 220 15% 25%;
-    --ring: 160 100% 40%;
+    --ring: 163 100% 25%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
