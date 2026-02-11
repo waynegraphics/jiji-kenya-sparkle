@@ -3,6 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import LocationSelector from "@/components/LocationSelector";
+import SellerVerificationForm from "@/components/SellerVerificationForm";
+import { useSellerVerification } from "@/hooks/useSellerVerification";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,10 +33,7 @@ import PropertyFormFields from "@/components/forms/PropertyFormFields";
 import JobFormFields from "@/components/forms/JobFormFields";
 import GenericFormFields from "@/components/forms/GenericFormFields";
 
-const locations = [
-  "Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret",
-  "Thika", "Malindi", "Kitale", "Garissa", "Nyeri",
-];
+// locations now handled by LocationSelector
 
 const PostAd = () => {
   const navigate = useNavigate();
@@ -41,6 +41,7 @@ const PostAd = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const incrementAdsUsed = useIncrementAdsUsed();
+  const { data: verification, isLoading: verificationLoading } = useSellerVerification();
   
   // Subscription limits
   const { data: limits, isLoading: limitsLoading } = useSubscriptionLimits();
@@ -475,6 +476,20 @@ const PostAd = () => {
           Post Your Ad
         </h1>
 
+        {/* Seller Verification Check */}
+        {!verificationLoading && verification?.status !== "approved" && (
+          <div className="mb-6">
+            <SellerVerificationForm />
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              You must complete seller verification before posting listings.
+            </p>
+            {verification?.status === "pending" ? null : null}
+          </div>
+        )}
+
+        {verification?.status !== "approved" && !verificationLoading ? null : (
+          <>
+        
         {/* Subscription Status Banner */}
         {limitsLoading ? (
           <div className="mb-6 bg-muted rounded-lg p-4 animate-pulse">
@@ -699,19 +714,12 @@ const PostAd = () => {
             {/* Location */}
             <div className="space-y-2">
               <Label>Location *</Label>
-              <Select
-                value={baseFormData.location}
-                onValueChange={(value) => setBaseFormData(prev => ({ ...prev, location: value }))}
-              >
-                <SelectTrigger className={errors.location ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Select location" />
-                </SelectTrigger>
-                <SelectContent>
-                  {locations.map((loc) => (
-                    <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <LocationSelector
+                onLocationChange={(county, town) => {
+                  const loc = town ? `${county}, ${town}` : county;
+                  setBaseFormData(prev => ({ ...prev, location: loc }));
+                }}
+              />
               {errors.location && <p className="text-sm text-destructive">{errors.location}</p>}
             </div>
 
@@ -745,6 +753,8 @@ const PostAd = () => {
             )}
           </Button>
         </form>
+          </>
+        )}
       </main>
 
       <Footer />

@@ -13,6 +13,7 @@ interface Profile {
   rating: number;
   total_reviews: number;
   is_verified: boolean;
+  account_type: string;
 }
 
 interface AuthContextType {
