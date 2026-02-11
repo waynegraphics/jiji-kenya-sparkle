@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import LocationSelector from "@/components/LocationSelector";
 import SellerVerificationForm from "@/components/SellerVerificationForm";
+import RegistrationFeeCheckout from "@/components/RegistrationFeeCheckout";
 import { useSellerVerification } from "@/hooks/useSellerVerification";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,11 +38,33 @@ import GenericFormFields from "@/components/forms/GenericFormFields";
 
 const PostAd = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const incrementAdsUsed = useIncrementAdsUsed();
   const { data: verification, isLoading: verificationLoading } = useSellerVerification();
+  const [registrationFeePaid, setRegistrationFeePaid] = useState(false);
+  const [feeCheckLoading, setFeeCheckLoading] = useState(true);
+  
+  // Check if registration fee has been paid
+  useEffect(() => {
+    const checkFee = async () => {
+      if (!user) return;
+      // Check if user has any completed payment transaction for registration
+      const { data } = await supabase
+        .from("payment_transactions")
+        .select("id")
+        .eq("user_id", user.id)
+        .is("subscription_id", null)
+        .is("addon_purchase_id", null)
+        .eq("status", "completed")
+        .limit(1);
+      
+      setRegistrationFeePaid(!!(data && data.length > 0));
+      setFeeCheckLoading(false);
+    };
+    checkFee();
+  }, [user]);
   
   // Subscription limits
   const { data: limits, isLoading: limitsLoading } = useSubscriptionLimits();
@@ -79,7 +102,15 @@ const PostAd = () => {
     setCategoryFormData({});
   }, [selectedMainCategoryId]);
 
-  // Redirect if not logged in
+  // Redirect if not logged in (wait for auth to load first)
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   if (!user) {
     navigate("/");
     return null;
@@ -483,11 +514,20 @@ const PostAd = () => {
             <p className="text-center text-sm text-muted-foreground mt-4">
               You must complete seller verification before posting listings.
             </p>
-            {verification?.status === "pending" ? null : null}
           </div>
         )}
 
-        {verification?.status !== "approved" && !verificationLoading ? null : (
+        {/* Registration Fee Check - show after verification is approved */}
+        {verification?.status === "approved" && !feeCheckLoading && !registrationFeePaid && (
+          <div className="mb-6">
+            <RegistrationFeeCheckout onPaymentSuccess={() => setRegistrationFeePaid(true)} />
+            <p className="text-center text-sm text-muted-foreground mt-4">
+              Pay the one-time registration fee to start posting listings.
+            </p>
+          </div>
+        )}
+
+        {(verification?.status !== "approved" || (!registrationFeePaid && !feeCheckLoading)) && !verificationLoading ? null : (
           <>
         
         {/* Subscription Status Banner */}
