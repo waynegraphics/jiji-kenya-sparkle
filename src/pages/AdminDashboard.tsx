@@ -18,6 +18,7 @@ import AdminSettings from "@/components/admin/AdminSettings";
 import AdminVerifications from "@/components/admin/AdminVerifications";
 import AdminTeam from "@/components/admin/AdminTeam";
 import AdminAffiliates from "@/components/admin/AdminAffiliates";
+import AdminDiagnostics from "@/components/admin/AdminDiagnostics";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Shield, Home, Eye } from "lucide-react";
@@ -79,6 +80,7 @@ const AdminDashboard = () => {
     if (path.includes('/verifications')) return 'Seller Verifications';
     if (path.includes('/team')) return 'Team Management';
     if (path.includes('/affiliates')) return 'Affiliates';
+    if (path.includes('/diagnostics')) return 'System Diagnostics';
     return 'Overview';
   };
 
@@ -141,6 +143,7 @@ const AdminDashboard = () => {
                 <Route path="verifications" element={<AdminVerifications />} />
                 <Route path="team" element={<AdminTeam />} />
                 {hasPermission("view_affiliates") && <Route path="affiliates" element={<AdminAffiliates />} />}
+                <Route path="diagnostics" element={<AdminDiagnostics />} />
               </Routes>
             </div>
           </main>

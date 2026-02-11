@@ -11,20 +11,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { 
-  LayoutDashboard, 
-  Users, 
-  FileText, 
-  FolderTree, 
-  Package, 
-  Puzzle,
-  MessageSquare,
-  LifeBuoy,
-  Flag,
-  Settings,
-  Shield,
-  ShieldCheck,
-  UsersRound,
-  Link2
+  LayoutDashboard, Users, FileText, FolderTree, Package, Puzzle,
+  MessageSquare, LifeBuoy, Flag, Settings, Shield, ShieldCheck,
+  UsersRound, Link2, Activity
 } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 
@@ -57,6 +46,7 @@ const AdminSidebar = () => {
     { title: "Verifications", url: `${basePath}/verifications`, icon: ShieldCheck, permission: null },
     { title: "Affiliates", url: `${basePath}/affiliates`, icon: Link2, permission: "view_affiliates" },
     { title: "Team", url: `${basePath}/team`, icon: UsersRound, permission: "manage_team", superAdminOnly: true },
+    { title: "Diagnostics", url: `${basePath}/diagnostics`, icon: Activity, permission: "manage_settings" },
     { title: "Settings", url: `${basePath}/settings`, icon: Settings, permission: "manage_settings" },
   ];
 

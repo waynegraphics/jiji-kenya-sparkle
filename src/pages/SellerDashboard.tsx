@@ -14,18 +14,17 @@ import SellerNotifications from "@/components/seller/SellerNotifications";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Settings } from "lucide-react";
+import { Home, Settings, Shield } from "lucide-react";
+import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 
 const SellerSettings = () => {
   const { profile } = useAuth();
-  
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold">Account Settings</h2>
         <p className="text-muted-foreground">Manage your seller profile settings</p>
       </div>
-      
       <div className="bg-card rounded-xl p-6 border">
         <div className="flex items-center gap-4 mb-6">
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
@@ -36,12 +35,8 @@ const SellerSettings = () => {
             <p className="text-muted-foreground">{profile?.location || 'No location set'}</p>
           </div>
         </div>
-        
         <Link to="/profile">
-          <Button>
-            <Settings className="h-4 w-4 mr-2" />
-            Edit Profile Settings
-          </Button>
+          <Button><Settings className="h-4 w-4 mr-2" />Edit Profile Settings</Button>
         </Link>
       </div>
     </div>
@@ -52,6 +47,7 @@ const SellerDashboard = () => {
   const { user, loading } = useAuth();
   const location = useLocation();
   const { data: limits } = useSubscriptionLimits();
+  const { isSuperAdmin, isTeamMember } = useIsSuperAdmin();
 
   if (loading) {
     return (
@@ -61,9 +57,7 @@ const SellerDashboard = () => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/" replace />;
-  }
+  if (!user) return <Navigate to="/" replace />;
 
   const getPageTitle = () => {
     const path = location.pathname;
@@ -79,39 +73,35 @@ const SellerDashboard = () => {
     return 'Dashboard';
   };
 
+  const showAdminSwitch = isSuperAdmin || isTeamMember;
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
         <SellerSidebar />
-        
         <div className="flex-1 flex flex-col">
-          {/* Top Header */}
           <header className="h-14 border-b bg-card flex items-center justify-between px-4 sticky top-0 z-10">
             <div className="flex items-center gap-4">
               <SidebarTrigger />
               <nav className="flex items-center gap-2 text-sm">
-                <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
-                  <Home className="h-4 w-4" />
-                </Link>
+                <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors"><Home className="h-4 w-4" /></Link>
                 <span className="text-muted-foreground">/</span>
                 <span className="font-medium">{getPageTitle()}</span>
               </nav>
             </div>
-            
             <div className="flex items-center gap-2">
-              <Link to="/messages">
-                <Button variant="ghost" size="sm">Messages</Button>
-              </Link>
-              <Link to="/">
-                <Button variant="outline" size="sm">
-                  <Home className="h-4 w-4 mr-2" />
-                  Back to Site
-                </Button>
-              </Link>
+              {showAdminSwitch && (
+                <Link to="/apa/dashboard">
+                  <Button variant="default" size="sm" className="gap-2">
+                    <Shield className="h-4 w-4" />
+                    Back to Admin
+                  </Button>
+                </Link>
+              )}
+              <Link to="/messages"><Button variant="ghost" size="sm">Messages</Button></Link>
+              <Link to="/"><Button variant="outline" size="sm"><Home className="h-4 w-4 mr-2" />Back to Site</Button></Link>
             </div>
           </header>
-
-          {/* Main Content */}
           <main className="flex-1 p-6 overflow-auto">
             <div className="max-w-6xl mx-auto">
               <Routes>
@@ -120,17 +110,11 @@ const SellerDashboard = () => {
                 <Route path="listings" element={<SellerListings />} />
                 <Route path="addons" element={<SellerAddonsPage />} />
                 <Route path="analytics" element={
-                  limits?.analyticsAccess ? (
-                    <SellerAnalytics />
-                  ) : (
+                  limits?.analyticsAccess ? <SellerAnalytics /> : (
                     <div className="text-center py-12">
                       <h2 className="text-2xl font-bold mb-4">Analytics Locked</h2>
-                      <p className="text-muted-foreground mb-6">
-                        Upgrade your subscription to access detailed analytics.
-                      </p>
-                      <Link to="/pricing">
-                        <Button>View Plans</Button>
-                      </Link>
+                      <p className="text-muted-foreground mb-6">Upgrade your subscription to access detailed analytics.</p>
+                      <Link to="/pricing"><Button>View Plans</Button></Link>
                     </div>
                   )
                 } />
