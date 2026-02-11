@@ -11,43 +11,24 @@ import SellerBilling from "@/components/seller/SellerBilling";
 import SellerFollowers from "@/components/seller/SellerFollowers";
 import SellerSupport from "@/components/seller/SellerSupport";
 import SellerNotifications from "@/components/seller/SellerNotifications";
+import SellerMessages from "@/components/seller/SellerMessages";
+import SellerFavorites from "@/components/seller/SellerFavorites";
+import SellerSettingsPage from "@/components/seller/SellerSettingsPage";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Settings, Shield } from "lucide-react";
+import { Home, Shield, Heart, Bell, MessageCircle } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useTeamMember";
-
-const SellerSettings = () => {
-  const { profile } = useAuth();
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Account Settings</h2>
-        <p className="text-muted-foreground">Manage your seller profile settings</p>
-      </div>
-      <div className="bg-card rounded-xl p-6 border">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
-            {profile?.display_name?.charAt(0) || 'S'}
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold">{profile?.display_name || 'Seller'}</h3>
-            <p className="text-muted-foreground">{profile?.location || 'No location set'}</p>
-          </div>
-        </div>
-        <Link to="/profile">
-          <Button><Settings className="h-4 w-4 mr-2" />Edit Profile Settings</Button>
-        </Link>
-      </div>
-    </div>
-  );
-};
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const SellerDashboard = () => {
   const { user, loading } = useAuth();
   const location = useLocation();
   const { data: limits } = useSubscriptionLimits();
   const { isSuperAdmin, isTeamMember } = useIsSuperAdmin();
+  const unreadMessages = useUnreadMessages();
+  const { unreadCount: unreadNotifications } = useNotifications();
 
   if (loading) {
     return (
@@ -63,10 +44,12 @@ const SellerDashboard = () => {
     const path = location.pathname;
     if (path.includes('/subscription')) return 'Subscription';
     if (path.includes('/listings')) return 'My Listings';
+    if (path.includes('/messages')) return 'Messages';
     if (path.includes('/addons')) return 'Add-ons';
     if (path.includes('/analytics')) return 'Analytics';
     if (path.includes('/billing')) return 'Billing';
     if (path.includes('/followers')) return 'Followers';
+    if (path.includes('/favorites')) return 'Favorites';
     if (path.includes('/support')) return 'Support';
     if (path.includes('/notifications')) return 'Notifications';
     if (path.includes('/settings')) return 'Settings';
@@ -89,17 +72,43 @@ const SellerDashboard = () => {
                 <span className="font-medium">{getPageTitle()}</span>
               </nav>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              {/* Quick action icons */}
+              <Link to="/seller-dashboard/favorites">
+                <Button variant="ghost" size="icon" className="relative">
+                  <Heart className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/seller-dashboard/notifications">
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-4 w-4" />
+                  {unreadNotifications > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                      {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+              <Link to="/seller-dashboard/messages">
+                <Button variant="ghost" size="icon" className="relative">
+                  <MessageCircle className="h-4 w-4" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+                      {unreadMessages > 9 ? "9+" : unreadMessages}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+
               {showAdminSwitch && (
                 <Link to="/apa/dashboard">
-                  <Button variant="default" size="sm" className="gap-2">
+                  <Button variant="default" size="sm" className="gap-2 ml-2">
                     <Shield className="h-4 w-4" />
                     Back to Admin
                   </Button>
                 </Link>
               )}
-              <Link to="/messages"><Button variant="ghost" size="sm">Messages</Button></Link>
-              <Link to="/"><Button variant="outline" size="sm"><Home className="h-4 w-4 mr-2" />Back to Site</Button></Link>
+              <Link to="/"><Button variant="outline" size="sm" className="ml-1"><Home className="h-4 w-4 mr-2" />Site</Button></Link>
             </div>
           </header>
           <main className="flex-1 p-6 overflow-auto">
@@ -108,6 +117,7 @@ const SellerDashboard = () => {
                 <Route index element={<SellerOverview />} />
                 <Route path="subscription" element={<SellerSubscriptionDashboard />} />
                 <Route path="listings" element={<SellerListings />} />
+                <Route path="messages" element={<SellerMessages />} />
                 <Route path="addons" element={<SellerAddonsPage />} />
                 <Route path="analytics" element={
                   limits?.analyticsAccess ? <SellerAnalytics /> : (
@@ -118,11 +128,12 @@ const SellerDashboard = () => {
                     </div>
                   )
                 } />
+                <Route path="favorites" element={<SellerFavorites />} />
                 <Route path="billing" element={<SellerBilling />} />
                 <Route path="followers" element={<SellerFollowers />} />
                 <Route path="support" element={<SellerSupport />} />
                 <Route path="notifications" element={<SellerNotifications />} />
-                <Route path="settings" element={<SellerSettings />} />
+                <Route path="settings" element={<SellerSettingsPage />} />
               </Routes>
             </div>
           </main>
