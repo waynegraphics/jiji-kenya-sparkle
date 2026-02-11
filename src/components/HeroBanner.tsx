@@ -11,7 +11,13 @@ const features = [
 ];
 
 const HeroBanner = () => {
-  const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedCounty, setSelectedCounty] = useState("");
+  const [selectedTown, setSelectedTown] = useState("");
+
+  const handleLocationSelect = (county: string, town?: string) => {
+    setSelectedCounty(county);
+    setSelectedTown(town || "");
+  };
 
   return (
     <section className="bg-gradient-to-br from-primary via-jiji-green-dark to-primary py-10 md:py-16">
@@ -28,8 +34,9 @@ const HeroBanner = () => {
         {/* Search Bar + Location - Desktop */}
         <div className="hidden md:flex max-w-3xl mx-auto mb-8 gap-2 items-center">
           <LocationPopup
-            onSelect={(county) => setSelectedLocation(county)}
-            selectedCounty={selectedLocation}
+            onSelect={handleLocationSelect}
+            selectedCounty={selectedCounty}
+            selectedTown={selectedTown}
           />
           <AjaxSearch className="flex-1" inputClassName="h-12 rounded-lg" />
         </div>
@@ -37,8 +44,9 @@ const HeroBanner = () => {
         {/* Mobile Search + Location */}
         <div className="md:hidden max-w-lg mx-auto mb-6 space-y-2 px-2">
           <LocationPopup
-            onSelect={(county) => setSelectedLocation(county)}
-            selectedCounty={selectedLocation}
+            onSelect={handleLocationSelect}
+            selectedCounty={selectedCounty}
+            selectedTown={selectedTown}
           />
           <AjaxSearch inputClassName="h-10 rounded-lg" />
         </div>
