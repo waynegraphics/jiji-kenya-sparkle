@@ -1,3 +1,4 @@
+import logo from "@/assets/logo.png";
 import { Search, MapPin, Menu, User, ChevronDown, Plus, LogOut, MessageCircle, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,12 +64,7 @@ const Header = ({ onSearch }: HeaderProps) => {
               className="flex items-center gap-2 cursor-pointer"
               onClick={() => navigate("/")}
             >
-              <div className="text-2xl md:text-3xl font-extrabold text-primary-foreground tracking-tight">
-                jiji
-              </div>
-              <span className="hidden md:inline text-xs text-primary-foreground/80 font-medium">
-                KENYA
-              </span>
+              <img src={logo} alt="APA Bazaar Market" className="h-10 md:h-12 w-auto" />
             </div>
 
             {/* Search Bar - Desktop */}
