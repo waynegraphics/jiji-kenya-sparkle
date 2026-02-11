@@ -25,6 +25,93 @@ import {
   Smartphone
 } from "lucide-react";
 
+const SellerRegistrationFeeCard = () => {
+  const [fee, setFee] = useState("");
+  const [duration, setDuration] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const { data } = await supabase
+        .from("platform_settings")
+        .select("key, value")
+        .in("key", ["seller_registration_fee", "seller_registration_duration_days"]);
+      if (data) {
+        data.forEach((s) => {
+          if (s.key === "seller_registration_fee") setFee(s.value);
+          if (s.key === "seller_registration_duration_days") setDuration(s.value);
+        });
+      }
+      setLoading(false);
+    };
+    fetchSettings();
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const updates = [
+      supabase.from("platform_settings").update({ value: fee }).eq("key", "seller_registration_fee"),
+      supabase.from("platform_settings").update({ value: duration }).eq("key", "seller_registration_duration_days"),
+    ];
+    const results = await Promise.all(updates);
+    const hasError = results.some((r) => r.error);
+    if (hasError) {
+      toast.error("Failed to save registration fee settings");
+    } else {
+      toast.success("Seller registration fee settings saved");
+    }
+    setSaving(false);
+  };
+
+  if (loading) return <Card><CardContent className="py-8 text-center"><Loader2 className="h-5 w-5 animate-spin mx-auto" /></CardContent></Card>;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+            <Shield className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <CardTitle>Seller Registration Fee</CardTitle>
+            <CardDescription>Set the fee sellers must pay before their account is activated</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Registration Fee (KES)</Label>
+            <Input
+              type="number"
+              value={fee}
+              onChange={(e) => setFee(e.target.value)}
+              placeholder="250"
+              min={0}
+            />
+            <p className="text-xs text-muted-foreground">Amount in KES that sellers pay during registration</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Registration Duration (days)</Label>
+            <Input
+              type="number"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              placeholder="30"
+              min={1}
+            />
+            <p className="text-xs text-muted-foreground">How long the seller registration is valid</p>
+          </div>
+        </div>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</> : <><Save className="h-4 w-4 mr-2" />Save Fee Settings</>}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
 const AdminSettings = () => {
   const [siteSettings, setSiteSettings] = useState({
     siteName: "Jiji Kenya",
@@ -509,6 +596,9 @@ const AdminSettings = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Seller Registration Fee */}
+          <SellerRegistrationFeeCard />
 
           {/* Other Gateways */}
           <Card>
