@@ -163,7 +163,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
                 {accountType === "seller" && (
                   <div className="flex items-start gap-2 p-2 bg-secondary/10 rounded-md text-xs text-muted-foreground">
                     <Info className="h-3.5 w-3.5 mt-0.5 text-secondary flex-shrink-0" />
-                    <span>Sellers need to complete ID verification before posting listings.</span>
+                    <span>Sellers need to complete ID verification and pay a one-time registration fee of <strong className="text-foreground">KES 250</strong> before posting listings.</span>
                   </div>
                 )}
               </div>

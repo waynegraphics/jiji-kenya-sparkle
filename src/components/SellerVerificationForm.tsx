@@ -4,9 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSellerVerification, useSubmitVerification } from "@/hooks/useSellerVerification";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Upload, CheckCircle, Clock, XCircle, Shield, Loader2 } from "lucide-react";
+import { Upload, CheckCircle, Clock, XCircle, Shield, Loader2, X, ImageIcon } from "lucide-react";
 
 const SellerVerificationForm = () => {
   const { user } = useAuth();
@@ -18,9 +17,36 @@ const SellerVerificationForm = () => {
   const [passportPhoto, setPassportPhoto] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Preview URLs
+  const [idFrontPreview, setIdFrontPreview] = useState<string | null>(null);
+  const [idBackPreview, setIdBackPreview] = useState<string | null>(null);
+  const [passportPreview, setPassportPreview] = useState<string | null>(null);
+
   const idFrontRef = useRef<HTMLInputElement>(null);
   const idBackRef = useRef<HTMLInputElement>(null);
   const passportRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (
+    file: File | undefined,
+    setFile: (f: File | null) => void,
+    setPreview: (url: string | null) => void,
+    oldPreview: string | null
+  ) => {
+    if (!file) return;
+    if (oldPreview) URL.revokeObjectURL(oldPreview);
+    setFile(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const clearFile = (
+    setFile: (f: File | null) => void,
+    setPreview: (url: string | null) => void,
+    preview: string | null
+  ) => {
+    if (preview) URL.revokeObjectURL(preview);
+    setFile(null);
+    setPreview(null);
+  };
 
   if (isLoading) {
     return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>;
@@ -105,6 +131,71 @@ const SellerVerificationForm = () => {
     }
   };
 
+  const renderUploadArea = (
+    label: string,
+    file: File | null,
+    preview: string | null,
+    inputRef: React.RefObject<HTMLInputElement>,
+    setFile: (f: File | null) => void,
+    setPreview: (url: string | null) => void
+  ) => (
+    <div>
+      <label className="block text-sm font-medium mb-1">{label} *</label>
+      <div
+        onClick={() => !file && inputRef.current?.click()}
+        className={`border-2 border-dashed rounded-lg overflow-hidden transition-colors ${
+          file ? "border-primary/30" : "cursor-pointer hover:border-primary/50"
+        }`}
+      >
+        {preview ? (
+          <div className="relative">
+            <img src={preview} alt={label} className="w-full h-40 object-cover" />
+            <div className="absolute top-2 right-2 flex gap-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  inputRef.current?.click();
+                }}
+                className="w-7 h-7 bg-card/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-card shadow-sm"
+              >
+                <ImageIcon className="h-3.5 w-3.5 text-foreground" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  clearFile(setFile, setPreview, preview);
+                }}
+                className="w-7 h-7 bg-destructive/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-destructive shadow-sm"
+              >
+                <X className="h-3.5 w-3.5 text-destructive-foreground" />
+              </button>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+              <p className="text-xs text-white truncate">{file?.name}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="p-6 text-center text-muted-foreground">
+            <Upload className="h-8 w-8 mx-auto mb-2" />
+            <p className="text-sm font-medium">Click to upload</p>
+            <p className="text-xs mt-1">JPG, PNG up to 5MB</p>
+          </div>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) =>
+          handleFileChange(e.target.files?.[0], setFile, setPreview, preview)
+        }
+      />
+    </div>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -120,65 +211,9 @@ const SellerVerificationForm = () => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* ID Front */}
-        <div>
-          <label className="block text-sm font-medium mb-1">National ID - Front Side *</label>
-          <div
-            onClick={() => idFrontRef.current?.click()}
-            className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
-          >
-            {idFront ? (
-              <p className="text-sm text-primary font-medium">{idFront.name}</p>
-            ) : (
-              <div className="text-muted-foreground">
-                <Upload className="h-6 w-6 mx-auto mb-1" />
-                <p className="text-sm">Click to upload front of ID</p>
-              </div>
-            )}
-          </div>
-          <input ref={idFrontRef} type="file" accept="image/*" className="hidden"
-            onChange={(e) => e.target.files?.[0] && setIdFront(e.target.files[0])} />
-        </div>
-
-        {/* ID Back */}
-        <div>
-          <label className="block text-sm font-medium mb-1">National ID - Back Side *</label>
-          <div
-            onClick={() => idBackRef.current?.click()}
-            className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
-          >
-            {idBack ? (
-              <p className="text-sm text-primary font-medium">{idBack.name}</p>
-            ) : (
-              <div className="text-muted-foreground">
-                <Upload className="h-6 w-6 mx-auto mb-1" />
-                <p className="text-sm">Click to upload back of ID</p>
-              </div>
-            )}
-          </div>
-          <input ref={idBackRef} type="file" accept="image/*" className="hidden"
-            onChange={(e) => e.target.files?.[0] && setIdBack(e.target.files[0])} />
-        </div>
-
-        {/* Passport Photo */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Passport Photo *</label>
-          <div
-            onClick={() => passportRef.current?.click()}
-            className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 transition-colors"
-          >
-            {passportPhoto ? (
-              <p className="text-sm text-primary font-medium">{passportPhoto.name}</p>
-            ) : (
-              <div className="text-muted-foreground">
-                <Upload className="h-6 w-6 mx-auto mb-1" />
-                <p className="text-sm">Click to upload passport photo</p>
-              </div>
-            )}
-          </div>
-          <input ref={passportRef} type="file" accept="image/*" className="hidden"
-            onChange={(e) => e.target.files?.[0] && setPassportPhoto(e.target.files[0])} />
-        </div>
+        {renderUploadArea("National ID - Front Side", idFront, idFrontPreview, idFrontRef, setIdFront, setIdFrontPreview)}
+        {renderUploadArea("National ID - Back Side", idBack, idBackPreview, idBackRef, setIdBack, setIdBackPreview)}
+        {renderUploadArea("Passport Photo", passportPhoto, passportPreview, passportRef, setPassportPhoto, setPassportPreview)}
 
         <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
           <Shield className="h-4 w-4 inline mr-1" />
