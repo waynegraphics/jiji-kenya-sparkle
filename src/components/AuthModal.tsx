@@ -50,7 +50,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
           toast.success("Welcome back!");
           onClose();
           resetForm();
-          navigate('/seller');
+          navigate('/seller-dashboard');
         }
       } else {
         if (!displayName.trim()) {
