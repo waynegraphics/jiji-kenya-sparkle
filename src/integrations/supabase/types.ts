@@ -103,6 +103,142 @@ export type Database = {
         }
         Relationships: []
       }
+      affiliate_payouts: {
+        Row: {
+          affiliate_id: string
+          amount: number
+          created_at: string
+          id: string
+          mpesa_phone: string | null
+          mpesa_receipt: string | null
+          notes: string | null
+          payment_method: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+        }
+        Insert: {
+          affiliate_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          mpesa_phone?: string | null
+          mpesa_receipt?: string | null
+          notes?: string | null
+          payment_method?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+        }
+        Update: {
+          affiliate_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          mpesa_phone?: string | null
+          mpesa_receipt?: string | null
+          notes?: string | null
+          payment_method?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_payouts_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_referrals: {
+        Row: {
+          affiliate_id: string
+          commission_amount: number
+          created_at: string
+          id: string
+          referral_type: string
+          referred_user_id: string
+          source_amount: number
+          status: string
+        }
+        Insert: {
+          affiliate_id: string
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          referral_type?: string
+          referred_user_id: string
+          source_amount?: number
+          status?: string
+        }
+        Update: {
+          affiliate_id?: string
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          referral_type?: string
+          referred_user_id?: string
+          source_amount?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_referrals_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliates: {
+        Row: {
+          commission_rate_registration: number
+          commission_rate_subscription: number
+          created_at: string
+          id: string
+          mpesa_phone: string | null
+          pending_balance: number
+          referral_code: string
+          status: string
+          total_earnings: number
+          total_paid: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          commission_rate_registration?: number
+          commission_rate_subscription?: number
+          created_at?: string
+          id?: string
+          mpesa_phone?: string | null
+          pending_balance?: number
+          referral_code: string
+          status?: string
+          total_earnings?: number
+          total_paid?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          commission_rate_registration?: number
+          commission_rate_subscription?: number
+          created_at?: string
+          id?: string
+          mpesa_phone?: string | null
+          pending_balance?: number
+          referral_code?: string
+          status?: string
+          total_earnings?: number
+          total_paid?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agriculture_listings: {
         Row: {
           certifications: string[] | null
@@ -1859,6 +1995,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      team_members: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          designation: string
+          id: string
+          is_active: boolean
+          permissions: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          designation?: string
+          id?: string
+          is_active?: boolean
+          permissions?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          designation?: string
+          id?: string
+          is_active?: boolean
+          permissions?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       ticket_responses: {
         Row: {
