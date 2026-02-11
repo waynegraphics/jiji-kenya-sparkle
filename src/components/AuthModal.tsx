@@ -34,7 +34,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
         if (error) {
           toast.error(error.message);
         } else {
-          // Check if user is admin and redirect accordingly
+          // Check user role and redirect accordingly
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
             const { data: isAdmin } = await supabase.rpc('is_admin', { _user_id: user.id });
@@ -45,10 +45,25 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
               navigate('/admin');
               return;
             }
+            // Check if user has a seller subscription (seller role)
+            const { data: subscription } = await supabase
+              .from('seller_subscriptions')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('status', 'active')
+              .maybeSingle();
+            if (subscription) {
+              toast.success("Welcome back!");
+              onClose();
+              resetForm();
+              navigate('/seller');
+              return;
+            }
           }
           toast.success("Welcome back!");
           onClose();
           resetForm();
+          navigate('/');
         }
       } else {
         if (!displayName.trim()) {
