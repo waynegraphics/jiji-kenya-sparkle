@@ -128,7 +128,7 @@ const Header = ({ onSearch }: HeaderProps) => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem onClick={() => navigate("/seller")}>
+                      <DropdownMenuItem onClick={() => navigate("/seller-dashboard")}>
                         <LayoutDashboard className="h-4 w-4 mr-2" />
                         Dashboard
                       </DropdownMenuItem>
@@ -212,7 +212,7 @@ const Header = ({ onSearch }: HeaderProps) => {
                     <Button
                       variant="ghost"
                       className="justify-start text-primary-foreground hover:bg-jiji-green-dark"
-                      onClick={() => { navigate("/seller"); setIsMenuOpen(false); }}
+                      onClick={() => { navigate("/seller-dashboard"); setIsMenuOpen(false); }}
                     >
                       <LayoutDashboard className="h-4 w-4 mr-2" />
                       Dashboard
