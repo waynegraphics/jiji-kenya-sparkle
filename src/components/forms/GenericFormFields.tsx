@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -11,6 +11,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 
 interface GenericFormFieldsProps {
   categorySlug: string;
@@ -178,12 +181,47 @@ const leisureBrands = [
 ];
 
 // Helper: Searchable select with "Other" manual input
-const SearchableSelect = ({ label, value, options, onChange, required, error, placeholder }: {
+const SearchableSelect = ({ label, value, options, onChange, required, error, placeholder, categorySlug, fieldName }: {
   label: string; value: string; options: string[]; onChange: (v: string) => void;
   required?: boolean; error?: string; placeholder?: string;
+  categorySlug?: string; fieldName?: string;
 }) => {
   const [customValue, setCustomValue] = useState("");
   const [showCustom, setShowCustom] = useState(value === "__custom__" || (value && !options.includes(value) && value !== ""));
+  const { user } = useAuth();
+
+  // Fetch approved custom values for this field
+  const { data: approvedCustom } = useQuery({
+    queryKey: ["custom-field-values", categorySlug, fieldName],
+    queryFn: async () => {
+      if (!categorySlug || !fieldName) return [];
+      const { data } = await supabase
+        .from("custom_field_values")
+        .select("field_value")
+        .eq("category_slug", categorySlug)
+        .eq("field_name", fieldName)
+        .eq("status", "approved");
+      return data?.map(d => d.field_value) || [];
+    },
+    enabled: !!categorySlug && !!fieldName,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const allOptions = [...options, ...(approvedCustom?.filter(v => !options.includes(v)) || [])];
+
+  const submitCustomValue = async (val: string) => {
+    if (!user || !categorySlug || !fieldName || !val.trim()) return;
+    if (allOptions.includes(val.trim())) return;
+    try {
+      await supabase.from("custom_field_values").upsert({
+        category_slug: categorySlug,
+        field_name: fieldName,
+        field_value: val.trim(),
+        submitted_by: user.id,
+        status: "pending",
+      }, { onConflict: "category_slug,field_name,field_value" });
+    } catch {}
+  };
 
   return (
     <div className="space-y-2">
@@ -204,7 +242,7 @@ const SearchableSelect = ({ label, value, options, onChange, required, error, pl
           <SelectValue placeholder={placeholder || `Select ${label.toLowerCase()}`} />
         </SelectTrigger>
         <SelectContent className="max-h-60">
-          {options.map((opt) => (
+          {allOptions.map((opt) => (
             <SelectItem key={opt} value={opt}>{opt}</SelectItem>
           ))}
           <SelectItem value="__custom__">✏️ Enter manually...</SelectItem>
@@ -217,6 +255,10 @@ const SearchableSelect = ({ label, value, options, onChange, required, error, pl
           onChange={(e) => {
             setCustomValue(e.target.value);
             onChange(e.target.value);
+          }}
+          onBlur={() => {
+            const val = customValue || value;
+            if (val && val !== "__custom__") submitCustomValue(val);
           }}
           className="mt-1"
         />
@@ -236,10 +278,10 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
       return (
         <div className="space-y-6">
           <SearchableSelect label="Device Type" value={data.device_type as string || ""} options={deviceTypes}
-            onChange={(v) => updateField("device_type", v)} required error={errors.device_type} />
+            onChange={(v) => updateField("device_type", v)} required error={errors.device_type} categorySlug={categorySlug} fieldName="device_type" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SearchableSelect label="Brand" value={data.brand as string || ""} options={electronicsBrands}
-              onChange={(v) => updateField("brand", v)} required error={errors.brand} />
+              onChange={(v) => updateField("brand", v)} required error={errors.brand} categorySlug={categorySlug} fieldName="brand" />
             <div className="space-y-2">
               <Label>Model *</Label>
               <Input value={data.model as string || ""} onChange={(e) => updateField("model", e.target.value)} placeholder="e.g., MacBook Pro 14-inch" />
