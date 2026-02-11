@@ -45,25 +45,12 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
               navigate('/admin');
               return;
             }
-            // Check if user has a seller subscription (seller role)
-            const { data: subscription } = await supabase
-              .from('seller_subscriptions')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('status', 'active')
-              .maybeSingle();
-            if (subscription) {
-              toast.success("Welcome back!");
-              onClose();
-              resetForm();
-              navigate('/seller');
-              return;
-            }
           }
+          // All non-admin users go to seller dashboard
           toast.success("Welcome back!");
           onClose();
           resetForm();
-          navigate('/');
+          navigate('/seller');
         }
       } else {
         if (!displayName.trim()) {
