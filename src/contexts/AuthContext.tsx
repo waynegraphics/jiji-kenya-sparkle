@@ -14,6 +14,8 @@ interface Profile {
   total_reviews: number;
   is_verified: boolean;
   account_type: string;
+  business_name: string | null;
+  whatsapp_number: string | null;
 }
 
 interface AuthContextType {

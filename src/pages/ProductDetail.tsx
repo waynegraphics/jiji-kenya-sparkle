@@ -21,7 +21,6 @@ import {
   Star,
   Eye,
   AlertTriangle,
-  Copy,
   GitCompare,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,39 +28,46 @@ import AuthModal from "@/components/AuthModal";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
-interface Listing {
+interface BaseListing {
   id: string;
   title: string;
   description: string | null;
   price: number;
-  category: string;
   location: string;
   images: string[];
   is_featured: boolean;
   is_urgent: boolean;
   is_negotiable: boolean;
-  condition: string;
   views: number;
   created_at: string;
   user_id: string;
+  currency: string;
+  status: string;
+  main_category_id: string;
+  sub_category_id: string | null;
 }
 
 interface SellerProfile {
   display_name: string;
   phone: string | null;
+  whatsapp_number: string | null;
   location: string | null;
   avatar_url: string | null;
   rating: number;
   total_reviews: number;
   is_verified: boolean;
   created_at: string;
+  account_type: string;
+  business_name: string | null;
 }
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [listing, setListing] = useState<Listing | null>(null);
+  const [listing, setListing] = useState<BaseListing | null>(null);
+  const [categoryDetails, setCategoryDetails] = useState<Record<string, any>>({});
+  const [categoryName, setCategoryName] = useState("");
   const [seller, setSeller] = useState<SellerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -72,47 +78,128 @@ const ProductDetail = () => {
     const fetchListing = async () => {
       if (!id) return;
 
-      const { data: listingData, error: listingError } = await supabase
-        .from("listings")
+      // Try base_listings first (new system)
+      const { data: baseData, error: baseError } = await supabase
+        .from("base_listings")
         .select("*")
         .eq("id", id)
         .single();
 
-      if (listingError || !listingData) {
-        toast.error("Listing not found");
-        navigate("/");
-        return;
+      if (baseError || !baseData) {
+        // Fallback to old listings table
+        const { data: oldData, error: oldError } = await supabase
+          .from("listings")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (oldError || !oldData) {
+          toast.error("Listing not found");
+          navigate("/");
+          return;
+        }
+
+        // Map old listing format
+        setListing({
+          id: oldData.id,
+          title: oldData.title,
+          description: oldData.description,
+          price: oldData.price,
+          location: oldData.location,
+          images: oldData.images || [],
+          is_featured: oldData.is_featured || false,
+          is_urgent: oldData.is_urgent || false,
+          is_negotiable: oldData.is_negotiable || false,
+          views: oldData.views || 0,
+          created_at: oldData.created_at,
+          user_id: oldData.user_id,
+          currency: "KES",
+          status: "active",
+          main_category_id: "",
+          sub_category_id: null,
+        });
+        setCategoryName(oldData.category || "");
+      } else {
+        setListing(baseData as BaseListing);
+
+        // Fetch category name
+        if (baseData.main_category_id) {
+          const { data: catData } = await supabase
+            .from("main_categories")
+            .select("name, slug")
+            .eq("id", baseData.main_category_id)
+            .single();
+          if (catData) setCategoryName(catData.name);
+
+          // Fetch category-specific details
+          await fetchCategoryDetails(baseData.id, catData?.slug || "");
+        }
       }
 
-      setListing(listingData as Listing);
-
+      // Fetch seller profile
+      const userId = baseData?.user_id || "";
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
-        .eq("user_id", listingData.user_id)
+        .eq("user_id", userId)
         .single();
 
       if (profileData) setSeller(profileData as SellerProfile);
 
+      // Check favorite
       if (user) {
         const { data: favData } = await supabase
           .from("favorites")
           .select("id")
           .eq("user_id", user.id)
           .eq("listing_id", id)
-          .single();
+          .maybeSingle();
         setIsFavorite(!!favData);
       }
 
-      await supabase
-        .from("listings")
-        .update({ views: (listingData.views || 0) + 1 })
-        .eq("id", id);
+      // Increment views
+      if (baseData) {
+        await supabase
+          .from("base_listings")
+          .update({ views: (baseData.views || 0) + 1 })
+          .eq("id", id);
+      }
 
       setLoading(false);
     };
     fetchListing();
   }, [id, user, navigate]);
+
+  const fetchCategoryDetails = async (listingId: string, slug: string) => {
+    const tableMap: Record<string, string> = {
+      vehicles: "vehicle_listings",
+      property: "property_listings",
+      jobs: "job_listings",
+      electronics: "electronics_listings",
+      "phones-tablets": "phone_listings",
+      fashion: "fashion_listings",
+      "furniture-appliances": "furniture_listings",
+      "animals-pets": "pet_listings",
+      "babies-kids": "kids_listings",
+      "beauty-care": "beauty_listings",
+      services: "service_listings",
+      "commercial-equipment": "equipment_listings",
+      "food-agriculture": "agriculture_listings",
+      "leisure-activities": "leisure_listings",
+      "repair-construction": "construction_listings",
+    };
+
+    const table = tableMap[slug];
+    if (!table) return;
+
+    const { data } = await supabase
+      .from(table as any)
+      .select("*")
+      .eq("id", listingId)
+      .single();
+
+    if (data) setCategoryDetails(data);
+  };
 
   const toggleFavorite = async () => {
     if (!user) { setIsAuthModalOpen(true); return; }
@@ -138,49 +225,31 @@ const ProductDetail = () => {
     }
   };
 
-  const handleCompare = () => {
-    if (!listing) return;
-    const existing = JSON.parse(localStorage.getItem("compare_items") || "[]");
-    if (existing.find((item: any) => item.id === listing.id)) {
-      toast.info("Already in comparison list");
-      return;
-    }
-    if (existing.length >= 4) {
-      toast.error("Max 4 items for comparison");
-      return;
-    }
-    // Only allow same category
-    if (existing.length > 0 && existing[0].category !== listing.category) {
-      toast.error("Can only compare items in the same category");
-      return;
-    }
-    existing.push({
-      id: listing.id,
-      title: listing.title,
-      price: listing.price,
-      category: listing.category,
-      image: listing.images?.[0] || "/placeholder.svg",
-    });
-    localStorage.setItem("compare_items", JSON.stringify(existing));
-    toast.success(`Added to compare (${existing.length}/4)`);
-  };
-
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", minimumFractionDigits: 0 }).format(price);
+
+  // Get display name for seller
+  const getSellerDisplayName = () => {
+    if (!seller) return "the seller";
+    if (seller.account_type === "business" && seller.business_name) {
+      return seller.business_name;
+    }
+    return seller.display_name;
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="container mx-auto py-6 px-4">
-          <Skeleton className="h-[480px] rounded-xl mb-6" />
+          <div className="h-[480px] rounded-xl bg-muted animate-pulse mb-6" />
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
-              <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="h-6 w-1/4" />
-              <Skeleton className="h-32" />
+              <div className="h-8 w-3/4 bg-muted animate-pulse rounded" />
+              <div className="h-6 w-1/4 bg-muted animate-pulse rounded" />
+              <div className="h-32 bg-muted animate-pulse rounded" />
             </div>
-            <Skeleton className="h-64 rounded-xl" />
+            <div className="h-64 rounded-xl bg-muted animate-pulse" />
           </div>
         </div>
       </div>
@@ -193,12 +262,44 @@ const ProductDetail = () => {
     ? listing.images
     : ["/placeholder.svg"];
 
+  // Render category-specific details
+  const renderCategoryDetails = () => {
+    if (Object.keys(categoryDetails).length === 0) return null;
+    
+    const details = { ...categoryDetails };
+    delete details.id;
+    delete details.created_at;
+    
+    const entries = Object.entries(details).filter(([_, v]) => v != null && v !== "" && v !== false);
+    if (entries.length === 0) return null;
+
+    const formatKey = (key: string) => key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    const formatValue = (val: any) => {
+      if (typeof val === "boolean") return val ? "Yes" : "No";
+      if (Array.isArray(val)) return val.join(", ");
+      return String(val);
+    };
+
+    return (
+      <div className="bg-card rounded-xl p-6 shadow-card">
+        <h2 className="text-lg font-semibold mb-3">Specifications</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {entries.map(([key, val]) => (
+            <div key={key} className="flex flex-col">
+              <span className="text-xs text-muted-foreground">{formatKey(key)}</span>
+              <span className="text-sm font-medium">{formatValue(val)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
       <main className="container mx-auto py-6 px-4">
-        {/* Back */}
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors"
@@ -207,7 +308,6 @@ const ProductDetail = () => {
           Back to listings
         </button>
 
-        {/* Bento Gallery */}
         <BentoGallery
           images={images}
           title={listing.title}
@@ -215,11 +315,10 @@ const ProductDetail = () => {
           isUrgent={listing.is_urgent}
         />
 
-        {/* Action Bar */}
         <div className="flex items-center justify-between mt-4 mb-6">
           <div className="flex gap-2">
-            <Badge variant="secondary">{listing.category}</Badge>
-            <Badge variant="outline">{listing.condition}</Badge>
+            {categoryName && <Badge variant="secondary">{categoryName}</Badge>}
+            {categoryDetails?.condition && <Badge variant="outline">{categoryDetails.condition}</Badge>}
           </div>
           <div className="flex gap-2">
             <Button variant="ghost" size="sm" onClick={toggleFavorite}>
@@ -230,15 +329,10 @@ const ProductDetail = () => {
               <Share2 className="h-4 w-4 mr-1" />
               Share
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleCompare}>
-              <GitCompare className="h-4 w-4 mr-1" />
-              Compare
-            </Button>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left - Details */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-card rounded-xl p-6 shadow-card">
               <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
@@ -258,7 +352,8 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {/* Description */}
+            {renderCategoryDetails()}
+
             <div className="bg-card rounded-xl p-6 shadow-card">
               <h2 className="text-lg font-semibold mb-3">Description</h2>
               <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
@@ -266,7 +361,6 @@ const ProductDetail = () => {
               </p>
             </div>
 
-            {/* Disclaimer */}
             <div className="bg-muted/50 border border-border rounded-xl p-6">
               <div className="flex items-start gap-3 mb-3">
                 <AlertTriangle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
@@ -276,23 +370,20 @@ const ProductDetail = () => {
                 <p>
                   This ad is offered by{" "}
                   <Link to={`/seller/${listing.user_id}`} className="text-primary font-medium hover:underline">
-                    {seller?.display_name || "the seller"}
+                    {getSellerDisplayName()}
                   </Link>
                   , not APA Bazaar Marketplace.
                 </p>
                 <p>All listings are posted and managed directly by individual users (private sellers or dealers/businesses). APA Bazaar acts only as a marketplace and is not a party to any transaction between buyers and sellers.</p>
-                <p>The accuracy, completeness, legality, or reliability of any advertisement content (including descriptions, prices, photos, contact details, and availability) is the sole responsibility of the person or business who created the listing.</p>
-                <p>Prices, specifications, conditions, and availability shown in listings are subject to change without notice and may differ from the final terms offered by the seller.</p>
-                <p>Any arrangements, contracts, payments, deliveries, warranties, or disputes are strictly between the buyer and seller. APA Bazaar is not involved and accepts no liability.</p>
+                <p>Prices, specifications, conditions, and availability shown in listings are subject to change without notice.</p>
                 <p>
-                  Users are strongly advised to verify all information independently, meet in safe locations, use secure payment methods, and exercise the same caution they would when dealing with strangers offline. Visit our{" "}
+                  Visit our{" "}
                   <Link to="/safety-tips" className="text-primary font-medium hover:underline">Safety Tips</Link> page for more details.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Right - Seller & Actions */}
           <div className="space-y-4">
             <div className="bg-card rounded-xl p-6 shadow-card">
               <div
@@ -301,16 +392,19 @@ const ProductDetail = () => {
               >
                 <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xl font-bold overflow-hidden">
                   {seller?.avatar_url ? (
-                    <img src={seller.avatar_url} alt={seller.display_name} className="w-full h-full object-cover" />
+                    <img src={seller.avatar_url} alt={getSellerDisplayName()} className="w-full h-full object-cover" />
                   ) : (
-                    seller?.display_name.charAt(0).toUpperCase()
+                    getSellerDisplayName().charAt(0).toUpperCase()
                   )}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-primary hover:underline">{seller?.display_name}</h3>
+                    <h3 className="font-semibold text-primary hover:underline">{getSellerDisplayName()}</h3>
                     {seller?.is_verified && <Shield className="h-4 w-4 text-primary" />}
                   </div>
+                  {seller?.account_type === "business" && (
+                    <Badge variant="secondary" className="text-xs mt-0.5">Business</Badge>
+                  )}
                   {seller?.rating !== undefined && seller.rating > 0 && (
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Star className="h-4 w-4 fill-jiji-yellow text-jiji-yellow" />
@@ -334,6 +428,19 @@ const ProductDetail = () => {
                   >
                     <Phone className="h-4 w-4 mr-2" />
                     {showPhone ? seller.phone : "Show Phone Number"}
+                  </Button>
+                )}
+                {seller?.whatsapp_number && (
+                  <Button
+                    variant="outline"
+                    className="w-full border-green-500 text-green-600 hover:bg-green-50"
+                    onClick={() => {
+                      if (!user) { setIsAuthModalOpen(true); return; }
+                      window.open(`https://wa.me/${seller.whatsapp_number.replace(/\D/g, "")}?text=Hi, I'm interested in your listing: ${listing.title}`, "_blank");
+                    }}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    WhatsApp
                   </Button>
                 )}
                 <Button
@@ -371,8 +478,7 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Similar Ads */}
-        <SimilarAds category={listing.category} currentId={listing.id} />
+        <SimilarAds categoryId={listing.main_category_id} currentId={listing.id} />
       </main>
 
       <Footer />
@@ -381,32 +487,29 @@ const ProductDetail = () => {
   );
 };
 
-// Similar Ads with infinite loading
-const SimilarAds = ({ category, currentId }: { category: string; currentId: string }) => {
+// Similar Ads from base_listings
+const SimilarAds = ({ categoryId, currentId }: { categoryId: string; currentId: string }) => {
   const [ads, setAds] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(0);
-  const PAGE_SIZE = 6;
 
-  const loadMore = async () => {
-    if (loading || !hasMore) return;
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("listings")
-      .select("*")
-      .eq("category", category as any)
-      .neq("id", currentId)
-      .order("created_at", { ascending: false })
-      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+  useEffect(() => {
+    const load = async () => {
+      if (!categoryId) return;
+      setLoading(true);
+      const { data } = await supabase
+        .from("base_listings")
+        .select("*")
+        .eq("main_category_id", categoryId)
+        .eq("status", "active")
+        .neq("id", currentId)
+        .order("created_at", { ascending: false })
+        .limit(6);
 
-    if (error || !data || data.length < PAGE_SIZE) setHasMore(false);
-    if (data) setAds((prev) => [...prev, ...data]);
-    setPage((p) => p + 1);
-    setLoading(false);
-  };
-
-  useEffect(() => { loadMore(); }, []);
+      if (data) setAds(data);
+      setLoading(false);
+    };
+    load();
+  }, [categoryId, currentId]);
 
   if (ads.length === 0 && !loading) return null;
 
@@ -431,13 +534,6 @@ const SimilarAds = ({ category, currentId }: { category: string; currentId: stri
           />
         ))}
       </div>
-      {hasMore && (
-        <div className="text-center mt-6">
-          <Button variant="outline" onClick={loadMore} disabled={loading}>
-            {loading ? "Loading..." : "Load More"}
-          </Button>
-        </div>
-      )}
     </div>
   );
 };

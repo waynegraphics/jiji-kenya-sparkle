@@ -1428,6 +1428,7 @@ export type Database = {
           account_type: string
           avatar_url: string | null
           bio: string | null
+          business_name: string | null
           created_at: string
           display_name: string
           id: string
@@ -1438,11 +1439,13 @@ export type Database = {
           total_reviews: number | null
           updated_at: string
           user_id: string
+          whatsapp_number: string | null
         }
         Insert: {
           account_type?: string
           avatar_url?: string | null
           bio?: string | null
+          business_name?: string | null
           created_at?: string
           display_name: string
           id?: string
@@ -1453,11 +1456,13 @@ export type Database = {
           total_reviews?: number | null
           updated_at?: string
           user_id: string
+          whatsapp_number?: string | null
         }
         Update: {
           account_type?: string
           avatar_url?: string | null
           bio?: string | null
+          business_name?: string | null
           created_at?: string
           display_name?: string
           id?: string
@@ -1468,6 +1473,7 @@ export type Database = {
           total_reviews?: number | null
           updated_at?: string
           user_id?: string
+          whatsapp_number?: string | null
         }
         Relationships: []
       }

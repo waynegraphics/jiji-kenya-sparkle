@@ -176,6 +176,11 @@ const AdminUsers = () => {
     return role?.role || "user";
   };
 
+  const getUserAccountType = (userId: string) => {
+    const u = users?.find(p => p.user_id === userId);
+    return (u as any)?.account_type || "customer";
+  };
+
   const getUserSubscription = (userId: string) => {
     const sub = userSubscriptions?.find(s => s.user_id === userId);
     return sub?.subscription_packages?.name || null;
@@ -187,7 +192,8 @@ const AdminUsers = () => {
       user.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.phone?.includes(searchQuery);
     if (roleFilter === "all") return matchesSearch;
-    return matchesSearch && getUserRole(user.user_id) === roleFilter;
+    const accountType = (user as any).account_type || "customer";
+    return matchesSearch && accountType === roleFilter;
   });
 
   if (isLoading) {
@@ -231,9 +237,9 @@ const AdminUsers = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Users</SelectItem>
-                <SelectItem value="admin">Admins</SelectItem>
-                <SelectItem value="moderator">Moderators</SelectItem>
-                <SelectItem value="user">Regular Users</SelectItem>
+                <SelectItem value="customer">Customers</SelectItem>
+                <SelectItem value="seller">Sellers</SelectItem>
+                <SelectItem value="business">Businesses</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -276,8 +282,8 @@ const AdminUsers = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getUserRole(user.user_id) === "admin" ? "default" : "secondary"}>
-                      {getUserRole(user.user_id)}
+                    <Badge variant={((user as any).account_type === "business") ? "default" : "secondary"}>
+                      {((user as any).account_type === "business" ? "Business" : (user as any).account_type === "seller" ? "Seller" : "Customer")}
                     </Badge>
                   </TableCell>
                   <TableCell>

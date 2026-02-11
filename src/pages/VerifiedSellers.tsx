@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -15,34 +14,36 @@ import {
   Package,
   Search,
   Users,
+  Building2,
 } from "lucide-react";
 
 interface VerifiedSeller {
   user_id: string;
   display_name: string;
+  business_name: string | null;
   avatar_url: string | null;
   location: string | null;
   bio: string | null;
   rating: number;
   total_reviews: number;
   created_at: string;
+  account_type: string;
   listing_count?: number;
 }
 
 const VerifiedSellers = () => {
-  const { user } = useAuth();
   const [sellers, setSellers] = useState<VerifiedSeller[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     const fetchVerifiedSellers = async () => {
-      // Fetch all verified profiles (is_verified = true, account_type = seller)
+      // Only show business accounts
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("user_id, display_name, avatar_url, location, bio, rating, total_reviews, created_at")
+        .select("user_id, display_name, business_name, avatar_url, location, bio, rating, total_reviews, created_at, account_type")
         .eq("is_verified", true)
-        .eq("account_type", "seller")
+        .eq("account_type", "business")
         .order("rating", { ascending: false });
 
       if (error) {
@@ -51,7 +52,6 @@ const VerifiedSellers = () => {
         return;
       }
 
-      // Fetch listing counts for each seller from base_listings
       const sellersWithCounts: VerifiedSeller[] = await Promise.all(
         (profiles || []).map(async (profile) => {
           const { count } = await supabase
@@ -74,8 +74,11 @@ const VerifiedSellers = () => {
     fetchVerifiedSellers();
   }, []);
 
+  const getDisplayName = (seller: VerifiedSeller) => 
+    seller.business_name || seller.display_name;
+
   const filteredSellers = sellers.filter((s) =>
-    s.display_name.toLowerCase().includes(search.toLowerCase()) ||
+    getDisplayName(s).toLowerCase().includes(search.toLowerCase()) ||
     s.location?.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -84,24 +87,22 @@ const VerifiedSellers = () => {
       <Header />
 
       <main className="container mx-auto py-8 px-4">
-        {/* Hero */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-4">
-            <Shield className="h-4 w-4" />
-            Trusted Community
+            <Building2 className="h-4 w-4" />
+            Verified Businesses
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">Verified Sellers</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">Business Directory</h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            These sellers have been identity-verified by our team. Shop with confidence knowing you're dealing with trusted members.
+            These businesses have been identity-verified by our team. Shop with confidence knowing you're dealing with trusted businesses.
           </p>
         </div>
 
-        {/* Search */}
         <div className="max-w-md mx-auto mb-8">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or location..."
+              placeholder="Search by business name or location..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
@@ -109,11 +110,10 @@ const VerifiedSellers = () => {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="flex justify-center gap-8 mb-8 text-center">
           <div>
             <p className="text-2xl font-bold text-primary">{sellers.length}</p>
-            <p className="text-sm text-muted-foreground">Verified Sellers</p>
+            <p className="text-sm text-muted-foreground">Verified Businesses</p>
           </div>
           <div>
             <p className="text-2xl font-bold text-primary">
@@ -123,7 +123,6 @@ const VerifiedSellers = () => {
           </div>
         </div>
 
-        {/* Sellers Grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -134,10 +133,10 @@ const VerifiedSellers = () => {
           <div className="text-center py-16">
             <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">
-              {search ? "No sellers match your search" : "No verified sellers yet"}
+              {search ? "No businesses match your search" : "No verified businesses yet"}
             </h2>
             <p className="text-muted-foreground">
-              {search ? "Try a different search term." : "Check back soon as more sellers get verified."}
+              {search ? "Try a different search term." : "Check back soon as more businesses get verified."}
             </p>
           </div>
         ) : (
@@ -149,22 +148,21 @@ const VerifiedSellers = () => {
                 className="group"
               >
                 <div className="bg-card rounded-xl p-6 shadow-card hover:shadow-lg transition-all border border-transparent hover:border-primary/20">
-                  {/* Avatar */}
                   <div className="flex flex-col items-center text-center mb-4">
                     <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary text-2xl font-bold mb-3 ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all">
                       {seller.avatar_url ? (
                         <img
                           src={seller.avatar_url}
-                          alt={seller.display_name}
+                          alt={getDisplayName(seller)}
                           className="w-full h-full rounded-full object-cover"
                         />
                       ) : (
-                        seller.display_name.charAt(0).toUpperCase()
+                        getDisplayName(seller).charAt(0).toUpperCase()
                       )}
                     </div>
                     <div className="flex items-center gap-1.5">
                       <h3 className="font-semibold group-hover:text-primary transition-colors">
-                        {seller.display_name}
+                        {getDisplayName(seller)}
                       </h3>
                       <Shield className="h-4 w-4 text-primary" />
                     </div>
@@ -177,7 +175,6 @@ const VerifiedSellers = () => {
                     )}
                   </div>
 
-                  {/* Info */}
                   <div className="space-y-2 text-sm text-muted-foreground">
                     {seller.location && (
                       <div className="flex items-center gap-2 justify-center">
@@ -197,18 +194,16 @@ const VerifiedSellers = () => {
                     </div>
                   </div>
 
-                  {/* Bio preview */}
                   {seller.bio && (
                     <p className="text-xs text-muted-foreground mt-3 text-center line-clamp-2">
                       {seller.bio}
                     </p>
                   )}
 
-                  {/* Badge */}
                   <div className="mt-4 flex justify-center">
                     <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-xs">
-                      <Shield className="h-3 w-3 mr-1" />
-                      Verified
+                      <Building2 className="h-3 w-3 mr-1" />
+                      Verified Business
                     </Badge>
                   </div>
                 </div>
