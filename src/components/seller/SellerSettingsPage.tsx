@@ -1,17 +1,31 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import LocationSelector from "@/components/LocationSelector";
 import { toast } from "sonner";
-import { Camera, Loader2, Settings, Lock } from "lucide-react";
+import { Camera, Loader2, Settings, Lock, Trash2, AlertTriangle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const SellerSettingsPage = () => {
+  const navigate = useNavigate();
   const { user, profile, updateProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -24,10 +38,14 @@ const SellerSettingsPage = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Password change
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // Delete account
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -56,15 +74,60 @@ const SellerSettingsPage = () => {
 
   const handlePasswordChange = async () => {
     if (newPassword !== confirmPassword) { toast.error("Passwords don't match"); return; }
-    if (newPassword.length < 6) { toast.error("Password must be at least 6 characters"); return; }
+    if (newPassword.length < 8) { toast.error("Password must be at least 8 characters"); return; }
+    if (!/[A-Z]/.test(newPassword)) { toast.error("Password must contain at least one uppercase letter"); return; }
+    if (!/[0-9]/.test(newPassword)) { toast.error("Password must contain at least one number"); return; }
     setChangingPassword(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
       toast.success("Password changed successfully");
-      setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
+      setNewPassword(""); setConfirmPassword("");
     } catch (e: any) { toast.error(e.message || "Failed to change password"); }
     finally { setChangingPassword(false); }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE MY ACCOUNT") {
+      toast.error("Please type 'DELETE MY ACCOUNT' to confirm");
+      return;
+    }
+    if (!deletePassword || deletePassword.length < 6) {
+      toast.error("Please enter your password to confirm deletion");
+      return;
+    }
+    setDeletingAccount(true);
+    try {
+      // Verify password by re-signing in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || "",
+        password: deletePassword,
+      });
+      if (signInError) {
+        toast.error("Incorrect password. Account deletion cancelled.");
+        return;
+      }
+
+      // Soft-delete: deactivate profile and sign out
+      await supabase.from("profiles").update({
+        display_name: "Deleted User",
+        bio: null,
+        phone: null,
+        avatar_url: null,
+        location: null,
+      }).eq("user_id", user!.id);
+
+      // Set all user listings to draft
+      await supabase.from("base_listings").update({ status: "deleted" }).eq("user_id", user!.id);
+
+      await supabase.auth.signOut();
+      toast.success("Your account has been deleted. You will be redirected.");
+      navigate("/");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete account");
+    } finally {
+      setDeletingAccount(false);
+    }
   };
 
   return (
@@ -75,9 +138,10 @@ const SellerSettingsPage = () => {
         <TabsList>
           <TabsTrigger value="profile"><Settings className="h-4 w-4 mr-2" />Profile</TabsTrigger>
           <TabsTrigger value="security"><Lock className="h-4 w-4 mr-2" />Security</TabsTrigger>
+          <TabsTrigger value="danger"><Trash2 className="h-4 w-4 mr-2" />Account</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile" className="mt-4">
+        <TabsContent value="profile" className="mt-4 space-y-4">
           <Card>
             <CardHeader><CardTitle>Profile Information</CardTitle></CardHeader>
             <CardContent className="space-y-4">
@@ -99,10 +163,16 @@ const SellerSettingsPage = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div><Label>Display Name</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} /></div>
-                <div><Label>Phone</Label><Input value={phone} onChange={e => setPhone(e.target.value)} /></div>
-                <div><Label>Location</Label><Input value={location} onChange={e => setLocation(e.target.value)} /></div>
+                <div><Label>Phone</Label><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+254..." /></div>
               </div>
-              <div><Label>Bio</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} /></div>
+              <div>
+                <Label>Location</Label>
+                <LocationSelector
+                  onLocationChange={(county, town) => setLocation(town ? `${county}, ${town}` : county)}
+                  compact
+                />
+              </div>
+              <div><Label>Bio</Label><Textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="Tell buyers about yourself..." /></div>
               <Button onClick={handleSaveProfile} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}Save Changes
               </Button>
@@ -110,15 +180,101 @@ const SellerSettingsPage = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="security" className="mt-4">
+        <TabsContent value="security" className="mt-4 space-y-4">
           <Card>
-            <CardHeader><CardTitle>Change Password</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Change Password</CardTitle>
+              <CardDescription>Password must be at least 8 characters with one uppercase letter and one number.</CardDescription>
+            </CardHeader>
             <CardContent className="space-y-4 max-w-md">
-              <div><Label>New Password</Label><Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} /></div>
-              <div><Label>Confirm New Password</Label><Input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} /></div>
+              <div>
+                <Label>New Password</Label>
+                <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" />
+              </div>
+              <div>
+                <Label>Confirm New Password</Label>
+                <Input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••" />
+              </div>
+              {newPassword && (
+                <div className="text-xs space-y-1">
+                  <p className={newPassword.length >= 8 ? "text-green-600" : "text-destructive"}>
+                    {newPassword.length >= 8 ? "✓" : "✗"} At least 8 characters
+                  </p>
+                  <p className={/[A-Z]/.test(newPassword) ? "text-green-600" : "text-destructive"}>
+                    {/[A-Z]/.test(newPassword) ? "✓" : "✗"} One uppercase letter
+                  </p>
+                  <p className={/[0-9]/.test(newPassword) ? "text-green-600" : "text-destructive"}>
+                    {/[0-9]/.test(newPassword) ? "✓" : "✗"} One number
+                  </p>
+                  <p className={newPassword === confirmPassword && confirmPassword ? "text-green-600" : "text-destructive"}>
+                    {newPassword === confirmPassword && confirmPassword ? "✓" : "✗"} Passwords match
+                  </p>
+                </div>
+              )}
               <Button onClick={handlePasswordChange} disabled={changingPassword}>
                 {changingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}Change Password
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Active Sessions</CardTitle>
+              <CardDescription>Sign out of all other devices.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" onClick={async () => {
+                await supabase.auth.signOut({ scope: "others" });
+                toast.success("Signed out of all other sessions");
+              }}>
+                Sign Out Other Sessions
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="danger" className="mt-4">
+          <Card className="border-destructive/50">
+            <CardHeader>
+              <CardTitle className="text-destructive flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" /> Delete Account
+              </CardTitle>
+              <CardDescription>
+                This action is permanent. All your listings will be removed and your profile data will be erased.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 max-w-md">
+              <div>
+                <Label>Enter your password to confirm</Label>
+                <Input type="password" value={deletePassword} onChange={e => setDeletePassword(e.target.value)} placeholder="Your current password" />
+              </div>
+              <div>
+                <Label>Type "DELETE MY ACCOUNT" to confirm</Label>
+                <Input value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} placeholder="DELETE MY ACCOUNT" className="font-mono" />
+              </div>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={deleteConfirmText !== "DELETE MY ACCOUNT" || !deletePassword}>
+                    <Trash2 className="h-4 w-4 mr-2" /> Delete My Account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete your account, remove all your listings, and sign you out. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={deletingAccount}>
+                      {deletingAccount ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                      Yes, Delete My Account
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </CardContent>
           </Card>
         </TabsContent>

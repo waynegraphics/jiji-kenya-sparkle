@@ -24,7 +24,7 @@ import { useSubscriptionLimits, useIncrementAdsUsed } from "@/hooks/useSubscript
 import { useMainCategories, useSubCategories } from "@/hooks/useCategories";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, X, ImagePlus, AlertCircle, Package, ChevronRight } from "lucide-react";
+import { Loader2, X, ImagePlus, AlertCircle, Package, ChevronRight, ChevronLeft, Check } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { compressImage } from "@/lib/imageCompression";
@@ -35,7 +35,8 @@ import PropertyFormFields from "@/components/forms/PropertyFormFields";
 import JobFormFields from "@/components/forms/JobFormFields";
 import GenericFormFields from "@/components/forms/GenericFormFields";
 
-// locations now handled by LocationSelector
+const ACCEPTED_IMAGE_TYPES = ".jpg,.jpeg,.png,.heic,.heif";
+const MAX_IMAGES = 10;
 
 const PostAd = () => {
   const navigate = useNavigate();
@@ -46,12 +47,11 @@ const PostAd = () => {
   const { data: verification, isLoading: verificationLoading } = useSellerVerification();
   const [registrationFeePaid, setRegistrationFeePaid] = useState(false);
   const [feeCheckLoading, setFeeCheckLoading] = useState(true);
+  const [currentStep, setCurrentStep] = useState(0);
   
-  // Check if registration fee has been paid
   useEffect(() => {
     const checkFee = async () => {
       if (!user) return;
-      // Check if user has any completed payment transaction for registration
       const { data } = await supabase
         .from("payment_transactions")
         .select("id")
@@ -67,19 +67,13 @@ const PostAd = () => {
     checkFee();
   }, [user]);
   
-  // Subscription limits
   const { data: limits, isLoading: limitsLoading } = useSubscriptionLimits();
-
-  // Categories
   const { data: mainCategories, isLoading: categoriesLoading } = useMainCategories();
   const [selectedMainCategoryId, setSelectedMainCategoryId] = useState<string>("");
   const { data: subCategories } = useSubCategories(selectedMainCategoryId);
-
-  // Get the selected category object
   const selectedMainCategory = mainCategories?.find(c => c.id === selectedMainCategoryId);
   const categorySlug = selectedMainCategory?.slug || "";
 
-  // Base form data
   const [baseFormData, setBaseFormData] = useState({
     title: "",
     description: "",
@@ -87,23 +81,18 @@ const PostAd = () => {
     location: profile?.location || "Nairobi",
     subCategoryId: "",
     isNegotiable: true,
-    isUrgent: false,
   });
 
-  // Category-specific form data
   const [categoryFormData, setCategoryFormData] = useState<Record<string, unknown>>({});
-
   const [images, setImages] = useState<{ file: File; preview: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Reset sub-category when main category changes
   useEffect(() => {
     setBaseFormData(prev => ({ ...prev, subCategoryId: "" }));
     setCategoryFormData({});
   }, [selectedMainCategoryId]);
 
-  // Redirect if not logged in (wait for auth to load first)
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -117,27 +106,37 @@ const PostAd = () => {
     return null;
   }
 
+  const isJobCategory = categorySlug === "jobs";
+
+  // Multi-step definitions
+  const steps = [
+    { title: "Category & Location", icon: "📂" },
+    { title: `${selectedMainCategory?.name || "Category"} Details`, icon: "📝" },
+    ...(isJobCategory ? [] : [{ title: "Photos", icon: "📷" }]),
+    { title: "Ad Details & Price", icon: "💰" },
+  ];
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     const newImages: { file: File; preview: string }[] = [];
-    const maxSize = 10 * 1024 * 1024; // Allow up to 10MB raw, will compress
 
     for (const file of Array.from(files)) {
-      if (images.length + newImages.length >= 8) {
-        toast.error("Maximum 8 images allowed");
+      if (images.length + newImages.length >= MAX_IMAGES) {
+        toast.error(`Maximum ${MAX_IMAGES} images allowed`);
         break;
       }
-      if (file.size > maxSize) {
-        toast.error(`${file.name} is too large. Max size is 10MB`);
+      const ext = file.name.split(".").pop()?.toLowerCase() || "";
+      const validExts = ["jpg", "jpeg", "png", "heic", "heif"];
+      if (!validExts.includes(ext) && !file.type.startsWith("image/")) {
+        toast.error(`${file.name} — Supported formats: JPG, PNG, JPEG, HEIC`);
         continue;
       }
-      if (!file.type.startsWith("image/")) {
-        toast.error(`${file.name} is not an image`);
+      if (file.size > 15 * 1024 * 1024) {
+        toast.error(`${file.name} is too large. Max 15MB`);
         continue;
       }
-      // Compress image before adding
       const compressed = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.8, maxSizeKB: 500 });
       newImages.push({ file: compressed, preview: URL.createObjectURL(compressed) });
     }
@@ -170,11 +169,41 @@ const PostAd = () => {
     return uploadedUrls;
   };
 
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    if (step === 0) {
+      if (!selectedMainCategoryId) newErrors.category = "Please select a category";
+      if (!baseFormData.location) newErrors.location = "Please select a location";
+    }
+    
+    if (step === steps.length - 1) {
+      if (!baseFormData.title.trim() || baseFormData.title.length < 5)
+        newErrors.title = "Title must be at least 5 characters";
+      if (!isJobCategory && (!baseFormData.price || parseFloat(baseFormData.price) < 1))
+        newErrors.price = "Price must be at least 1";
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast.error("Please fix the errors before continuing");
+      return false;
+    }
+    return true;
+  };
+
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
+    }
+  };
+
+  const handleBack = () => setCurrentStep(prev => Math.max(prev - 1, 0));
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrors({});
+    if (!validateStep(currentStep)) return;
 
-    // Check subscription limits (admins bypass)
     if (!limits?.isAdminBypass) {
       if (!limits?.hasActiveSubscription) {
         toast.error("You need an active subscription to post ads");
@@ -188,42 +217,16 @@ const PostAd = () => {
       }
     }
 
-    // Validate required fields
-    const newErrors: Record<string, string> = {};
-    if (!baseFormData.title.trim() || baseFormData.title.length < 5) {
-      newErrors.title = "Title must be at least 5 characters";
-    }
-    if (!selectedMainCategoryId) {
-      newErrors.category = "Please select a category";
-    }
-    if (!baseFormData.location) {
-      newErrors.location = "Please select a location";
-    }
-    
-    // Jobs don't need price
-    const isJobCategory = categorySlug === "jobs";
-    if (!isJobCategory && (!baseFormData.price || parseFloat(baseFormData.price) < 1)) {
-      newErrors.price = "Price must be at least 1";
-    }
-    
     if (images.length === 0 && !isJobCategory) {
       toast.error("Please add at least one image");
-      return;
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      toast.error("Please fix the errors in the form");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Upload images
       const imageUrls = await uploadImages();
 
-      // Create base listing
       const { data: listing, error: baseError } = await supabase
         .from("base_listings")
         .insert({
@@ -235,7 +238,6 @@ const PostAd = () => {
           price: isJobCategory ? 0 : parseFloat(baseFormData.price),
           location: baseFormData.location,
           is_negotiable: baseFormData.isNegotiable,
-          is_urgent: baseFormData.isUrgent,
           images: imageUrls,
         })
         .select()
@@ -243,10 +245,7 @@ const PostAd = () => {
 
       if (baseError) throw baseError;
 
-      // Insert category-specific data
       await insertCategorySpecificData(listing.id, categorySlug, categoryFormData);
-
-      // Increment ads used
       await incrementAdsUsed();
       queryClient.invalidateQueries({ queryKey: ["subscription-limits"] });
 
@@ -295,7 +294,6 @@ const PostAd = () => {
           key_features: (data.key_features as string[]) || null,
         }]);
         break;
-
       case "property":
         await supabase.from("property_listings").insert([{
           id: listingId,
@@ -317,7 +315,6 @@ const PostAd = () => {
           service_charge: (data.service_charge as number) || null,
         }]);
         break;
-
       case "jobs":
         await supabase.from("job_listings").insert([{
           id: listingId,
@@ -343,7 +340,6 @@ const PostAd = () => {
           is_remote: (data.is_remote as boolean) || false,
         }]);
         break;
-
       case "electronics":
         await supabase.from("electronics_listings").insert([{
           id: listingId,
@@ -360,7 +356,6 @@ const PostAd = () => {
           accessories_included: (data.accessories_included as string[]) || null,
         }]);
         break;
-
       case "phones-tablets":
         await supabase.from("phone_listings").insert([{
           id: listingId,
@@ -377,7 +372,6 @@ const PostAd = () => {
           accessories_included: (data.accessories_included as string[]) || null,
         }]);
         break;
-
       case "fashion":
         await supabase.from("fashion_listings").insert([{
           id: listingId,
@@ -391,7 +385,6 @@ const PostAd = () => {
           occasion: (data.occasion as string) || null,
         }]);
         break;
-
       case "furniture-appliances":
         await supabase.from("furniture_listings").insert([{
           id: listingId,
@@ -405,7 +398,6 @@ const PostAd = () => {
           assembly_required: (data.assembly_required as boolean) || false,
         }]);
         break;
-
       case "animals-pets":
         await supabase.from("pet_listings").insert([{
           id: listingId,
@@ -419,7 +411,6 @@ const PostAd = () => {
           includes: (data.includes as string[]) || null,
         }]);
         break;
-
       case "babies-kids":
         await supabase.from("kids_listings").insert([{
           id: listingId,
@@ -431,7 +422,6 @@ const PostAd = () => {
           safety_certified: (data.safety_certified as boolean) || false,
         }]);
         break;
-
       case "services":
         await supabase.from("service_listings").insert([{
           id: listingId,
@@ -445,77 +435,247 @@ const PostAd = () => {
           languages: (data.languages as string[]) || null,
         }]);
         break;
-
+      case "beauty-health":
+        await supabase.from("beauty_listings").insert([{
+          id: listingId,
+          product_type: (data.product_type as string) || "Other",
+          brand: (data.brand as string) || null,
+          skin_type: (data.skin_type as string) || null,
+          usage_type: (data.usage_type as string) || null,
+          condition: (data.condition as string) || null,
+          is_organic: (data.is_organic as boolean) || false,
+          expiry_date: (data.expiry_date as string) || null,
+        }]);
+        break;
+      case "agriculture":
+        await supabase.from("agriculture_listings").insert([{
+          id: listingId,
+          product_type: (data.product_type as string) || "Other",
+          quantity: (data.quantity as number) || null,
+          unit: (data.unit as string) || null,
+          origin: (data.origin as string) || null,
+          is_organic: (data.is_organic as boolean) || false,
+          harvest_date: (data.harvest_date as string) || null,
+          minimum_order: (data.minimum_order as number) || null,
+          certifications: (data.certifications as string[]) || null,
+        }]);
+        break;
+      case "construction":
+        await supabase.from("construction_listings").insert([{
+          id: listingId,
+          item_type: (data.item_type as string) || "Other",
+          brand: (data.brand as string) || null,
+          condition: (data.condition as string) || null,
+          material_type: (data.material_type as string) || null,
+          quantity: (data.quantity as number) || null,
+          unit: (data.unit as string) || null,
+        }]);
+        break;
+      case "equipment":
+        await supabase.from("equipment_listings").insert([{
+          id: listingId,
+          equipment_type: (data.equipment_type as string) || "Other",
+          brand: (data.brand as string) || null,
+          model: (data.model as string) || null,
+          condition: (data.condition as string) || null,
+          year: (data.year as number) || null,
+          hours_used: (data.hours_used as number) || null,
+          power_source: (data.power_source as string) || null,
+          capacity: (data.capacity as string) || null,
+        }]);
+        break;
+      case "leisure":
+        await supabase.from("leisure_listings").insert([{
+          id: listingId,
+          item_type: (data.item_type as string) || "Other",
+          brand: (data.brand as string) || null,
+          condition: (data.condition as string) || null,
+          includes: (data.includes as string[]) || null,
+        }]);
+        break;
       default:
-        // For categories without specific tables, we can skip
         break;
     }
   };
 
   const renderCategorySpecificFields = () => {
     if (!categorySlug) return null;
-
     switch (categorySlug) {
       case "vehicles":
-        return (
-          <VehicleFormFields
-            data={categoryFormData}
-            onChange={setCategoryFormData}
-            errors={errors}
-          />
-        );
+        return <VehicleFormFields data={categoryFormData} onChange={setCategoryFormData} errors={errors} />;
       case "property":
-        return (
-          <PropertyFormFields
-            data={categoryFormData}
-            onChange={setCategoryFormData}
-            errors={errors}
-          />
-        );
+        return <PropertyFormFields data={categoryFormData} onChange={setCategoryFormData} errors={errors} />;
       case "jobs":
-        return (
-          <JobFormFields
-            data={categoryFormData}
-            onChange={setCategoryFormData}
-            errors={errors}
-          />
-        );
-      case "electronics":
-      case "phones-tablets":
-      case "fashion":
-      case "animals-pets":
-        return (
-          <GenericFormFields
-            categorySlug={categorySlug}
-            data={categoryFormData}
-            onChange={setCategoryFormData}
-            errors={errors}
-          />
-        );
+        return <JobFormFields data={categoryFormData} onChange={setCategoryFormData} errors={errors} />;
       default:
-        return (
-          <GenericFormFields
-            categorySlug={categorySlug}
-            data={categoryFormData}
-            onChange={setCategoryFormData}
-            errors={errors}
-          />
-        );
+        return <GenericFormFields categorySlug={categorySlug} data={categoryFormData} onChange={setCategoryFormData} errors={errors} />;
     }
   };
 
-  const isJobCategory = categorySlug === "jobs";
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0: // Category & Location
+        return (
+          <div className="space-y-6">
+            <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
+              <h2 className="text-lg font-semibold">Select Category</h2>
+              <div className="space-y-2">
+                <Label>Category *</Label>
+                <Select value={selectedMainCategoryId} onValueChange={setSelectedMainCategoryId} disabled={categoriesLoading}>
+                  <SelectTrigger className={errors.category ? "border-destructive" : ""}>
+                    <SelectValue placeholder={categoriesLoading ? "Loading..." : "Select a category"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mainCategories?.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.category && <p className="text-sm text-destructive">{errors.category}</p>}
+              </div>
+
+              {subCategories && subCategories.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Sub-Category</Label>
+                  <Select value={baseFormData.subCategoryId} onValueChange={(value) => setBaseFormData(prev => ({ ...prev, subCategoryId: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a sub-category (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subCategories.map((sub) => (
+                        <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
+              <h2 className="text-lg font-semibold">Location</h2>
+              <LocationSelector
+                onLocationChange={(county, town) => {
+                  const loc = town ? `${county}, ${town}` : county;
+                  setBaseFormData(prev => ({ ...prev, location: loc }));
+                }}
+              />
+              {errors.location && <p className="text-sm text-destructive">{errors.location}</p>}
+            </div>
+          </div>
+        );
+
+      case 1: // Category-specific fields
+        return (
+          <div className="bg-card rounded-xl p-6 shadow-card">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              {selectedMainCategory?.name} Details
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </h2>
+            {selectedMainCategoryId ? renderCategorySpecificFields() : (
+              <p className="text-muted-foreground">Please select a category first.</p>
+            )}
+          </div>
+        );
+
+      case 2: // Photos (or Ad Details for jobs)
+        if (isJobCategory) {
+          return renderAdDetailsStep();
+        }
+        return (
+          <div className="bg-card rounded-xl p-6 shadow-card">
+            <h2 className="text-lg font-semibold mb-2">Photos</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Add up to {MAX_IMAGES} photos. Supported formats: JPG, PNG, JPEG, HEIC. The first image will be the cover.
+            </p>
+
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+              {images.map((img, index) => (
+                <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                  <img src={img.preview} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
+                  {index === 0 && (
+                    <span className="absolute bottom-1 left-1 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded">Cover</span>
+                  )}
+                  <button type="button" onClick={() => removeImage(index)}
+                    className="absolute top-1 right-1 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+
+              {images.length < MAX_IMAGES && (
+                <button type="button" onClick={() => fileInputRef.current?.click()}
+                  className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-muted/50 transition-colors">
+                  <ImagePlus className="h-8 w-8 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Add Photo</span>
+                </button>
+              )}
+            </div>
+
+            <input ref={fileInputRef} type="file" accept={ACCEPTED_IMAGE_TYPES} multiple onChange={handleImageUpload} className="hidden" />
+          </div>
+        );
+
+      case 3: // Ad Details (non-jobs)
+        return renderAdDetailsStep();
+
+      default:
+        return null;
+    }
+  };
+
+  const renderAdDetailsStep = () => (
+    <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
+      <h2 className="text-lg font-semibold mb-4">Ad Details</h2>
+
+      <div className="space-y-2">
+        <Label htmlFor="title">Title *</Label>
+        <Input id="title" value={baseFormData.title}
+          onChange={(e) => setBaseFormData(prev => ({ ...prev, title: e.target.value }))}
+          placeholder="Enter a descriptive title" maxLength={100}
+          className={errors.title ? "border-destructive" : ""} />
+        {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
+        <p className="text-xs text-muted-foreground">{baseFormData.title.length}/100 characters</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea id="description" value={baseFormData.description}
+          onChange={(e) => setBaseFormData(prev => ({ ...prev, description: e.target.value }))}
+          placeholder="Describe your item in detail..." rows={5} maxLength={2000} />
+        <p className="text-xs text-muted-foreground">{baseFormData.description.length}/2000 characters</p>
+      </div>
+
+      {!isJobCategory && (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="price">Price (KSh) *</Label>
+            <Input id="price" type="number" value={baseFormData.price}
+              onChange={(e) => setBaseFormData(prev => ({ ...prev, price: e.target.value }))}
+              placeholder="0" min={1} className={errors.price ? "border-destructive" : ""} />
+            {errors.price && <p className="text-sm text-destructive">{errors.price}</p>}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Negotiable</Label>
+              <p className="text-sm text-muted-foreground">Are you open to price negotiation?</p>
+            </div>
+            <Switch checked={baseFormData.isNegotiable}
+              onCheckedChange={(checked) => setBaseFormData(prev => ({ ...prev, isNegotiable: checked }))} />
+          </div>
+        </>
+      )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
       <main className="container mx-auto py-6 max-w-3xl">
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
-          Post Your Ad
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6">Post Your Ad</h1>
 
-        {/* Seller Verification Check - skip for admins */}
+        {/* Seller Verification Check */}
         {!limits?.isAdminBypass && !verificationLoading && verification?.status !== "approved" && (
           <div className="mb-6">
             <SellerVerificationForm />
@@ -525,7 +685,6 @@ const PostAd = () => {
           </div>
         )}
 
-        {/* Registration Fee Check - show after verification is approved, skip for admins */}
         {!limits?.isAdminBypass && verification?.status === "approved" && !feeCheckLoading && !registrationFeePaid && (
           <div className="mb-6">
             <RegistrationFeeCheckout onPaymentSuccess={() => setRegistrationFeePaid(true)} />
@@ -537,276 +696,90 @@ const PostAd = () => {
 
         {(!limits?.isAdminBypass && ((verification?.status !== "approved" || (!registrationFeePaid && !feeCheckLoading)) && !verificationLoading)) ? null : (
           <>
-        
-        {/* Subscription Status Banner */}
-        {limits?.isAdminBypass ? (
-          <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Admin — Unlimited Posting</span>
-            </div>
-          </div>
-        ) : limitsLoading ? (
-          <div className="mb-6 bg-muted rounded-lg p-4 animate-pulse">
-            <div className="h-4 bg-muted-foreground/20 rounded w-1/3"></div>
-          </div>
-        ) : !limits?.hasActiveSubscription ? (
-          <Alert className="mb-6 border-destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>No Active Subscription</AlertTitle>
-            <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <span>You need an active subscription to post ads.</span>
-              <Link to="/pricing">
-                <Button size="sm" variant="default">
-                  <Package className="h-4 w-4 mr-2" />
-                  Get a Subscription
-                </Button>
-              </Link>
-            </AlertDescription>
-          </Alert>
-        ) : !limits.canPostAd ? (
-          <Alert className="mb-6 border-destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Ad Limit Reached</AlertTitle>
-            <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
-              <span>You've used all {limits.maxAds} ads in your {limits.subscriptionName} plan.</span>
-              <Link to="/pricing">
-                <Button size="sm" variant="default">Upgrade Plan</Button>
-              </Link>
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">{limits.subscriptionName} - Ads Usage</span>
-              <span className="text-sm text-muted-foreground">{limits.adsUsed} / {limits.maxAds} used</span>
-            </div>
-            <Progress value={(limits.adsUsed / limits.maxAds) * 100} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-1">{limits.adsRemaining} ads remaining</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Category Selection */}
-          <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
-            <h2 className="text-lg font-semibold mb-4">Select Category</h2>
-
-            {/* Main Category */}
-            <div className="space-y-2">
-              <Label>Category *</Label>
-              <Select
-                value={selectedMainCategoryId}
-                onValueChange={setSelectedMainCategoryId}
-                disabled={categoriesLoading}
-              >
-                <SelectTrigger className={errors.category ? "border-destructive" : ""}>
-                  <SelectValue placeholder={categoriesLoading ? "Loading..." : "Select a category"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {mainCategories?.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.category && <p className="text-sm text-destructive">{errors.category}</p>}
-            </div>
-
-            {/* Sub-Category */}
-            {subCategories && subCategories.length > 0 && (
-              <div className="space-y-2">
-                <Label>Sub-Category</Label>
-                <Select
-                  value={baseFormData.subCategoryId}
-                  onValueChange={(value) => setBaseFormData(prev => ({ ...prev, subCategoryId: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a sub-category (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subCategories.map((sub) => (
-                      <SelectItem key={sub.id} value={sub.id}>
-                        {sub.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Subscription Status Banner */}
+            {limits?.isAdminBypass ? (
+              <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Admin — Unlimited Posting</span>
+                </div>
+              </div>
+            ) : limitsLoading ? (
+              <div className="mb-6 bg-muted rounded-lg p-4 animate-pulse">
+                <div className="h-4 bg-muted-foreground/20 rounded w-1/3"></div>
+              </div>
+            ) : !limits?.hasActiveSubscription ? (
+              <Alert className="mb-6 border-destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>No Active Subscription</AlertTitle>
+                <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <span>You need an active subscription to post ads.</span>
+                  <Link to="/pricing"><Button size="sm" variant="default"><Package className="h-4 w-4 mr-2" />Get a Subscription</Button></Link>
+                </AlertDescription>
+              </Alert>
+            ) : !limits.canPostAd ? (
+              <Alert className="mb-6 border-destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Ad Limit Reached</AlertTitle>
+                <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <span>You've used all {limits.maxAds} ads in your {limits.subscriptionName} plan.</span>
+                  <Link to="/pricing"><Button size="sm" variant="default">Upgrade Plan</Button></Link>
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">{limits.subscriptionName} - Ads Usage</span>
+                  <span className="text-sm text-muted-foreground">{limits.adsUsed} / {limits.maxAds} used</span>
+                </div>
+                <Progress value={(limits.adsUsed / limits.maxAds) * 100} className="h-2" />
+                <p className="text-xs text-muted-foreground mt-1">{limits.adsRemaining} ads remaining</p>
               </div>
             )}
-          </div>
 
-          {/* Category-Specific Fields */}
-          {selectedMainCategoryId && (
-            <div className="bg-card rounded-xl p-6 shadow-card">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                {selectedMainCategory?.name} Details
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </h2>
-              {renderCategorySpecificFields()}
-            </div>
-          )}
-
-          {/* Images Section */}
-          {!isJobCategory && (
-            <div className="bg-card rounded-xl p-6 shadow-card">
-              <h2 className="text-lg font-semibold mb-4">Photos</h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Add up to 8 photos. The first image will be the cover.
-              </p>
-
-              <div className="grid grid-cols-4 gap-3">
-                {images.map((img, index) => (
-                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                    <img src={img.preview} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
-                    {index === 0 && (
-                      <span className="absolute bottom-1 left-1 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded">
-                        Cover
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 w-6 h-6 bg-destructive text-destructive-foreground rounded-full flex items-center justify-center hover:bg-destructive/90"
-                    >
-                      <X className="h-4 w-4" />
+            {/* Step Progress */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                {steps.map((step, i) => (
+                  <div key={i} className="flex items-center">
+                    <button type="button" onClick={() => i < currentStep && setCurrentStep(i)}
+                      className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium px-2 py-1 rounded-full transition-colors ${
+                        i === currentStep ? "bg-primary text-primary-foreground" :
+                        i < currentStep ? "bg-primary/20 text-primary cursor-pointer" :
+                        "bg-muted text-muted-foreground"
+                      }`}>
+                      {i < currentStep ? <Check className="h-3 w-3" /> : <span>{step.icon}</span>}
+                      <span className="hidden sm:inline">{step.title}</span>
+                      <span className="sm:hidden">{i + 1}</span>
                     </button>
+                    {i < steps.length - 1 && <div className={`w-4 sm:w-8 h-0.5 mx-1 ${i < currentStep ? "bg-primary" : "bg-muted"}`} />}
                   </div>
                 ))}
+              </div>
+            </div>
 
-                {images.length < 8 && (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="aspect-square rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-muted/50 transition-colors"
-                  >
-                    <ImagePlus className="h-8 w-8 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Add Photo</span>
-                  </button>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {renderStepContent()}
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between gap-4">
+                {currentStep > 0 && (
+                  <Button type="button" variant="outline" onClick={handleBack}>
+                    <ChevronLeft className="h-4 w-4 mr-2" /> Back
+                  </Button>
                 )}
-              </div>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </div>
-          )}
-
-          {/* Basic Details Section */}
-          <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
-            <h2 className="text-lg font-semibold mb-4">Ad Details</h2>
-
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
-              <Input
-                id="title"
-                value={baseFormData.title}
-                onChange={(e) => setBaseFormData(prev => ({ ...prev, title: e.target.value }))}
-                placeholder="Enter a descriptive title"
-                maxLength={100}
-                className={errors.title ? "border-destructive" : ""}
-              />
-              {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
-              <p className="text-xs text-muted-foreground">{baseFormData.title.length}/100 characters</p>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={baseFormData.description}
-                onChange={(e) => setBaseFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Describe your item in detail..."
-                rows={5}
-                maxLength={2000}
-              />
-              <p className="text-xs text-muted-foreground">{baseFormData.description.length}/2000 characters</p>
-            </div>
-          </div>
-
-          {/* Price & Location Section */}
-          <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
-            <h2 className="text-lg font-semibold mb-4">Price & Location</h2>
-
-            {/* Price (not for jobs) */}
-            {!isJobCategory && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price (KSh) *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    value={baseFormData.price}
-                    onChange={(e) => setBaseFormData(prev => ({ ...prev, price: e.target.value }))}
-                    placeholder="0"
-                    min={1}
-                    className={errors.price ? "border-destructive" : ""}
-                  />
-                  {errors.price && <p className="text-sm text-destructive">{errors.price}</p>}
+                <div className="ml-auto">
+                  {currentStep < steps.length - 1 ? (
+                    <Button type="button" onClick={handleNext}>
+                      Next <ChevronRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  ) : (
+                    <Button type="submit" size="lg" disabled={isSubmitting || (!limits?.isAdminBypass && !limits?.canPostAd)}>
+                      {isSubmitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Posting...</> : "Post Ad"}
+                    </Button>
+                  )}
                 </div>
-
-                {/* Negotiable */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Negotiable</Label>
-                    <p className="text-sm text-muted-foreground">Are you open to price negotiation?</p>
-                  </div>
-                  <Switch
-                    checked={baseFormData.isNegotiable}
-                    onCheckedChange={(checked) => setBaseFormData(prev => ({ ...prev, isNegotiable: checked }))}
-                  />
-                </div>
-              </>
-            )}
-
-            {/* Location */}
-            <div className="space-y-2">
-              <Label>Location *</Label>
-              <LocationSelector
-                onLocationChange={(county, town) => {
-                  const loc = town ? `${county}, ${town}` : county;
-                  setBaseFormData(prev => ({ ...prev, location: loc }));
-                }}
-              />
-              {errors.location && <p className="text-sm text-destructive">{errors.location}</p>}
-            </div>
-
-            {/* Urgent */}
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Mark as Urgent</Label>
-                <p className="text-sm text-muted-foreground">Highlight your ad as urgent</p>
               </div>
-              <Switch
-                checked={baseFormData.isUrgent}
-                onCheckedChange={(checked) => setBaseFormData(prev => ({ ...prev, isUrgent: checked }))}
-              />
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            size="lg"
-            className="w-full"
-            disabled={isSubmitting || !limits?.canPostAd}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Posting...
-              </>
-            ) : (
-              "Post Ad"
-            )}
-          </Button>
-        </form>
+            </form>
           </>
         )}
       </main>
