@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,11 +6,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import LocationSelector from "@/components/LocationSelector";
 import { toast } from "sonner";
-import { Camera, Loader2, Settings, Lock, Trash2, AlertTriangle } from "lucide-react";
+import { Camera, Loader2, Settings, Lock, Trash2, AlertTriangle, Building2, User } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -37,6 +38,11 @@ const SellerSettingsPage = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
+  // Account type fields
+  const [accountType, setAccountType] = useState((profile as any)?.account_type || "customer");
+  const [businessName, setBusinessName] = useState((profile as any)?.business_name || "");
+  const [whatsappNumber, setWhatsappNumber] = useState((profile as any)?.whatsapp_number || "");
+
   // Password change
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -46,6 +52,20 @@ const SellerSettingsPage = () => {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
+
+  // Sync with profile on load
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.display_name);
+      setPhone(profile.phone || "");
+      setLocation(profile.location || "");
+      setBio(profile.bio || "");
+      setAvatarUrl(profile.avatar_url || "");
+      setAccountType((profile as any).account_type || "customer");
+      setBusinessName((profile as any).business_name || "");
+      setWhatsappNumber((profile as any).whatsapp_number || "");
+    }
+  }, [profile]);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,7 +86,23 @@ const SellerSettingsPage = () => {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      await updateProfile({ display_name: displayName, phone, location, bio, avatar_url: avatarUrl });
+      const updateData: any = {
+        display_name: displayName,
+        phone,
+        location,
+        bio,
+        avatar_url: avatarUrl,
+        account_type: accountType,
+        whatsapp_number: whatsappNumber || null,
+        business_name: accountType === "business" ? businessName : null,
+      };
+
+      const { error } = await supabase
+        .from("profiles")
+        .update(updateData)
+        .eq("user_id", user!.id);
+
+      if (error) throw error;
       toast.success("Profile updated");
     } catch { toast.error("Failed to update profile"); }
     finally { setSaving(false); }
@@ -98,7 +134,6 @@ const SellerSettingsPage = () => {
     }
     setDeletingAccount(true);
     try {
-      // Verify password by re-signing in
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: user?.email || "",
         password: deletePassword,
@@ -108,20 +143,19 @@ const SellerSettingsPage = () => {
         return;
       }
 
-      // Soft-delete: deactivate profile and sign out
       await supabase.from("profiles").update({
         display_name: "Deleted User",
         bio: null,
         phone: null,
         avatar_url: null,
         location: null,
+        business_name: null,
+        whatsapp_number: null,
       }).eq("user_id", user!.id);
 
-      // Set all user listings to draft
       await supabase.from("base_listings").update({ status: "deleted" }).eq("user_id", user!.id);
-
       await supabase.auth.signOut();
-      toast.success("Your account has been deleted. You will be redirected.");
+      toast.success("Your account has been deleted.");
       navigate("/");
     } catch (e: any) {
       toast.error(e.message || "Failed to delete account");
@@ -137,10 +171,12 @@ const SellerSettingsPage = () => {
       <Tabs defaultValue="profile">
         <TabsList>
           <TabsTrigger value="profile"><Settings className="h-4 w-4 mr-2" />Profile</TabsTrigger>
+          <TabsTrigger value="account"><Building2 className="h-4 w-4 mr-2" />Account Type</TabsTrigger>
           <TabsTrigger value="security"><Lock className="h-4 w-4 mr-2" />Security</TabsTrigger>
           <TabsTrigger value="danger"><Trash2 className="h-4 w-4 mr-2" />Account</TabsTrigger>
         </TabsList>
 
+        {/* Profile Tab */}
         <TabsContent value="profile" className="mt-4 space-y-4">
           <Card>
             <CardHeader><CardTitle>Profile Information</CardTitle></CardHeader>
@@ -163,7 +199,10 @@ const SellerSettingsPage = () => {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div><Label>Display Name</Label><Input value={displayName} onChange={e => setDisplayName(e.target.value)} /></div>
-                <div><Label>Phone</Label><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+254..." /></div>
+                <div><Label>Phone Number</Label><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+254..." /></div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><Label>WhatsApp Number</Label><Input value={whatsappNumber} onChange={e => setWhatsappNumber(e.target.value)} placeholder="+254..." /></div>
               </div>
               <div>
                 <Label>Location</Label>
@@ -180,6 +219,81 @@ const SellerSettingsPage = () => {
           </Card>
         </TabsContent>
 
+        {/* Account Type Tab */}
+        <TabsContent value="account" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Type</CardTitle>
+              <CardDescription>Choose whether you're a customer, individual seller, or business.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { value: "customer", label: "Customer", desc: "Browse and buy items", icon: <User className="h-5 w-5" /> },
+                  { value: "seller", label: "Individual Seller", desc: "Sell as a private individual", icon: <User className="h-5 w-5" /> },
+                  { value: "business", label: "Business", desc: "Sell as a registered business", icon: <Building2 className="h-5 w-5" /> },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setAccountType(opt.value)}
+                    className={`p-4 rounded-lg border-2 text-left transition-all ${
+                      accountType === opt.value
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      {opt.icon}
+                      <span className="font-semibold">{opt.label}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                  </button>
+                ))}
+              </div>
+
+              {accountType === "business" && (
+                <div className="space-y-4 pt-4 border-t">
+                  <div>
+                    <Label>Business Name *</Label>
+                    <Input value={businessName} onChange={e => setBusinessName(e.target.value)} placeholder="Your business name" />
+                    <p className="text-xs text-muted-foreground mt-1">This will be displayed publicly on your listings and profile.</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Business Phone</Label>
+                      <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+254..." />
+                    </div>
+                    <div>
+                      <Label>Business WhatsApp</Label>
+                      <Input value={whatsappNumber} onChange={e => setWhatsappNumber(e.target.value)} placeholder="+254..." />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {accountType === "seller" && (
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Phone Number</Label>
+                      <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+254..." />
+                    </div>
+                    <div>
+                      <Label>WhatsApp Number</Label>
+                      <Input value={whatsappNumber} onChange={e => setWhatsappNumber(e.target.value)} placeholder="+254..." />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Button onClick={handleSaveProfile} disabled={saving}>
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}Save Account Type
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Security Tab */}
         <TabsContent value="security" className="mt-4 space-y-4">
           <Card>
             <CardHeader>
@@ -233,6 +347,7 @@ const SellerSettingsPage = () => {
           </Card>
         </TabsContent>
 
+        {/* Danger Zone */}
         <TabsContent value="danger" className="mt-4">
           <Card className="border-destructive/50">
             <CardHeader>
@@ -263,7 +378,7 @@ const SellerSettingsPage = () => {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will permanently delete your account, remove all your listings, and sign you out. This action cannot be undone.
+                      This will permanently delete your account, remove all your listings, and sign you out.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
