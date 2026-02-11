@@ -2,7 +2,7 @@ import Header from "@/components/Header";
 import HeroBanner from "@/components/HeroBanner";
 import CategoryGrid from "@/components/CategoryGrid";
 import FeaturedListings from "@/components/FeaturedListings";
-import AppDownload from "@/components/AppDownload";
+import SuperchargeSearch from "@/components/SuperchargeSearch";
 import Footer from "@/components/Footer";
 
 const Index = () => {
@@ -13,7 +13,7 @@ const Index = () => {
         <HeroBanner />
         <CategoryGrid />
         <FeaturedListings />
-        <AppDownload />
+        <SuperchargeSearch />
       </main>
       <Footer />
     </div>
