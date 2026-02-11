@@ -1,6 +1,6 @@
 import { Shield, Truck, HeadphonesIcon, CheckCircle } from "lucide-react";
 import AjaxSearch from "./AjaxSearch";
-import LocationSelector from "./LocationSelector";
+import LocationPopup from "./LocationPopup";
 import { useState } from "react";
 
 const features = [
@@ -26,17 +26,21 @@ const HeroBanner = () => {
         </div>
 
         {/* Search Bar + Location - Desktop */}
-        <div className="hidden md:flex max-w-3xl mx-auto mb-8 gap-2 items-start">
-          <div className="w-56 bg-card rounded-lg">
-            <LocationSelector
-              onLocationChange={(county, town) => {
-                setSelectedLocation(town ? `${county}, ${town}` : county);
-              }}
-              showLabel={false}
-              compact
-            />
-          </div>
+        <div className="hidden md:flex max-w-3xl mx-auto mb-8 gap-2 items-center">
+          <LocationPopup
+            onSelect={(county) => setSelectedLocation(county)}
+            selectedCounty={selectedLocation}
+          />
           <AjaxSearch className="flex-1" inputClassName="h-12 rounded-lg" />
+        </div>
+
+        {/* Mobile Search + Location */}
+        <div className="md:hidden max-w-lg mx-auto mb-6 space-y-2 px-2">
+          <LocationPopup
+            onSelect={(county) => setSelectedLocation(county)}
+            selectedCounty={selectedLocation}
+          />
+          <AjaxSearch inputClassName="h-10 rounded-lg" />
         </div>
 
         {/* Feature Pills */}
