@@ -28,7 +28,7 @@ export const useSubscriptionLimits = () => {
           adsRemaining: 0,
           canPostAd: false,
           allowedCategories: null,
-          analyticsAccess: false,
+          analyticsAccess: true, // Analytics is free for all sellers
           subscriptionName: null,
           expiresAt: null,
         };
@@ -55,7 +55,7 @@ export const useSubscriptionLimits = () => {
           adsRemaining: 0,
           canPostAd: false,
           allowedCategories: null,
-          analyticsAccess: false,
+          analyticsAccess: true, // Analytics is free for all sellers
           subscriptionName: null,
           expiresAt: null,
         };
@@ -71,7 +71,7 @@ export const useSubscriptionLimits = () => {
         adsRemaining,
         canPostAd: adsRemaining > 0,
         allowedCategories: pkg.allowed_categories,
-        analyticsAccess: pkg.analytics_access,
+        analyticsAccess: true, // Analytics is always free
         subscriptionName: pkg.name,
         expiresAt: subscription.expires_at,
       };
