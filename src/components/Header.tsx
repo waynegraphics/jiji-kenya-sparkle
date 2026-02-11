@@ -1,4 +1,4 @@
-import { Search, MapPin, Menu, User, ChevronDown, Plus, LogOut, MessageCircle } from "lucide-react";
+import { Search, MapPin, Menu, User, ChevronDown, Plus, LogOut, MessageCircle, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -128,6 +128,11 @@ const Header = ({ onSearch }: HeaderProps) => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem onClick={() => navigate("/seller")}>
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => navigate("/my-ads")}>
                         My Ads
                       </DropdownMenuItem>
@@ -204,6 +209,14 @@ const Header = ({ onSearch }: HeaderProps) => {
                 </Button>
                 {user ? (
                   <>
+                    <Button
+                      variant="ghost"
+                      className="justify-start text-primary-foreground hover:bg-jiji-green-dark"
+                      onClick={() => { navigate("/seller"); setIsMenuOpen(false); }}
+                    >
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
                     <Button
                       variant="ghost"
                       className="justify-start text-primary-foreground hover:bg-jiji-green-dark"
