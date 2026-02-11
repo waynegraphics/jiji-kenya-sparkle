@@ -19,6 +19,7 @@ import SellerDashboard from "./pages/SellerDashboard";
 import Pricing from "./pages/Pricing";
 import Checkout from "./pages/Checkout";
 import CategoryPage from "./pages/CategoryPage";
+import VerifiedSellers from "./pages/VerifiedSellers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
             <Route path="/checkout/:type/:id/:tierId" element={<Checkout />} />
             <Route path="/category/:categorySlug" element={<CategoryPage />} />
             <Route path="/category/:categorySlug/:subCategorySlug" element={<CategoryPage />} />
+            <Route path="/verified-sellers" element={<VerifiedSellers />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
