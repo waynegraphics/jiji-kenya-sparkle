@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTeamMember } from "@/hooks/useTeamMember";
 
 interface SubscriptionLimits {
   hasActiveSubscription: boolean;
@@ -12,13 +13,15 @@ interface SubscriptionLimits {
   analyticsAccess: boolean;
   subscriptionName: string | null;
   expiresAt: string | null;
+  isAdminBypass: boolean;
 }
 
 export const useSubscriptionLimits = () => {
   const { user } = useAuth();
+  const { data: teamMember } = useTeamMember();
 
   return useQuery({
-    queryKey: ["subscription-limits", user?.id],
+    queryKey: ["subscription-limits", user?.id, teamMember?.designation],
     queryFn: async (): Promise<SubscriptionLimits> => {
       if (!user) {
         return {
@@ -28,9 +31,46 @@ export const useSubscriptionLimits = () => {
           adsRemaining: 0,
           canPostAd: false,
           allowedCategories: null,
-          analyticsAccess: true, // Analytics is free for all sellers
+          analyticsAccess: true,
           subscriptionName: null,
           expiresAt: null,
+          isAdminBypass: false,
+        };
+      }
+
+      // Check if user is admin or super_admin - they bypass all limits
+      const isAdminOrSuperAdmin = teamMember && 
+        (teamMember.designation === "super_admin" || teamMember.designation === "admin");
+
+      if (isAdminOrSuperAdmin) {
+        return {
+          hasActiveSubscription: true,
+          maxAds: Infinity,
+          adsUsed: 0,
+          adsRemaining: Infinity,
+          canPostAd: true,
+          allowedCategories: null, // all categories
+          analyticsAccess: true,
+          subscriptionName: "Admin (Unlimited)",
+          expiresAt: null,
+          isAdminBypass: true,
+        };
+      }
+
+      // Also check via the is_admin RPC for users with admin role but maybe no team_member entry
+      const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: user.id });
+      if (isAdmin) {
+        return {
+          hasActiveSubscription: true,
+          maxAds: Infinity,
+          adsUsed: 0,
+          adsRemaining: Infinity,
+          canPostAd: true,
+          allowedCategories: null,
+          analyticsAccess: true,
+          subscriptionName: "Admin (Unlimited)",
+          expiresAt: null,
+          isAdminBypass: true,
         };
       }
 
@@ -55,9 +95,10 @@ export const useSubscriptionLimits = () => {
           adsRemaining: 0,
           canPostAd: false,
           allowedCategories: null,
-          analyticsAccess: true, // Analytics is free for all sellers
+          analyticsAccess: true,
           subscriptionName: null,
           expiresAt: null,
+          isAdminBypass: false,
         };
       }
 
@@ -71,24 +112,27 @@ export const useSubscriptionLimits = () => {
         adsRemaining,
         canPostAd: adsRemaining > 0,
         allowedCategories: pkg.allowed_categories,
-        analyticsAccess: true, // Analytics is always free
+        analyticsAccess: true,
         subscriptionName: pkg.name,
         expiresAt: subscription.expires_at,
+        isAdminBypass: false,
       };
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 };
 
 // Hook to increment ads_used after successful ad creation
 export const useIncrementAdsUsed = () => {
   const { user } = useAuth();
+  const { data: limits } = useSubscriptionLimits();
 
   const incrementAdsUsed = async () => {
     if (!user) return;
+    // Don't increment for admin bypass
+    if (limits?.isAdminBypass) return;
 
-    // Get current subscription and increment ads_used
     const { data: sub, error: fetchError } = await supabase
       .from("seller_subscriptions")
       .select("id, ads_used")

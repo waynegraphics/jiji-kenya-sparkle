@@ -165,6 +165,8 @@ export const useListingsByCategory = (
     sortBy?: 'newest' | 'oldest' | 'price_asc' | 'price_desc';
     page?: number;
     limit?: number;
+    searchQuery?: string;
+    [key: string]: unknown;
   }
 ) => {
   return useQuery({
@@ -214,6 +216,10 @@ export const useListingsByCategory = (
       }
       if (filters?.location) {
         query = query.eq("location", filters.location);
+      }
+      // Search query - search in title and description
+      if (filters?.searchQuery && typeof filters.searchQuery === 'string') {
+        query = query.or(`title.ilike.%${filters.searchQuery}%,description.ilike.%${filters.searchQuery}%`);
       }
 
       // Sorting
