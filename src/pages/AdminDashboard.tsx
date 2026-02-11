@@ -15,6 +15,7 @@ import AdminSupport from "@/components/admin/AdminSupport";
 import AdminReports from "@/components/admin/AdminReports";
 import AdminMessaging from "@/components/admin/AdminMessaging";
 import AdminSettings from "@/components/admin/AdminSettings";
+import AdminVerifications from "@/components/admin/AdminVerifications";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Shield, Home } from "lucide-react";
@@ -71,6 +72,7 @@ const AdminDashboard = () => {
     if (path.includes('/reports')) return 'Reports & Moderation';
     if (path.includes('/messaging')) return 'Messaging';
     if (path.includes('/settings')) return 'System Settings';
+    if (path.includes('/verifications')) return 'Seller Verifications';
     return 'Overview';
   };
 
@@ -119,6 +121,7 @@ const AdminDashboard = () => {
                 <Route path="reports" element={<AdminReports />} />
                 <Route path="messaging" element={<AdminMessaging />} />
                 <Route path="settings" element={<AdminSettings />} />
+                <Route path="verifications" element={<AdminVerifications />} />
               </Routes>
             </div>
           </main>
