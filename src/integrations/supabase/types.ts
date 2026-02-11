@@ -328,6 +328,7 @@ export type Database = {
           created_at: string | null
           currency: string | null
           description: string | null
+          edited_fields: string[] | null
           expires_at: string | null
           featured_until: string | null
           id: string
@@ -339,7 +340,9 @@ export type Database = {
           location: string
           longitude: number | null
           main_category_id: string
+          previous_data: Json | null
           price: number
+          rejection_note: string | null
           status: string | null
           sub_category_id: string | null
           title: string
@@ -352,6 +355,7 @@ export type Database = {
           created_at?: string | null
           currency?: string | null
           description?: string | null
+          edited_fields?: string[] | null
           expires_at?: string | null
           featured_until?: string | null
           id?: string
@@ -363,7 +367,9 @@ export type Database = {
           location?: string
           longitude?: number | null
           main_category_id: string
+          previous_data?: Json | null
           price?: number
+          rejection_note?: string | null
           status?: string | null
           sub_category_id?: string | null
           title: string
@@ -376,6 +382,7 @@ export type Database = {
           created_at?: string | null
           currency?: string | null
           description?: string | null
+          edited_fields?: string[] | null
           expires_at?: string | null
           featured_until?: string | null
           id?: string
@@ -387,7 +394,9 @@ export type Database = {
           location?: string
           longitude?: number | null
           main_category_id?: string
+          previous_data?: Json | null
           price?: number
+          rejection_note?: string | null
           status?: string | null
           sub_category_id?: string | null
           title?: string
