@@ -2,10 +2,11 @@ import logo from "@/assets/logo.png";
 import {
   Search, MapPin, Menu, User, ChevronDown, Plus, LogOut,
   MessageCircle, LayoutDashboard, X, Bell, Heart, Settings,
-  FileText, Store, ShieldCheck
+  FileText, Store, ShieldCheck, Grid3X3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useMainCategories } from "@/hooks/useCategories";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "./AuthModal";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
@@ -37,6 +38,7 @@ interface HeaderProps {
 const Header = ({ onSearch }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<"login" | "register">("login");
   const { user, profile, signOut, loading } = useAuth();
@@ -45,6 +47,7 @@ const Header = ({ onSearch }: HeaderProps) => {
   const { notifications, unreadCount: notifCount, markAsRead, markAllAsRead } = useNotifications();
 
   const totalBadge = unreadCount + notifCount;
+  const { data: categories = [] } = useMainCategories();
 
   const openAuthModal = (tab: "login" | "register") => {
     setAuthModalTab(tab);
@@ -338,6 +341,33 @@ const Header = ({ onSearch }: HeaderProps) => {
                     <User className="h-4 w-4 mr-2" />Login
                   </Button>
                 )}
+
+                {/* Categories Dropdown */}
+                <div className="border-t my-1" />
+                <Button
+                  variant="ghost"
+                  className="justify-between text-primary hover:bg-primary/10 w-full"
+                  onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
+                >
+                  <span className="flex items-center"><Grid3X3 className="h-4 w-4 mr-2" />Categories</span>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${isCategoriesOpen ? "rotate-180" : ""}`} />
+                </Button>
+                {isCategoriesOpen && (
+                  <div className="pl-6 space-y-0.5 pb-2">
+                    {categories.map((cat) => (
+                      <Button
+                        key={cat.id}
+                        variant="ghost"
+                        size="sm"
+                        className="justify-start text-muted-foreground hover:text-primary hover:bg-primary/5 w-full text-sm h-8"
+                        onClick={() => { navigate(`/category/${cat.slug}`); setIsMenuOpen(false); setIsCategoriesOpen(false); }}
+                      >
+                        {cat.name}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+
                 <Button
                   className="bg-secondary hover:bg-jiji-orange-hover text-secondary-foreground font-semibold mt-2"
                   onClick={() => {

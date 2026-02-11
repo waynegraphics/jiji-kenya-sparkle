@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -19,11 +19,13 @@ import {
   Star,
   Eye,
   Flag,
+  AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/AuthModal";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import ProductCard from "@/components/ProductCard";
 
 interface Listing {
   id: string;
@@ -452,6 +454,54 @@ const ProductDetail = () => {
             </button>
           </div>
         </div>
+
+        {/* Disclaimer */}
+        <div className="mt-8 bg-muted/50 border border-border rounded-xl p-6">
+          <div className="flex items-start gap-3 mb-3">
+            <AlertTriangle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+            <h3 className="font-semibold text-sm text-foreground">Disclaimer</h3>
+          </div>
+          <div className="text-xs text-muted-foreground space-y-2 leading-relaxed">
+            <p>
+              This ad is offered by{" "}
+              <Link 
+                to={`/seller/${listing.user_id}`} 
+                className="text-primary font-medium hover:underline"
+              >
+                {seller?.display_name || "the seller"}
+              </Link>
+              , not APA Bazaar Marketplace.
+            </p>
+            <p>
+              All listings are posted and managed directly by individual users (private sellers or dealers/businesses). 
+              APA Bazaar acts only as a marketplace and is not a party to any transaction between buyers and sellers.
+            </p>
+            <p>
+              The accuracy, completeness, legality, or reliability of any advertisement content (including descriptions, 
+              prices, photos, contact details, and availability) is the sole responsibility of the person or business who 
+              created the listing.
+            </p>
+            <p>
+              Prices, specifications, conditions, and availability shown in listings are subject to change without notice 
+              and may differ from the final terms offered by the seller.
+            </p>
+            <p>
+              Any arrangements, contracts, payments, deliveries, warranties, or disputes are strictly between the buyer 
+              and seller. APA Bazaar is not involved and accepts no liability.
+            </p>
+            <p>
+              Users are strongly advised to verify all information independently, meet in safe locations, use secure 
+              payment methods, and exercise the same caution they would when dealing with strangers offline. Visit our{" "}
+              <Link to="/safety-tips" className="text-primary font-medium hover:underline">
+                Safety Tips
+              </Link>{" "}
+              page for more details.
+            </p>
+          </div>
+        </div>
+
+        {/* Similar Ads */}
+        <SimilarAds category={listing.category} currentId={listing.id} />
       </main>
 
       <Footer />
@@ -461,6 +511,69 @@ const ProductDetail = () => {
         onClose={() => setIsAuthModalOpen(false)}
         defaultTab="login"
       />
+    </div>
+  );
+};
+
+// Similar Ads component with infinite loading
+const SimilarAds = ({ category, currentId }: { category: string; currentId: string }) => {
+  const [ads, setAds] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 6;
+
+  const loadMore = async () => {
+    if (loading || !hasMore) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("listings")
+      .select("*")
+      .eq("category", category as any)
+      .neq("id", currentId)
+      .order("created_at", { ascending: false })
+      .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+    
+    if (error || !data || data.length < PAGE_SIZE) setHasMore(false);
+    if (data) setAds(prev => [...prev, ...data]);
+    setPage(p => p + 1);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadMore();
+  }, []);
+
+  if (ads.length === 0 && !loading) return null;
+
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", minimumFractionDigits: 0 }).format(price);
+
+  return (
+    <div className="mt-10">
+      <h2 className="text-xl font-bold mb-4">Similar Ads</h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {ads.map(ad => (
+          <ProductCard
+            key={ad.id}
+            id={ad.id}
+            title={ad.title}
+            price={formatPrice(ad.price)}
+            location={ad.location}
+            time={formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}
+            image={ad.images?.[0] || "/placeholder.svg"}
+            isFeatured={ad.is_featured}
+            isUrgent={ad.is_urgent}
+          />
+        ))}
+      </div>
+      {hasMore && (
+        <div className="text-center mt-6">
+          <Button variant="outline" onClick={loadMore} disabled={loading}>
+            {loading ? "Loading..." : "Load More"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
