@@ -12,9 +12,12 @@ import SellerFollowers from "@/components/seller/SellerFollowers";
 import SellerSupport from "@/components/seller/SellerSupport";
 import SellerNotifications from "@/components/seller/SellerNotifications";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
+import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Settings } from "lucide-react";
+import { Home, Settings, Shield } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const SellerSettings = () => {
   const { profile } = useAuth();
@@ -53,6 +56,16 @@ const SellerDashboard = () => {
   const location = useLocation();
   const { data: limits } = useSubscriptionLimits();
 
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data } = await supabase.rpc("is_admin", { _user_id: user.id });
+      return data || false;
+    },
+    enabled: !!user,
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -65,7 +78,6 @@ const SellerDashboard = () => {
     return <Navigate to="/" replace />;
   }
 
-  // Determine page title
   const getPageTitle = () => {
     const path = location.pathname;
     if (path.includes('/subscription')) return 'Subscription';
@@ -99,7 +111,15 @@ const SellerDashboard = () => {
               </nav>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <Link to="/apa/dashboard">
+                  <Button variant="ghost" size="sm">
+                    <Shield className="h-4 w-4 mr-2" />
+                    Admin Panel
+                  </Button>
+                </Link>
+              )}
               <Link to="/messages">
                 <Button variant="ghost" size="sm">Messages</Button>
               </Link>

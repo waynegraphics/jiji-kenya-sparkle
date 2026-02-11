@@ -8,7 +8,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { 
@@ -22,73 +21,26 @@ import {
   Plus,
   Users,
   LifeBuoy,
-  Bell
+  Bell,
+  Link2
 } from "lucide-react";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const menuItems = [
-  { 
-    title: "Overview", 
-    url: "/seller-dashboard", 
-    icon: LayoutDashboard,
-    description: "Dashboard overview"
-  },
-  { 
-    title: "Subscription", 
-    url: "/seller-dashboard/subscription", 
-    icon: Package,
-    description: "Manage your plan"
-  },
-  { 
-    title: "My Listings", 
-    url: "/seller-dashboard/listings", 
-    icon: FileText,
-    description: "View and manage ads"
-  },
-  { 
-    title: "Add-ons", 
-    url: "/seller-dashboard/addons", 
-    icon: Zap,
-    description: "Boost your listings"
-  },
-  { 
-    title: "Analytics", 
-    url: "/seller-dashboard/analytics", 
-    icon: BarChart3,
-    description: "View performance",
-    requiresAnalytics: true
-  },
-  { 
-    title: "Followers", 
-    url: "/seller-dashboard/followers", 
-    icon: Users,
-    description: "Your followers"
-  },
-  { 
-    title: "Support", 
-    url: "/seller-dashboard/support", 
-    icon: LifeBuoy,
-    description: "Get help"
-  },
-  { 
-    title: "Notifications", 
-    url: "/seller-dashboard/notifications", 
-    icon: Bell,
-    description: "View updates"
-  },
-  { 
-    title: "Billing", 
-    url: "/seller-dashboard/billing", 
-    icon: CreditCard,
-    description: "Payment history"
-  },
-  { 
-    title: "Settings", 
-    url: "/seller-dashboard/settings", 
-    icon: Settings,
-    description: "Account settings"
-  },
+  { title: "Overview", url: "/seller-dashboard", icon: LayoutDashboard, description: "Dashboard overview" },
+  { title: "Subscription", url: "/seller-dashboard/subscription", icon: Package, description: "Manage your plan" },
+  { title: "My Listings", url: "/seller-dashboard/listings", icon: FileText, description: "View and manage ads" },
+  { title: "Add-ons", url: "/seller-dashboard/addons", icon: Zap, description: "Boost your listings" },
+  { title: "Analytics", url: "/seller-dashboard/analytics", icon: BarChart3, description: "View performance", requiresAnalytics: true },
+  { title: "Followers", url: "/seller-dashboard/followers", icon: Users, description: "Your followers" },
+  { title: "Support", url: "/seller-dashboard/support", icon: LifeBuoy, description: "Get help" },
+  { title: "Notifications", url: "/seller-dashboard/notifications", icon: Bell, description: "View updates" },
+  { title: "Billing", url: "/seller-dashboard/billing", icon: CreditCard, description: "Payment history" },
+  { title: "Settings", url: "/seller-dashboard/settings", icon: Settings, description: "Account settings" },
 ];
 
 export function SellerSidebar() {
@@ -96,12 +48,20 @@ export function SellerSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const { data: limits } = useSubscriptionLimits();
+  const { user } = useAuth();
   const collapsed = state === "collapsed";
 
+  const { data: affiliate } = useQuery({
+    queryKey: ["my-affiliate-status", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("affiliates").select("id, status").eq("user_id", user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
   const isActive = (path: string) => {
-    if (path === "/seller-dashboard") {
-      return currentPath === path;
-    }
+    if (path === "/seller-dashboard") return currentPath === path;
     return currentPath.startsWith(path);
   };
 
@@ -138,24 +98,12 @@ export function SellerSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
-                // Skip analytics if not included in plan
-                if (item.requiresAnalytics && !limits?.analyticsAccess) {
-                  return null;
-                }
-
+                if (item.requiresAnalytics && !limits?.analyticsAccess) return null;
                 const active = isActive(item.url);
-
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={active}
-                      tooltip={collapsed ? item.title : undefined}
-                    >
-                      <Link 
-                        to={item.url} 
-                        className={`flex items-center gap-3 ${active ? "bg-primary/10 text-primary" : ""}`}
-                      >
+                    <SidebarMenuButton asChild isActive={active} tooltip={collapsed ? item.title : undefined}>
+                      <Link to={item.url} className={`flex items-center gap-3 ${active ? "bg-primary/10 text-primary" : ""}`}>
                         <item.icon className="h-4 w-4 flex-shrink-0" />
                         {!collapsed && <span>{item.title}</span>}
                       </Link>
@@ -166,6 +114,34 @@ export function SellerSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Affiliate CTA */}
+        {!collapsed && !affiliate && (
+          <div className="p-3">
+            <Link to="/affiliate/apply">
+              <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg p-3 border border-primary/20 hover:border-primary/40 transition-colors cursor-pointer">
+                <div className="flex items-center gap-2 mb-1">
+                  <Link2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Become an Affiliate</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Earn commissions by referring users</p>
+              </div>
+            </Link>
+          </div>
+        )}
+
+        {!collapsed && affiliate?.status === "approved" && (
+          <div className="p-3">
+            <Link to="/affiliate/dashboard">
+              <div className="bg-muted/50 rounded-lg p-3 border hover:border-primary/40 transition-colors cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <Link2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Affiliate Dashboard</span>
+                </div>
+              </div>
+            </Link>
+          </div>
+        )}
 
         {/* Upgrade CTA */}
         {!collapsed && !limits?.analyticsAccess && (

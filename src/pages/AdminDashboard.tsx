@@ -16,14 +16,18 @@ import AdminReports from "@/components/admin/AdminReports";
 import AdminMessaging from "@/components/admin/AdminMessaging";
 import AdminSettings from "@/components/admin/AdminSettings";
 import AdminVerifications from "@/components/admin/AdminVerifications";
+import AdminTeam from "@/components/admin/AdminTeam";
+import AdminAffiliates from "@/components/admin/AdminAffiliates";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Shield, Home } from "lucide-react";
+import { Shield, Home, Eye } from "lucide-react";
+import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 
 const AdminDashboard = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isSuperAdmin, isTeamMember, teamMember } = useIsSuperAdmin();
 
   // Check if user is admin
   const { data: isAdmin, isLoading } = useQuery({
@@ -45,7 +49,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!user || !isAdmin) {
+  if (!user || (!isAdmin && !isTeamMember)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -73,7 +77,16 @@ const AdminDashboard = () => {
     if (path.includes('/messaging')) return 'Messaging';
     if (path.includes('/settings')) return 'System Settings';
     if (path.includes('/verifications')) return 'Seller Verifications';
+    if (path.includes('/team')) return 'Team Management';
+    if (path.includes('/affiliates')) return 'Affiliates';
     return 'Overview';
+  };
+
+  // Check permissions for team members
+  const hasPermission = (permission: string): boolean => {
+    if (isSuperAdmin || isAdmin) return true;
+    if (!teamMember) return false;
+    return !!(teamMember.permissions as any)?.[permission];
   };
 
   return (
@@ -87,21 +100,25 @@ const AdminDashboard = () => {
             <div className="flex items-center gap-4">
               <SidebarTrigger />
               <nav className="flex items-center gap-2 text-sm">
-                <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
-                  <Home className="h-4 w-4" />
-                </Link>
-                <span className="text-muted-foreground">/</span>
                 <span className="text-muted-foreground">Admin</span>
                 <span className="text-muted-foreground">/</span>
                 <span className="font-medium">{getPageTitle()}</span>
               </nav>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {(isSuperAdmin || hasPermission("view_seller_dashboard")) && (
+                <Link to="/seller-dashboard">
+                  <Button variant="ghost" size="sm">
+                    <Eye className="h-4 w-4 mr-2" />
+                    View as Seller
+                  </Button>
+                </Link>
+              )}
               <Link to="/">
                 <Button variant="outline" size="sm">
                   <Home className="h-4 w-4 mr-2" />
-                  Back to Site
+                  View Site
                 </Button>
               </Link>
             </div>
@@ -112,16 +129,18 @@ const AdminDashboard = () => {
             <div className="max-w-7xl mx-auto">
               <Routes>
                 <Route index element={<AdminOverview />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="listings" element={<AdminListings />} />
+                {hasPermission("view_users") && <Route path="users" element={<AdminUsers />} />}
+                {hasPermission("view_listings") && <Route path="listings" element={<AdminListings />} />}
                 <Route path="categories" element={<AdminCategories />} />
                 <Route path="packages" element={<AdminPackages />} />
                 <Route path="addons" element={<AdminAddons />} />
-                <Route path="support/*" element={<AdminSupport />} />
-                <Route path="reports" element={<AdminReports />} />
+                {hasPermission("view_support") && <Route path="support/*" element={<AdminSupport />} />}
+                {hasPermission("view_reports") && <Route path="reports" element={<AdminReports />} />}
                 <Route path="messaging" element={<AdminMessaging />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="verifications" element={<AdminVerifications />} />
+                <Route path="team" element={<AdminTeam />} />
+                {hasPermission("view_affiliates") && <Route path="affiliates" element={<AdminAffiliates />} />}
               </Routes>
             </div>
           </main>

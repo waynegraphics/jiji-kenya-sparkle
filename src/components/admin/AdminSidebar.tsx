@@ -22,90 +22,54 @@ import {
   Flag,
   Settings,
   Shield,
-  ShieldCheck
+  ShieldCheck,
+  UsersRound,
+  Link2
 } from "lucide-react";
+import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 
-const menuItems = [
-  { 
-    title: "Overview", 
-    url: "/admin", 
-    icon: LayoutDashboard,
-    description: "Platform statistics"
-  },
-  { 
-    title: "User Management", 
-    url: "/admin/users", 
-    icon: Users,
-    description: "Manage all users"
-  },
-  { 
-    title: "Listings", 
-    url: "/admin/listings", 
-    icon: FileText,
-    description: "Manage listings"
-  },
-  { 
-    title: "Categories", 
-    url: "/admin/categories", 
-    icon: FolderTree,
-    description: "Category management"
-  },
-  { 
-    title: "Packages", 
-    url: "/admin/packages", 
-    icon: Package,
-    description: "Subscription plans"
-  },
-  { 
-    title: "Add-ons", 
-    url: "/admin/addons", 
-    icon: Puzzle,
-    description: "Manage add-ons"
-  },
-  { 
-    title: "Support", 
-    url: "/admin/support", 
-    icon: LifeBuoy,
-    description: "Support tickets"
-  },
-  { 
-    title: "Reports", 
-    url: "/admin/reports", 
-    icon: Flag,
-    description: "Moderation & reports"
-  },
-  { 
-    title: "Messaging", 
-    url: "/admin/messaging", 
-    icon: MessageSquare,
-    description: "System messaging"
-  },
-  { 
-    title: "Verifications", 
-    url: "/admin/verifications", 
-    icon: ShieldCheck,
-    description: "Seller verifications"
-  },
-  { 
-    title: "Settings", 
-    url: "/admin/settings", 
-    icon: Settings,
-    description: "System settings"
-  },
-];
-
-export function AdminSidebar() {
+const AdminSidebar = () => {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
+  const { isSuperAdmin, teamMember } = useIsSuperAdmin();
+
+  // Determine base path (supports both /admin and /apa/dashboard)
+  const basePath = currentPath.startsWith("/apa/dashboard") ? "/apa/dashboard" : "/admin";
+
+  const hasPermission = (permission: string): boolean => {
+    if (isSuperAdmin) return true;
+    if (!teamMember) return true; // fallback for admin role users without team_member record
+    return !!(teamMember.permissions as any)?.[permission];
+  };
+
+  const menuItems = [
+    { title: "Overview", url: basePath, icon: LayoutDashboard, permission: null },
+    { title: "User Management", url: `${basePath}/users`, icon: Users, permission: "view_users" },
+    { title: "Listings", url: `${basePath}/listings`, icon: FileText, permission: "view_listings" },
+    { title: "Categories", url: `${basePath}/categories`, icon: FolderTree, permission: null },
+    { title: "Packages", url: `${basePath}/packages`, icon: Package, permission: null },
+    { title: "Add-ons", url: `${basePath}/addons`, icon: Puzzle, permission: null },
+    { title: "Support", url: `${basePath}/support`, icon: LifeBuoy, permission: "view_support" },
+    { title: "Reports", url: `${basePath}/reports`, icon: Flag, permission: "view_reports" },
+    { title: "Messaging", url: `${basePath}/messaging`, icon: MessageSquare, permission: null },
+    { title: "Verifications", url: `${basePath}/verifications`, icon: ShieldCheck, permission: null },
+    { title: "Affiliates", url: `${basePath}/affiliates`, icon: Link2, permission: "view_affiliates" },
+    { title: "Team", url: `${basePath}/team`, icon: UsersRound, permission: "manage_team", superAdminOnly: true },
+    { title: "Settings", url: `${basePath}/settings`, icon: Settings, permission: "manage_settings" },
+  ];
 
   const isActive = (path: string) => {
-    if (path === "/admin") {
-      return currentPath === path;
-    }
+    if (path === basePath) return currentPath === path;
     return currentPath.startsWith(path);
   };
+
+  const visibleItems = menuItems.filter((item) => {
+    if (item.superAdminOnly && !isSuperAdmin) return false;
+    if (item.permission && !hasPermission(item.permission)) return false;
+    return true;
+  });
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
@@ -118,8 +82,10 @@ export function AdminSidebar() {
             </div>
             {!collapsed && (
               <div>
-                <h2 className="font-semibold text-sm">Admin Panel</h2>
-                <p className="text-xs text-muted-foreground">Super Admin</p>
+                <h2 className="font-semibold text-sm">APA Admin</h2>
+                <p className="text-xs text-muted-foreground">
+                  {isSuperAdmin ? "Super Admin" : teamMember?.designation ? teamMember.designation.charAt(0).toUpperCase() + teamMember.designation.slice(1) : "Admin"}
+                </p>
               </div>
             )}
           </div>
@@ -129,20 +95,12 @@ export function AdminSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {visibleItems.map((item) => {
                 const active = isActive(item.url);
-
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={active}
-                      tooltip={collapsed ? item.title : undefined}
-                    >
-                      <Link 
-                        to={item.url} 
-                        className={`flex items-center gap-3 ${active ? "bg-primary/10 text-primary" : ""}`}
-                      >
+                    <SidebarMenuButton asChild isActive={active} tooltip={collapsed ? item.title : undefined}>
+                      <Link to={item.url} className={`flex items-center gap-3 ${active ? "bg-primary/10 text-primary" : ""}`}>
                         <item.icon className="h-4 w-4 flex-shrink-0" />
                         {!collapsed && <span>{item.title}</span>}
                       </Link>
@@ -156,6 +114,6 @@ export function AdminSidebar() {
       </SidebarContent>
     </Sidebar>
   );
-}
+};
 
 export default AdminSidebar;
