@@ -149,33 +149,42 @@ export function SellerSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Affiliate CTA */}
-        {!collapsed && !affiliate && (
-          <div className="p-3">
-            <Link to="/affiliate/apply">
-              <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg p-3 border border-primary/20 hover:border-primary/40 transition-colors cursor-pointer">
-                <div className="flex items-center gap-2 mb-1">
-                  <Link2 className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">Become an Affiliate</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Earn commissions by referring users</p>
-              </div>
-            </Link>
-          </div>
-        )}
-
-        {!collapsed && affiliate?.status === "approved" && (
-          <div className="p-3">
-            <Link to="/affiliate/dashboard">
-              <div className="bg-muted/50 rounded-lg p-3 border hover:border-primary/40 transition-colors cursor-pointer">
-                <div className="flex items-center gap-2">
-                  <Link2 className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">Affiliate Dashboard</span>
-                </div>
-              </div>
-            </Link>
-          </div>
-        )}
+        {/* Affiliate Section - always visible */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Affiliate</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {!affiliate && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip={collapsed ? "Become Affiliate" : undefined}>
+                    <Link to="/affiliate/apply" className="flex items-center gap-3">
+                      <Link2 className="h-4 w-4" />
+                      {!collapsed && <span>Become an Affiliate</span>}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              {affiliate?.status === "pending" && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton disabled tooltip={collapsed ? "Application Pending" : undefined}>
+                    <Link2 className="h-4 w-4" />
+                    {!collapsed && <span className="text-muted-foreground">Application Pending</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+              {affiliate?.status === "approved" && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={currentPath.startsWith("/affiliate")} tooltip={collapsed ? "Affiliate Dashboard" : undefined}>
+                    <Link to="/affiliate/dashboard" className="flex items-center gap-3">
+                      <Link2 className="h-4 w-4" />
+                      {!collapsed && <span>Affiliate Dashboard</span>}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
     </Sidebar>
   );

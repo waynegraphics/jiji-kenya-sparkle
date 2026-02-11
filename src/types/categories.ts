@@ -70,9 +70,12 @@ export interface BaseListing {
   expires_at: string | null;
   created_at: string;
   updated_at: string;
+  rejection_note?: string | null;
+  previous_data?: Record<string, unknown> | null;
+  edited_fields?: string[] | null;
   // Joined data
-  main_category?: MainCategory;
-  sub_category?: SubCategory;
+  main_category?: Partial<MainCategory>;
+  sub_category?: Partial<SubCategory>;
 }
 
 // Vehicle Listing specific fields

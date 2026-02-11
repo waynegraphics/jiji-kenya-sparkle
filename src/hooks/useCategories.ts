@@ -405,7 +405,7 @@ export const useFeaturedListings = (limit = 8) => {
         .limit(limit);
       
       if (error) throw error;
-      return data as BaseListing[];
+      return data as unknown as BaseListing[];
     },
   });
 };
@@ -427,7 +427,7 @@ export const useRecentListings = (limit = 12) => {
         .limit(limit);
       
       if (error) throw error;
-      return data as BaseListing[];
+      return data as unknown as BaseListing[];
     },
   });
 };
