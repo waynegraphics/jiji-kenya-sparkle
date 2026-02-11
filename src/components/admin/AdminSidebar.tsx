@@ -13,7 +13,7 @@ import {
 import { 
   LayoutDashboard, Users, FileText, FolderTree, Package, Puzzle,
   MessageSquare, LifeBuoy, Flag, Settings, Shield, ShieldCheck,
-  UsersRound, Link2, Activity
+  UsersRound, Link2, Activity, ListChecks
 } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 
@@ -47,6 +47,7 @@ const AdminSidebar = () => {
     { title: "Affiliates", url: `${basePath}/affiliates`, icon: Link2, permission: "view_affiliates" },
     { title: "Team", url: `${basePath}/team`, icon: UsersRound, permission: "manage_team", superAdminOnly: true },
     { title: "Diagnostics", url: `${basePath}/diagnostics`, icon: Activity, permission: "manage_settings" },
+    { title: "Custom Values", url: `${basePath}/custom-values`, icon: ListChecks, permission: "manage_settings" },
     { title: "Settings", url: `${basePath}/settings`, icon: Settings, permission: "manage_settings" },
   ];
 

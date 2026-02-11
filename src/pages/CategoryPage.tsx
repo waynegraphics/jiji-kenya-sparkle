@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import LocationSelector from "@/components/LocationSelector";
 import { useParams, Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import Header from "@/components/Header";
@@ -51,10 +52,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
   "repair-construction": <Hammer className="h-5 w-5" />,
 };
 
-const locations = [
-  "All Locations", "Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret",
-  "Thika", "Malindi", "Kitale", "Garissa", "Nyeri",
-];
+
 
 const sortOptions = [
   { value: "newest", label: "Newest First" },
@@ -228,10 +226,14 @@ const CategoryPage = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-sm">Location</Label>
-                <Select value={filters.location} onValueChange={(value) => setFilters(prev => ({ ...prev, location: value, page: 1 }))}>
-                  <SelectTrigger className="h-9"><SelectValue placeholder="All Locations" /></SelectTrigger>
-                  <SelectContent>{locations.map((loc) => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}</SelectContent>
-                </Select>
+                <LocationSelector
+                  onLocationChange={(county, town) => {
+                    const loc = town ? `${county}, ${town}` : county;
+                    setFilters(prev => ({ ...prev, location: loc, page: 1 }));
+                  }}
+                  showLabel={false}
+                  compact
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm">Sort By</Label>

@@ -506,6 +506,42 @@ export type Database = {
           },
         ]
       }
+      custom_field_values: {
+        Row: {
+          category_slug: string
+          created_at: string
+          field_name: string
+          field_value: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_by: string
+        }
+        Insert: {
+          category_slug: string
+          created_at?: string
+          field_name: string
+          field_value: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_by: string
+        }
+        Update: {
+          category_slug?: string
+          created_at?: string
+          field_name?: string
+          field_value?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_by?: string
+        }
+        Relationships: []
+      }
       electronics_listings: {
         Row: {
           accessories_included: string[] | null
