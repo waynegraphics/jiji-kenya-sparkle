@@ -21,7 +21,8 @@ import {
   LifeBuoy,
   Flag,
   Settings,
-  Shield
+  Shield,
+  ShieldCheck
 } from "lucide-react";
 
 const menuItems = [
@@ -78,6 +79,12 @@ const menuItems = [
     url: "/admin/messaging", 
     icon: MessageSquare,
     description: "System messaging"
+  },
+  { 
+    title: "Verifications", 
+    url: "/admin/verifications", 
+    icon: ShieldCheck,
+    description: "Seller verifications"
   },
   { 
     title: "Settings", 
