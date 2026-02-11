@@ -39,27 +39,33 @@ interface SubCategory {
   name: string;
   slug: string;
   description: string | null;
+  icon: string | null;
   is_active: boolean;
   display_order: number;
+  seo_title: string | null;
+  seo_description: string | null;
 }
+
+const emptyForm = {
+  name: "",
+  slug: "",
+  description: "",
+  icon: "",
+  seo_title: "",
+  seo_description: ""
+};
 
 const AdminCategories = () => {
   const [openCategories, setOpenCategories] = useState<string[]>([]);
   const [isAddMainOpen, setIsAddMainOpen] = useState(false);
   const [isAddSubOpen, setIsAddSubOpen] = useState(false);
+  const [isEditMainOpen, setIsEditMainOpen] = useState(false);
+  const [isEditSubOpen, setIsEditSubOpen] = useState(false);
   const [selectedMainCategory, setSelectedMainCategory] = useState<string | null>(null);
-  const [editingCategory, setEditingCategory] = useState<MainCategory | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    slug: "",
-    description: "",
-    icon: "",
-    seo_title: "",
-    seo_description: ""
-  });
+  const [editingSubId, setEditingSubId] = useState<string | null>(null);
+  const [formData, setFormData] = useState(emptyForm);
   const queryClient = useQueryClient();
 
-  // Fetch main categories
   const { data: mainCategories, isLoading } = useQuery({
     queryKey: ["admin-main-categories"],
     queryFn: async () => {
@@ -72,7 +78,6 @@ const AdminCategories = () => {
     }
   });
 
-  // Fetch sub categories
   const { data: subCategories } = useQuery({
     queryKey: ["admin-sub-categories"],
     queryFn: async () => {
@@ -85,102 +90,186 @@ const AdminCategories = () => {
     }
   });
 
-  // Add main category
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-main-categories"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-sub-categories"] });
+  };
+
   const addMainCategory = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const { error } = await supabase
-        .from("main_categories")
-        .insert({
-          name: data.name,
-          slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-'),
-          description: data.description || null,
-          icon: data.icon || null,
-          seo_title: data.seo_title || null,
-          seo_description: data.seo_description || null,
-          display_order: (mainCategories?.length || 0) + 1
-        });
+      const { error } = await supabase.from("main_categories").insert({
+        name: data.name,
+        slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-'),
+        description: data.description || null,
+        icon: data.icon || null,
+        seo_title: data.seo_title || null,
+        seo_description: data.seo_description || null,
+        display_order: (mainCategories?.length || 0) + 1
+      });
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-main-categories"] });
+      invalidateAll();
       setIsAddMainOpen(false);
-      setFormData({ name: "", slug: "", description: "", icon: "", seo_title: "", seo_description: "" });
+      setFormData(emptyForm);
       toast.success("Category created");
     },
-    onError: () => {
-      toast.error("Failed to create category");
-    }
+    onError: () => toast.error("Failed to create category")
   });
 
-  // Add sub category
-  const addSubCategory = useMutation({
-    mutationFn: async ({ mainCategoryId, name, slug }: { mainCategoryId: string; name: string; slug: string }) => {
-      const { error } = await supabase
-        .from("sub_categories")
-        .insert({
-          main_category_id: mainCategoryId,
-          name,
-          slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
-          display_order: subCategories?.filter(s => s.main_category_id === mainCategoryId).length || 0
-        });
+  const updateMainCategory = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
+      const { error } = await supabase.from("main_categories").update({
+        name: data.name,
+        slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-'),
+        description: data.description || null,
+        icon: data.icon || null,
+        seo_title: data.seo_title || null,
+        seo_description: data.seo_description || null,
+      }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-sub-categories"] });
-      setIsAddSubOpen(false);
+      invalidateAll();
+      setIsEditMainOpen(false);
       setSelectedMainCategory(null);
-      setFormData({ name: "", slug: "", description: "", icon: "", seo_title: "", seo_description: "" });
-      toast.success("Sub-category created");
+      setFormData(emptyForm);
+      toast.success("Category updated");
     },
-    onError: () => {
-      toast.error("Failed to create sub-category");
-    }
+    onError: () => toast.error("Failed to update category")
   });
 
-  // Toggle category active status
+  const addSubCategory = useMutation({
+    mutationFn: async ({ mainCategoryId, data }: { mainCategoryId: string; data: typeof formData }) => {
+      const { error } = await supabase.from("sub_categories").insert({
+        main_category_id: mainCategoryId,
+        name: data.name,
+        slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-'),
+        description: data.description || null,
+        icon: data.icon || null,
+        seo_title: data.seo_title || null,
+        seo_description: data.seo_description || null,
+        display_order: subCategories?.filter(s => s.main_category_id === mainCategoryId).length || 0
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateAll();
+      setIsAddSubOpen(false);
+      setSelectedMainCategory(null);
+      setFormData(emptyForm);
+      toast.success("Sub-category created");
+    },
+    onError: () => toast.error("Failed to create sub-category")
+  });
+
+  const updateSubCategory = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
+      const { error } = await supabase.from("sub_categories").update({
+        name: data.name,
+        slug: data.slug || data.name.toLowerCase().replace(/\s+/g, '-'),
+        description: data.description || null,
+        icon: data.icon || null,
+        seo_title: data.seo_title || null,
+        seo_description: data.seo_description || null,
+      }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      invalidateAll();
+      setIsEditSubOpen(false);
+      setEditingSubId(null);
+      setFormData(emptyForm);
+      toast.success("Sub-category updated");
+    },
+    onError: () => toast.error("Failed to update sub-category")
+  });
+
   const toggleActive = useMutation({
     mutationFn: async ({ id, isActive, isMain }: { id: string; isActive: boolean; isMain: boolean }) => {
       const table = isMain ? "main_categories" : "sub_categories";
-      const { error } = await supabase
-        .from(table)
-        .update({ is_active: !isActive })
-        .eq("id", id);
+      const { error } = await supabase.from(table).update({ is_active: !isActive }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-main-categories"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-sub-categories"] });
+      invalidateAll();
       toast.success("Status updated");
     }
   });
 
-  // Delete category
   const deleteCategory = useMutation({
     mutationFn: async ({ id, isMain }: { id: string; isMain: boolean }) => {
       const table = isMain ? "main_categories" : "sub_categories";
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from(table).delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-main-categories"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-sub-categories"] });
+      invalidateAll();
       toast.success("Category deleted");
     },
-    onError: () => {
-      toast.error("Failed to delete category");
-    }
+    onError: () => toast.error("Failed to delete category")
   });
 
   const toggleCategory = (id: string) => {
-    setOpenCategories(prev => 
-      prev.includes(id) 
-        ? prev.filter(c => c !== id) 
-        : [...prev, id]
-    );
+    setOpenCategories(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
   };
+
+  const openEditMain = (cat: MainCategory) => {
+    setSelectedMainCategory(cat.id);
+    setFormData({
+      name: cat.name,
+      slug: cat.slug,
+      description: cat.description || "",
+      icon: cat.icon || "",
+      seo_title: cat.seo_title || "",
+      seo_description: cat.seo_description || "",
+    });
+    setIsEditMainOpen(true);
+  };
+
+  const openEditSub = (sub: SubCategory) => {
+    setEditingSubId(sub.id);
+    setFormData({
+      name: sub.name,
+      slug: sub.slug,
+      description: sub.description || "",
+      icon: sub.icon || "",
+      seo_title: sub.seo_title || "",
+      seo_description: sub.seo_description || "",
+    });
+    setIsEditSubOpen(true);
+  };
+
+  const CategoryFormFields = () => (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Name *</Label>
+          <Input value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="e.g., Vehicles" />
+        </div>
+        <div className="space-y-2">
+          <Label>Slug</Label>
+          <Input value={formData.slug} onChange={e => setFormData(p => ({ ...p, slug: e.target.value }))} placeholder="vehicles" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>Description</Label>
+        <Textarea value={formData.description} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} placeholder="Category description..." />
+      </div>
+      <div className="space-y-2">
+        <Label>Icon (Lucide icon name)</Label>
+        <Input value={formData.icon} onChange={e => setFormData(p => ({ ...p, icon: e.target.value }))} placeholder="car" />
+      </div>
+      <div className="space-y-2">
+        <Label>SEO Title</Label>
+        <Input value={formData.seo_title} onChange={e => setFormData(p => ({ ...p, seo_title: e.target.value }))} placeholder="Buy & Sell Vehicles in Kenya" />
+      </div>
+      <div className="space-y-2">
+        <Label>SEO Description</Label>
+        <Textarea value={formData.seo_description} onChange={e => setFormData(p => ({ ...p, seo_description: e.target.value }))} placeholder="Meta description for search engines..." />
+      </div>
+    </div>
+  );
 
   if (isLoading) {
     return (
@@ -193,99 +282,33 @@ const AdminCategories = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Category Management</h2>
-          <p className="text-muted-foreground">
-            Manage main categories and sub-categories
-          </p>
+          <p className="text-muted-foreground">Manage main categories and sub-categories</p>
         </div>
-        <Dialog open={isAddMainOpen} onOpenChange={setIsAddMainOpen}>
+        <Dialog open={isAddMainOpen} onOpenChange={(v) => { setIsAddMainOpen(v); if (!v) setFormData(emptyForm); }}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Category
-            </Button>
+            <Button><Plus className="h-4 w-4 mr-2" />Add Category</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add Main Category</DialogTitle>
               <DialogDescription>Create a new main category for listings</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Name *</Label>
-                  <Input 
-                    value={formData.name}
-                    onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
-                    placeholder="e.g., Vehicles"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Slug</Label>
-                  <Input 
-                    value={formData.slug}
-                    onChange={e => setFormData(p => ({ ...p, slug: e.target.value }))}
-                    placeholder="vehicles"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea 
-                  value={formData.description}
-                  onChange={e => setFormData(p => ({ ...p, description: e.target.value }))}
-                  placeholder="Category description..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Icon (Lucide icon name)</Label>
-                <Input 
-                  value={formData.icon}
-                  onChange={e => setFormData(p => ({ ...p, icon: e.target.value }))}
-                  placeholder="car"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>SEO Title</Label>
-                <Input 
-                  value={formData.seo_title}
-                  onChange={e => setFormData(p => ({ ...p, seo_title: e.target.value }))}
-                  placeholder="Buy & Sell Vehicles in Kenya"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>SEO Description</Label>
-                <Textarea 
-                  value={formData.seo_description}
-                  onChange={e => setFormData(p => ({ ...p, seo_description: e.target.value }))}
-                  placeholder="Meta description for search engines..."
-                />
-              </div>
-            </div>
+            <CategoryFormFields />
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsAddMainOpen(false)}>Cancel</Button>
-              <Button 
-                onClick={() => addMainCategory.mutate(formData)}
-                disabled={!formData.name}
-              >
-                Create Category
-              </Button>
+              <Button onClick={() => addMainCategory.mutate(formData)} disabled={!formData.name}>Create Category</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Categories List */}
       <div className="space-y-4">
         {mainCategories?.map(category => (
           <Card key={category.id}>
-            <Collapsible 
-              open={openCategories.includes(category.id)}
-              onOpenChange={() => toggleCategory(category.id)}
-            >
+            <Collapsible open={openCategories.includes(category.id)} onOpenChange={() => toggleCategory(category.id)}>
               <CollapsibleTrigger asChild>
                 <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                   <div className="flex items-center justify-between">
@@ -310,50 +333,25 @@ const AdminCategories = () => {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0">
-                  {/* Category Actions */}
-                  <div className="flex items-center gap-4 mb-4 pb-4 border-b">
+                  <div className="flex items-center gap-4 mb-4 pb-4 border-b flex-wrap">
                     <div className="flex items-center gap-2">
-                      <Switch 
+                      <Switch
                         checked={category.is_active || false}
-                        onCheckedChange={() => toggleActive.mutate({ 
-                          id: category.id, 
-                          isActive: category.is_active || false,
-                          isMain: true 
-                        })}
+                        onCheckedChange={() => toggleActive.mutate({ id: category.id, isActive: category.is_active || false, isMain: true })}
                       />
                       <Label>Active</Label>
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
+                    <Button variant="outline" size="sm" onClick={() => openEditMain(category)}>
+                      <Edit className="h-4 w-4 mr-2" />Edit
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setSelectedMainCategory(category.id);
-                        setIsAddSubOpen(true);
-                      }}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Sub-category
+                    <Button variant="outline" size="sm" onClick={() => { setSelectedMainCategory(category.id); setFormData(emptyForm); setIsAddSubOpen(true); }}>
+                      <Plus className="h-4 w-4 mr-2" />Add Sub-category
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-destructive"
-                      onClick={() => {
-                        if (confirm("Delete this category?")) {
-                          deleteCategory.mutate({ id: category.id, isMain: true });
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
+                    <Button variant="outline" size="sm" className="text-destructive" onClick={() => { if (confirm("Delete this category and all its sub-categories?")) deleteCategory.mutate({ id: category.id, isMain: true }); }}>
+                      <Trash2 className="h-4 w-4 mr-2" />Delete
                     </Button>
                   </div>
 
-                  {/* Sub-categories */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Sub-categories</Label>
                     {subCategories?.filter(s => s.main_category_id === category.id).length === 0 ? (
@@ -361,10 +359,7 @@ const AdminCategories = () => {
                     ) : (
                       <div className="space-y-2">
                         {subCategories?.filter(s => s.main_category_id === category.id).map(sub => (
-                          <div 
-                            key={sub.id}
-                            className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
-                          >
+                          <div key={sub.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
                             <div className="flex items-center gap-3">
                               <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
                               <div>
@@ -373,26 +368,14 @@ const AdminCategories = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Switch 
+                              <Switch
                                 checked={sub.is_active || false}
-                                onCheckedChange={() => toggleActive.mutate({ 
-                                  id: sub.id, 
-                                  isActive: sub.is_active || false,
-                                  isMain: false 
-                                })}
+                                onCheckedChange={() => toggleActive.mutate({ id: sub.id, isActive: sub.is_active || false, isMain: false })}
                               />
-                              <Button variant="ghost" size="icon">
+                              <Button variant="ghost" size="icon" onClick={() => openEditSub(sub)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon"
-                                onClick={() => {
-                                  if (confirm("Delete this sub-category?")) {
-                                    deleteCategory.mutate({ id: sub.id, isMain: false });
-                                  }
-                                }}
-                              >
+                              <Button variant="ghost" size="icon" onClick={() => { if (confirm("Delete this sub-category?")) deleteCategory.mutate({ id: sub.id, isMain: false }); }}>
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             </div>
@@ -409,45 +392,51 @@ const AdminCategories = () => {
       </div>
 
       {/* Add Sub-category Dialog */}
-      <Dialog open={isAddSubOpen} onOpenChange={setIsAddSubOpen}>
+      <Dialog open={isAddSubOpen} onOpenChange={(v) => { setIsAddSubOpen(v); if (!v) setFormData(emptyForm); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Sub-category</DialogTitle>
-            <DialogDescription>
-              Add a new sub-category to {mainCategories?.find(c => c.id === selectedMainCategory)?.name}
-            </DialogDescription>
+            <DialogDescription>Add to {mainCategories?.find(c => c.id === selectedMainCategory)?.name}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Name *</Label>
-                <Input 
-                  value={formData.name}
-                  onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
-                  placeholder="e.g., Sedans"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Slug</Label>
-                <Input 
-                  value={formData.slug}
-                  onChange={e => setFormData(p => ({ ...p, slug: e.target.value }))}
-                  placeholder="sedans"
-                />
-              </div>
-            </div>
-          </div>
+          <CategoryFormFields />
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddSubOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={() => addSubCategory.mutate({
-                mainCategoryId: selectedMainCategory!,
-                name: formData.name,
-                slug: formData.slug
-              })}
-              disabled={!formData.name || !selectedMainCategory}
-            >
+            <Button onClick={() => addSubCategory.mutate({ mainCategoryId: selectedMainCategory!, data: formData })} disabled={!formData.name || !selectedMainCategory}>
               Create Sub-category
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Main Category Dialog */}
+      <Dialog open={isEditMainOpen} onOpenChange={(v) => { setIsEditMainOpen(v); if (!v) { setFormData(emptyForm); setSelectedMainCategory(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+            <DialogDescription>Update category details</DialogDescription>
+          </DialogHeader>
+          <CategoryFormFields />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditMainOpen(false)}>Cancel</Button>
+            <Button onClick={() => updateMainCategory.mutate({ id: selectedMainCategory!, data: formData })} disabled={!formData.name}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Sub-category Dialog */}
+      <Dialog open={isEditSubOpen} onOpenChange={(v) => { setIsEditSubOpen(v); if (!v) { setFormData(emptyForm); setEditingSubId(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Sub-category</DialogTitle>
+            <DialogDescription>Update sub-category details</DialogDescription>
+          </DialogHeader>
+          <CategoryFormFields />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditSubOpen(false)}>Cancel</Button>
+            <Button onClick={() => updateSubCategory.mutate({ id: editingSubId!, data: formData })} disabled={!formData.name}>
+              Save Changes
             </Button>
           </DialogFooter>
         </DialogContent>

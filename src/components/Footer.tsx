@@ -1,4 +1,6 @@
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
+import logo from "@/assets/logo.png";
 
 const Footer = () => {
   return (
@@ -7,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           {/* About */}
           <div>
-            <h3 className="text-lg font-bold text-card mb-4">About Jiji</h3>
+            <h3 className="text-lg font-bold text-card mb-4">About APA Bazaar</h3>
             <ul className="space-y-2 text-sm text-muted">
               <li><a href="#" className="hover:text-card transition-colors">About Us</a></li>
               <li><a href="#" className="hover:text-card transition-colors">Careers</a></li>
@@ -21,9 +23,10 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-bold text-card mb-4">Support</h3>
             <ul className="space-y-2 text-sm text-muted">
-              <li><a href="#" className="hover:text-card transition-colors">Safety Tips</a></li>
+              <li><Link to="/safety-tips" className="hover:text-card transition-colors">Safety Tips</Link></li>
               <li><a href="#" className="hover:text-card transition-colors">Contact Us</a></li>
               <li><a href="#" className="hover:text-card transition-colors">FAQ</a></li>
+              <li><Link to="/verified-sellers" className="hover:text-card transition-colors">Verified Sellers</Link></li>
               <li><a href="#" className="hover:text-card transition-colors">Sitemap</a></li>
             </ul>
           </div>
@@ -50,7 +53,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4" />
-                <span>support@jiji.co.ke</span>
+                <span>support@apabazaar.co.ke</span>
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 mt-0.5" />
@@ -58,7 +61,6 @@ const Footer = () => {
               </li>
             </ul>
             
-            {/* Social Links */}
             <div className="flex items-center gap-3 mt-4">
               <a href="#" className="w-9 h-9 rounded-full bg-card/10 flex items-center justify-center hover:bg-primary transition-colors">
                 <Facebook className="h-4 w-4" />
@@ -79,11 +81,9 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="border-t border-card/10 pt-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-2xl font-extrabold text-card">
-              jiji<span className="text-primary text-sm ml-1">.co.ke</span>
-            </div>
+            <img src={logo} alt="APA Bazaar" className="h-8 w-auto" />
             <p className="text-sm text-muted">
-              © 2025 Jiji Kenya. All rights reserved.
+              © 2026 APA Bazaar Limited. All rights reserved.
             </p>
           </div>
         </div>
