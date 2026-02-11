@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import Pagination from "@/components/Pagination";
+import CategoryQuickFilters from "@/components/CategoryQuickFilters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,7 +26,7 @@ import {
 } from "@/hooks/useCategories";
 import {
   Car, Home, Briefcase, Smartphone, Monitor, Shirt, Sofa,
-  Dog, Baby, Heart, Wrench, Tractor, Gamepad, Hammer, Grid, Filter, X, ChevronRight
+  Dog, Baby, Heart, Wrench, Tractor, Gamepad, Hammer, Grid, Filter, X, ChevronRight, Search, RotateCcw
 } from "lucide-react";
 import VehicleFilters from "@/components/filters/VehicleFilters";
 import PropertyFilters from "@/components/filters/PropertyFilters";
@@ -72,6 +73,7 @@ const CategoryPage = () => {
     location: "",
     sortBy: "newest" as "newest" | "oldest" | "price_asc" | "price_desc",
     page: 1,
+    searchQuery: "",
   });
   const [categoryFilters, setCategoryFilters] = useState<Record<string, string>>({});
   const [showFilters, setShowFilters] = useState(false);
@@ -81,7 +83,7 @@ const CategoryPage = () => {
   const { data: subCategory } = useSubCategoryBySlug(categorySlug, subCategorySlug);
   const { data: subCategories } = useSubCategories(mainCategory?.id);
 
-  // Build filter params
+  // Build filter params including category-specific filters
   const filterParams = useMemo(() => ({
     minPrice: filters.minPrice ? parseFloat(filters.minPrice) : undefined,
     maxPrice: filters.maxPrice ? parseFloat(filters.maxPrice) : undefined,
@@ -89,7 +91,9 @@ const CategoryPage = () => {
     sortBy: filters.sortBy,
     page: filters.page,
     limit: 20,
-  }), [filters]);
+    searchQuery: filters.searchQuery || undefined,
+    ...categoryFilters,
+  }), [filters, categoryFilters]);
 
   // Fetch listings
   const { data: listingsData, isLoading: listingsLoading } = useListingsByCategory(
@@ -114,11 +118,12 @@ const CategoryPage = () => {
       location: "",
       sortBy: "newest",
       page: 1,
+      searchQuery: "",
     });
     setCategoryFilters({});
   };
 
-  const hasActiveFilters = filters.minPrice || filters.maxPrice || filters.location || Object.values(categoryFilters).some(v => v && v !== "Any");
+  const hasActiveFilters = filters.minPrice || filters.maxPrice || filters.location || filters.searchQuery || Object.values(categoryFilters).some(v => v && v !== "Any");
 
   // Render category-specific filters
   const renderCategoryFilters = () => {
@@ -206,102 +211,99 @@ const CategoryPage = () => {
           </p>
         </div>
 
-        {/* Sub-Categories (only show if viewing main category) */}
-        {!subCategorySlug && subCategories && subCategories.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">Browse by Sub-Category</h2>
-            <div className="flex flex-wrap gap-2">
-              <Link to={`/category/${categorySlug}`}>
-                <Badge variant="outline" className={!subCategorySlug ? "bg-primary text-primary-foreground" : "hover:bg-muted"}>
-                  All
-                </Badge>
-              </Link>
-              {subCategories.map((sub) => (
-                <Link key={sub.id} to={`/category/${categorySlug}/${sub.slug}`}>
-                  <Badge variant="outline" className="hover:bg-muted cursor-pointer">
-                    {sub.name}
-                  </Badge>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Sub-Category Quick Filters (icon grid like Jiji) */}
+        <CategoryQuickFilters categorySlug={categorySlug} currentSubSlug={subCategorySlug} />
 
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Filters Sidebar */}
-          <aside className={`lg:w-64 ${showFilters ? "block" : "hidden lg:block"}`}>
-            <div className="bg-card rounded-xl p-4 shadow-card sticky top-4">
-              <div className="flex items-center justify-between mb-4">
+          <aside className={`lg:w-64 shrink-0 ${showFilters ? "block" : "hidden lg:block"}`}>
+            <div className="bg-card rounded-xl p-4 shadow-card sticky top-4 space-y-4">
+              <div className="flex items-center justify-between">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Filter className="h-4 w-4" />
                   Filters
                 </h3>
                 {hasActiveFilters && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters}>
-                    Clear
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs">
+                    <RotateCcw className="h-3 w-3 mr-1" />
+                    Clear All
                   </Button>
                 )}
               </div>
 
-              <div className="space-y-4">
-                {/* Price Range */}
-                <div className="space-y-2">
-                  <Label>Price Range (KES)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="number"
-                      placeholder="Min"
-                      value={filters.minPrice}
-                      onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value, page: 1 }))}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Max"
-                      value={filters.maxPrice}
-                      onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value, page: 1 }))}
-                    />
-                  </div>
+              {/* Search within category */}
+              <div className="space-y-2">
+                <Label className="text-sm">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search listings..."
+                    value={filters.searchQuery}
+                    onChange={(e) => setFilters(prev => ({ ...prev, searchQuery: e.target.value, page: 1 }))}
+                    className="pl-8 h-9"
+                  />
                 </div>
-
-                {/* Location */}
-                <div className="space-y-2">
-                  <Label>Location</Label>
-                  <Select
-                    value={filters.location}
-                    onValueChange={(value) => setFilters(prev => ({ ...prev, location: value, page: 1 }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Locations" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map((loc) => (
-                        <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Sort */}
-                <div className="space-y-2">
-                  <Label>Sort By</Label>
-                  <Select
-                    value={filters.sortBy}
-                    onValueChange={(value) => setFilters(prev => ({ ...prev, sortBy: value as typeof filters.sortBy, page: 1 }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sortOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Category-Specific Filters */}
-                {renderCategoryFilters()}
               </div>
+
+              {/* Price Range */}
+              <div className="space-y-2">
+                <Label className="text-sm">Price Range (KES)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    className="h-9"
+                    value={filters.minPrice}
+                    onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value, page: 1 }))}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    className="h-9"
+                    value={filters.maxPrice}
+                    onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value, page: 1 }))}
+                  />
+                </div>
+              </div>
+
+              {/* Location */}
+              <div className="space-y-2">
+                <Label className="text-sm">Location</Label>
+                <Select
+                  value={filters.location}
+                  onValueChange={(value) => setFilters(prev => ({ ...prev, location: value, page: 1 }))}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="All Locations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map((loc) => (
+                      <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sort */}
+              <div className="space-y-2">
+                <Label className="text-sm">Sort By</Label>
+                <Select
+                  value={filters.sortBy}
+                  onValueChange={(value) => setFilters(prev => ({ ...prev, sortBy: value as typeof filters.sortBy, page: 1 }))}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Category-Specific Filters */}
+              {renderCategoryFilters()}
             </div>
           </aside>
 
@@ -317,6 +319,11 @@ const CategoryPage = () => {
                 <Filter className="h-4 w-4 mr-2" />
                 {showFilters ? "Hide Filters" : "Show Filters"}
               </Button>
+              {hasActiveFilters && (
+                <Button variant="outline" size="icon" onClick={clearFilters}>
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              )}
             </div>
 
             {/* Results Count */}

@@ -8,31 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  Shield, 
-  ShieldOff, 
-  Eye, 
-  Mail,
-  Ban,
-  CheckCircle,
-  AlertTriangle,
-  FileText,
-  MessageSquare
+  Search, Filter, MoreVertical, Shield, ShieldOff, Eye, Mail,
+  Ban, CheckCircle, AlertTriangle, FileText, MessageSquare, Package
 } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 interface UserProfile {
@@ -52,6 +39,8 @@ const AdminUsers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [assignPackageUser, setAssignPackageUser] = useState<UserProfile | null>(null);
+  const [selectedPackageId, setSelectedPackageId] = useState("");
   const queryClient = useQueryClient();
 
   // Fetch users
@@ -87,7 +76,6 @@ const AdminUsers = () => {
         .from("base_listings")
         .select("user_id");
       if (error) throw error;
-      
       const counts: Record<string, number> = {};
       data?.forEach(listing => {
         counts[listing.user_id] = (counts[listing.user_id] || 0) + 1;
@@ -109,6 +97,62 @@ const AdminUsers = () => {
     }
   });
 
+  // Fetch available packages for assignment
+  const { data: packages } = useQuery({
+    queryKey: ["admin-available-packages"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("subscription_packages")
+        .select("*")
+        .eq("is_active", true)
+        .order("display_order");
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Assign package mutation
+  const assignPackage = useMutation({
+    mutationFn: async ({ userId, packageId }: { userId: string; packageId: string }) => {
+      const pkg = packages?.find(p => p.id === packageId);
+      if (!pkg) throw new Error("Package not found");
+
+      // Deactivate any existing active subscriptions
+      await supabase
+        .from("seller_subscriptions")
+        .update({ status: "cancelled" as any })
+        .eq("user_id", userId)
+        .eq("status", "active");
+
+      // Create new subscription
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + pkg.duration_days * 24 * 60 * 60 * 1000);
+      
+      const { error } = await supabase
+        .from("seller_subscriptions")
+        .insert({
+          user_id: userId,
+          package_id: packageId,
+          status: "active" as any,
+          payment_status: "completed" as any,
+          starts_at: now.toISOString(),
+          expires_at: expiresAt.toISOString(),
+          ads_used: 0,
+          payment_reference: "admin_assigned",
+        });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-user-subscriptions"] });
+      toast.success("Package assigned successfully");
+      setAssignPackageUser(null);
+      setSelectedPackageId("");
+    },
+    onError: (err: Error) => {
+      toast.error("Failed to assign package: " + err.message);
+    }
+  });
+
   // Toggle verification
   const toggleVerification = useMutation({
     mutationFn: async ({ userId, isVerified }: { userId: string; isVerified: boolean }) => {
@@ -127,25 +171,21 @@ const AdminUsers = () => {
     }
   });
 
-  // Get user role
   const getUserRole = (userId: string) => {
     const role = userRoles?.find(r => r.user_id === userId);
     return role?.role || "user";
   };
 
-  // Get user subscription
   const getUserSubscription = (userId: string) => {
     const sub = userSubscriptions?.find(s => s.user_id === userId);
     return sub?.subscription_packages?.name || null;
   };
 
-  // Filter users
   const filteredUsers = users?.filter(user => {
     const matchesSearch = 
       user.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.phone?.includes(searchQuery);
-    
     if (roleFilter === "all") return matchesSearch;
     return matchesSearch && getUserRole(user.user_id) === roleFilter;
   });
@@ -227,9 +267,7 @@ const AdminUsers = () => {
                       <div>
                         <div className="font-medium flex items-center gap-2">
                           {user.display_name}
-                          {user.is_verified && (
-                            <CheckCircle className="h-4 w-4 text-primary" />
-                          )}
+                          {user.is_verified && <CheckCircle className="h-4 w-4 text-primary" />}
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {user.location || "No location"}
@@ -279,6 +317,10 @@ const AdminUsers = () => {
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setAssignPackageUser(user)}>
+                          <Package className="h-4 w-4 mr-2" />
+                          Assign Package
+                        </DropdownMenuItem>
                         <DropdownMenuItem>
                           <Mail className="h-4 w-4 mr-2" />
                           Send Message
@@ -325,14 +367,52 @@ const AdminUsers = () => {
         </CardContent>
       </Card>
 
+      {/* Assign Package Dialog */}
+      <Dialog open={!!assignPackageUser} onOpenChange={() => { setAssignPackageUser(null); setSelectedPackageId(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Package</DialogTitle>
+            <DialogDescription>
+              Manually assign a subscription package to {assignPackageUser?.display_name}. This will replace any active subscription.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Package</Label>
+              <Select value={selectedPackageId} onValueChange={setSelectedPackageId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a package..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {packages?.map((pkg) => (
+                    <SelectItem key={pkg.id} value={pkg.id}>
+                      {pkg.name} — KES {pkg.price.toLocaleString()} / {pkg.duration_days} days ({pkg.max_ads} ads)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setAssignPackageUser(null); setSelectedPackageId(""); }}>
+                Cancel
+              </Button>
+              <Button 
+                disabled={!selectedPackageId || assignPackage.isPending}
+                onClick={() => assignPackageUser && assignPackage.mutate({ userId: assignPackageUser.user_id, packageId: selectedPackageId })}
+              >
+                {assignPackage.isPending ? "Assigning..." : "Assign Package"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* User Details Dialog */}
       <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>User Details</DialogTitle>
-            <DialogDescription>
-              View and manage user information
-            </DialogDescription>
+            <DialogDescription>View and manage user information</DialogDescription>
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-6">
@@ -344,14 +424,11 @@ const AdminUsers = () => {
                 <div>
                   <h3 className="text-xl font-semibold flex items-center gap-2">
                     {selectedUser.display_name}
-                    {selectedUser.is_verified && (
-                      <Badge className="bg-green-500/20 text-green-700">Verified</Badge>
-                    )}
+                    {selectedUser.is_verified && <Badge className="bg-green-500/20 text-green-700">Verified</Badge>}
                   </h3>
                   <p className="text-muted-foreground">{selectedUser.location}</p>
                 </div>
               </div>
-              
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-muted">
                   <div className="text-sm text-muted-foreground">Phone</div>
@@ -374,7 +451,6 @@ const AdminUsers = () => {
                   </div>
                 </div>
               </div>
-
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1">
                   <FileText className="h-4 w-4 mr-2" />
@@ -383,6 +459,14 @@ const AdminUsers = () => {
                 <Button variant="outline" className="flex-1">
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Send Message
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => { setSelectedUser(null); setAssignPackageUser(selectedUser); }}
+                >
+                  <Package className="h-4 w-4 mr-2" />
+                  Assign Package
                 </Button>
               </div>
             </div>

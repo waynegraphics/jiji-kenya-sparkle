@@ -174,16 +174,18 @@ const PostAd = () => {
     e.preventDefault();
     setErrors({});
 
-    // Check subscription limits
-    if (!limits?.hasActiveSubscription) {
-      toast.error("You need an active subscription to post ads");
-      navigate("/pricing");
-      return;
-    }
-    if (!limits.canPostAd) {
-      toast.error(`You've reached your limit of ${limits.maxAds} ads`);
-      navigate("/pricing");
-      return;
+    // Check subscription limits (admins bypass)
+    if (!limits?.isAdminBypass) {
+      if (!limits?.hasActiveSubscription) {
+        toast.error("You need an active subscription to post ads");
+        navigate("/pricing");
+        return;
+      }
+      if (!limits.canPostAd) {
+        toast.error(`You've reached your limit of ${limits.maxAds} ads`);
+        navigate("/pricing");
+        return;
+      }
     }
 
     // Validate required fields
@@ -513,8 +515,8 @@ const PostAd = () => {
           Post Your Ad
         </h1>
 
-        {/* Seller Verification Check */}
-        {!verificationLoading && verification?.status !== "approved" && (
+        {/* Seller Verification Check - skip for admins */}
+        {!limits?.isAdminBypass && !verificationLoading && verification?.status !== "approved" && (
           <div className="mb-6">
             <SellerVerificationForm />
             <p className="text-center text-sm text-muted-foreground mt-4">
@@ -523,8 +525,8 @@ const PostAd = () => {
           </div>
         )}
 
-        {/* Registration Fee Check - show after verification is approved */}
-        {verification?.status === "approved" && !feeCheckLoading && !registrationFeePaid && (
+        {/* Registration Fee Check - show after verification is approved, skip for admins */}
+        {!limits?.isAdminBypass && verification?.status === "approved" && !feeCheckLoading && !registrationFeePaid && (
           <div className="mb-6">
             <RegistrationFeeCheckout onPaymentSuccess={() => setRegistrationFeePaid(true)} />
             <p className="text-center text-sm text-muted-foreground mt-4">
@@ -533,11 +535,17 @@ const PostAd = () => {
           </div>
         )}
 
-        {(verification?.status !== "approved" || (!registrationFeePaid && !feeCheckLoading)) && !verificationLoading ? null : (
+        {(!limits?.isAdminBypass && ((verification?.status !== "approved" || (!registrationFeePaid && !feeCheckLoading)) && !verificationLoading)) ? null : (
           <>
         
         {/* Subscription Status Banner */}
-        {limitsLoading ? (
+        {limits?.isAdminBypass ? (
+          <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Admin — Unlimited Posting</span>
+            </div>
+          </div>
+        ) : limitsLoading ? (
           <div className="mb-6 bg-muted rounded-lg p-4 animate-pulse">
             <div className="h-4 bg-muted-foreground/20 rounded w-1/3"></div>
           </div>
