@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { Loader2, X, ImagePlus, AlertCircle, Package, ChevronRight } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
+import { compressImage } from "@/lib/imageCompression";
 
 // Form components
 import VehicleFormFields from "@/components/forms/VehicleFormFields";
@@ -116,30 +117,35 @@ const PostAd = () => {
     return null;
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     const newImages: { file: File; preview: string }[] = [];
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024; // Allow up to 10MB raw, will compress
 
-    Array.from(files).forEach((file) => {
+    for (const file of Array.from(files)) {
       if (images.length + newImages.length >= 8) {
         toast.error("Maximum 8 images allowed");
-        return;
+        break;
       }
       if (file.size > maxSize) {
-        toast.error(`${file.name} is too large. Max size is 5MB`);
-        return;
+        toast.error(`${file.name} is too large. Max size is 10MB`);
+        continue;
       }
       if (!file.type.startsWith("image/")) {
         toast.error(`${file.name} is not an image`);
-        return;
+        continue;
       }
-      newImages.push({ file, preview: URL.createObjectURL(file) });
-    });
+      // Compress image before adding
+      const compressed = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.8, maxSizeKB: 500 });
+      newImages.push({ file: compressed, preview: URL.createObjectURL(compressed) });
+    }
 
-    setImages((prev) => [...prev, ...newImages]);
+    if (newImages.length > 0) {
+      setImages((prev) => [...prev, ...newImages]);
+      toast.success(`${newImages.length} image(s) compressed & added`);
+    }
   };
 
   const removeImage = (index: number) => {
