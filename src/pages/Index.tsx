@@ -4,11 +4,7 @@ import CategoryGrid from "@/components/CategoryGrid";
 import FeaturedListings from "@/components/FeaturedListings";
 import SuperchargeSearch from "@/components/SuperchargeSearch";
 import Footer from "@/components/Footer";
-import { useAffiliateClickTracker } from "@/hooks/useAffiliateClickTracker";
-
 const Index = () => {
-  useAffiliateClickTracker();
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
