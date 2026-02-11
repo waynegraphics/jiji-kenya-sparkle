@@ -1,15 +1,12 @@
 import { useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 function parseUserAgent(ua: string) {
-  // Device type
   let deviceType = "desktop";
   if (/Mobile|Android|iPhone|iPad|iPod/i.test(ua)) {
     deviceType = /iPad|Tablet/i.test(ua) ? "tablet" : "mobile";
   }
 
-  // OS
   let osName = "Unknown";
   if (/Windows/i.test(ua)) osName = "Windows";
   else if (/iPhone|iPad|iPod/i.test(ua)) osName = "iOS";
@@ -18,7 +15,6 @@ function parseUserAgent(ua: string) {
   else if (/Linux/i.test(ua)) osName = "Linux";
   else if (/CrOS/i.test(ua)) osName = "ChromeOS";
 
-  // Browser
   let browserName = "Unknown";
   if (/Edg\//i.test(ua)) browserName = "Edge";
   else if (/OPR|Opera/i.test(ua)) browserName = "Opera";
@@ -30,10 +26,10 @@ function parseUserAgent(ua: string) {
 }
 
 export function useAffiliateClickTracker() {
-  const [searchParams] = useSearchParams();
-
   useEffect(() => {
-    const refCode = searchParams.get("ref");
+    // Check URL params directly instead of useSearchParams (works outside Router too)
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get("ref");
     if (!refCode) return;
 
     // Store ref code in localStorage for later conversion tracking
@@ -57,7 +53,7 @@ export function useAffiliateClickTracker() {
       const ua = navigator.userAgent;
       const { deviceType, osName, browserName } = parseUserAgent(ua);
 
-      await supabase.from("affiliate_clicks").insert({
+      const { error } = await supabase.from("affiliate_clicks").insert({
         affiliate_id: affiliate.id,
         referral_code: refCode,
         user_agent: ua,
@@ -67,9 +63,11 @@ export function useAffiliateClickTracker() {
         page_url: window.location.pathname,
       } as any);
 
-      sessionStorage.setItem(sessionKey, "1");
+      if (!error) {
+        sessionStorage.setItem(sessionKey, "1");
+      }
     };
 
     trackClick();
-  }, [searchParams]);
+  }, []);
 }

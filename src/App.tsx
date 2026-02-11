@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { useAffiliateClickTracker } from "@/hooks/useAffiliateClickTracker";
 import Index from "./pages/Index";
 import ProductDetail from "./pages/ProductDetail";
 import SearchResults from "./pages/SearchResults";
@@ -27,6 +28,10 @@ import AffiliateApply from "./pages/AffiliateApply";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+function AffiliateTracker() {
+  useAffiliateClickTracker();
+  return null;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -35,6 +40,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <AffiliateTracker />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/listing/:id" element={<ProductDetail />} />
