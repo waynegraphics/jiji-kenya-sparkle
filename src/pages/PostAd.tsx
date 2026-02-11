@@ -52,6 +52,21 @@ const PostAd = () => {
   useEffect(() => {
     const checkFee = async () => {
       if (!user) return;
+      
+      // First check if fee is 0 — if so, skip payment requirement
+      const { data: feeData } = await supabase
+        .from("platform_settings")
+        .select("value")
+        .eq("key", "seller_registration_fee")
+        .maybeSingle();
+      
+      const feeAmount = feeData ? parseInt(feeData.value) : 250;
+      if (feeAmount === 0) {
+        setRegistrationFeePaid(true);
+        setFeeCheckLoading(false);
+        return;
+      }
+
       const { data } = await supabase
         .from("payment_transactions")
         .select("id")
