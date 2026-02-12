@@ -18,6 +18,8 @@ import { toast } from "sonner";
 interface ReportAdDialogProps {
   listingId: string;
   onAuthRequired: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const REPORT_REASONS = [
@@ -30,12 +32,15 @@ const REPORT_REASONS = [
   "Other",
 ];
 
-const ReportAdDialog = ({ listingId, onAuthRequired }: ReportAdDialogProps) => {
+const ReportAdDialog = ({ listingId, onAuthRequired, open: controlledOpen, onOpenChange }: ReportAdDialogProps) => {
   const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [description, setDescription] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
 
   const handleOpen = () => {
     if (!user) {
@@ -71,16 +76,18 @@ const ReportAdDialog = ({ listingId, onAuthRequired }: ReportAdDialogProps) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button
-          onClick={handleOpen}
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors"
-        >
-          <Flag className="h-4 w-4" />
-          Report this ad
-        </button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={setOpen}>
+      {controlledOpen === undefined && (
+        <DialogTrigger asChild>
+          <button
+            onClick={handleOpen}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-destructive transition-colors"
+          >
+            <Flag className="h-4 w-4" />
+            Report this ad
+          </button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Report this listing</DialogTitle>

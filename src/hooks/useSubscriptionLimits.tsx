@@ -88,6 +88,50 @@ export const useSubscriptionLimits = () => {
       }
 
       if (!subscription || !subscription.package) {
+        // Auto-assign free Starter Plan if one exists
+        const { data: starterPkg } = await supabase
+          .from("subscription_packages")
+          .select("*")
+          .eq("price", 0)
+          .eq("is_active", true)
+          .order("display_order")
+          .limit(1)
+          .maybeSingle();
+
+        if (starterPkg) {
+          const expiresAt = new Date();
+          expiresAt.setDate(expiresAt.getDate() + starterPkg.duration_days);
+
+          const { data: newSub, error: insertError } = await supabase
+            .from("seller_subscriptions")
+            .insert({
+              user_id: user.id,
+              package_id: starterPkg.id,
+              status: "active",
+              payment_status: "completed",
+              starts_at: new Date().toISOString(),
+              expires_at: expiresAt.toISOString(),
+            })
+            .select("*, package:subscription_packages(*)")
+            .single();
+
+          if (!insertError && newSub && newSub.package) {
+            const pkg = newSub.package;
+            return {
+              hasActiveSubscription: true,
+              maxAds: pkg.max_ads,
+              adsUsed: 0,
+              adsRemaining: pkg.max_ads,
+              canPostAd: true,
+              allowedCategories: pkg.allowed_categories,
+              analyticsAccess: true,
+              subscriptionName: pkg.name,
+              expiresAt: newSub.expires_at,
+              isAdminBypass: false,
+            };
+          }
+        }
+
         return {
           hasActiveSubscription: false,
           maxAds: 0,
