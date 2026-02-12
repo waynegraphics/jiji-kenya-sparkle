@@ -5,7 +5,7 @@ import SellerSidebar from "@/components/seller/SellerSidebar";
 import SellerOverview from "@/components/seller/SellerOverview";
 import SellerSubscriptionDashboard from "@/components/seller/SellerSubscriptionDashboard";
 import SellerListings from "@/components/seller/SellerListings";
-import SellerAddonsPage from "@/components/seller/SellerAddonsPage";
+
 import SellerAnalytics from "@/components/seller/SellerAnalytics";
 import SellerBilling from "@/components/seller/SellerBilling";
 import SellerFollowers from "@/components/seller/SellerFollowers";
@@ -45,7 +45,6 @@ const SellerDashboard = () => {
     if (path.includes('/subscription')) return 'Subscription';
     if (path.includes('/listings')) return 'My Listings';
     if (path.includes('/messages')) return 'Messages';
-    if (path.includes('/addons')) return 'Add-ons';
     if (path.includes('/analytics')) return 'Analytics';
     if (path.includes('/billing')) return 'Billing';
     if (path.includes('/followers')) return 'Followers';
@@ -118,7 +117,6 @@ const SellerDashboard = () => {
                 <Route path="subscription" element={<SellerSubscriptionDashboard />} />
                 <Route path="listings" element={<SellerListings />} />
                 <Route path="messages" element={<SellerMessages />} />
-                <Route path="addons" element={<SellerAddonsPage />} />
                 <Route path="analytics" element={
                   limits?.analyticsAccess ? <SellerAnalytics /> : (
                     <div className="text-center py-12">
