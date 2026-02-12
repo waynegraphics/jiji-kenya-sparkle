@@ -34,7 +34,7 @@ const PageHero = ({ title, subtitle, badge, badgeIcon: BadgeIcon, breadcrumbLabe
         backgroundSize: '24px 24px'
       }} />
 
-      <div className="container mx-auto px-4 py-12 md:py-20 relative z-10">
+      <div className="container mx-auto px-4 py-8 sm:py-12 md:py-20 relative z-10">
         {/* Breadcrumb */}
         <Breadcrumb className="mb-8">
           <BreadcrumbList>
@@ -63,7 +63,7 @@ const PageHero = ({ title, subtitle, badge, badgeIcon: BadgeIcon, breadcrumbLabe
           </div>
           
           {/* Title */}
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-primary-foreground mb-4 leading-tight tracking-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-primary-foreground mb-3 sm:mb-4 leading-tight tracking-tight">
             {title}
           </h1>
           

@@ -72,24 +72,23 @@ const SellerDashboard = () => {
       <div className="min-h-screen flex w-full bg-background">
         <SellerSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-14 border-b bg-card flex items-center justify-between px-4 sticky top-0 z-10">
-            <div className="flex items-center gap-4">
+          <header className="h-14 border-b bg-card flex items-center justify-between px-2 sm:px-4 sticky top-0 z-10">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <SidebarTrigger />
-              <nav className="flex items-center gap-2 text-sm">
-                <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors"><Home className="h-4 w-4" /></Link>
-                <span className="text-muted-foreground">/</span>
-                <span className="font-medium">{getPageTitle()}</span>
+              <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm min-w-0">
+                <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors hidden sm:block"><Home className="h-4 w-4" /></Link>
+                <span className="text-muted-foreground hidden sm:inline">/</span>
+                <span className="font-medium truncate">{getPageTitle()}</span>
               </nav>
             </div>
-            <div className="flex items-center gap-1">
-              {/* Quick action icons */}
+            <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
               <Link to="/seller-dashboard/favorites">
-                <Button variant="ghost" size="icon" className="relative">
+                <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9">
                   <Heart className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/seller-dashboard/notifications">
-                <Button variant="ghost" size="icon" className="relative">
+                <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9">
                   <Bell className="h-4 w-4" />
                   {unreadNotifications > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
@@ -99,7 +98,7 @@ const SellerDashboard = () => {
                 </Button>
               </Link>
               <Link to="/seller-dashboard/messages">
-                <Button variant="ghost" size="icon" className="relative">
+                <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9">
                   <MessageCircle className="h-4 w-4" />
                   {unreadMessages > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 bg-destructive text-destructive-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
@@ -110,21 +109,26 @@ const SellerDashboard = () => {
               </Link>
 
               {showAdminSwitch && (
-                <Link to="/apa/dashboard">
-                  <Button variant="default" size="sm" className="gap-2 ml-2">
+                <Link to="/apa/dashboard" className="hidden sm:block">
+                  <Button variant="default" size="sm" className="gap-2 ml-1">
                     <Shield className="h-4 w-4" />
-                    Back to Admin
+                    <span className="hidden md:inline">Back to Admin</span>
                   </Button>
                 </Link>
               )}
-              <Link to="/"><Button variant="outline" size="sm" className="ml-1"><Home className="h-4 w-4 mr-2" />Site</Button></Link>
-              <Button variant="outline" size="sm" onClick={handleLogout} className="ml-1">
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
+              <Link to="/">
+                <Button variant="outline" size="sm" className="ml-1 px-2 sm:px-3">
+                  <Home className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Site</span>
+                </Button>
+              </Link>
+              <Button variant="outline" size="sm" onClick={handleLogout} className="ml-1 px-2 sm:px-3">
+                <LogOut className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </header>
-          <main className="flex-1 p-6 overflow-auto">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto">
             <div className="max-w-6xl mx-auto">
               <Routes>
                 <Route index element={<SellerOverview />} />

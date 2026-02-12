@@ -111,40 +111,40 @@ const AdminDashboard = () => {
         
         <div className="flex-1 flex flex-col">
           {/* Top Header */}
-          <header className="h-14 border-b bg-card flex items-center justify-between px-4 sticky top-0 z-10">
-            <div className="flex items-center gap-4">
+          <header className="h-14 border-b bg-card flex items-center justify-between px-2 sm:px-4 sticky top-0 z-10">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <SidebarTrigger />
-              <nav className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Admin</span>
-                <span className="text-muted-foreground">/</span>
-                <span className="font-medium">{getPageTitle()}</span>
+              <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm min-w-0">
+                <span className="text-muted-foreground hidden sm:inline">Admin</span>
+                <span className="text-muted-foreground hidden sm:inline">/</span>
+                <span className="font-medium truncate">{getPageTitle()}</span>
               </nav>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               {(isSuperAdmin || hasPermission("view_seller_dashboard")) && (
-                <Link to="/seller-dashboard">
+                <Link to="/seller-dashboard" className="hidden sm:block">
                   <Button variant="ghost" size="sm">
-                    <Eye className="h-4 w-4 mr-2" />
-                    View as Seller
+                    <Eye className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden md:inline">View as Seller</span>
                   </Button>
                 </Link>
               )}
               <Link to="/">
-                <Button variant="outline" size="sm">
-                  <Home className="h-4 w-4 mr-2" />
-                  View Site
+                <Button variant="outline" size="sm" className="px-2 sm:px-3">
+                  <Home className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">View Site</span>
                 </Button>
               </Link>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
+              <Button variant="outline" size="sm" onClick={handleLogout} className="px-2 sm:px-3">
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-6 overflow-auto">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto">
             <div className="max-w-7xl mx-auto">
               <Routes>
                 <Route index element={<AdminOverview />} />
