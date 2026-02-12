@@ -7,7 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminOverview from "@/components/admin/AdminOverview";
 import AdminPackages from "@/components/admin/AdminPackages";
-import AdminAddons from "@/components/admin/AdminAddons";
+
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminListings from "@/components/admin/AdminListings";
 import AdminCategories from "@/components/admin/AdminCategories";
@@ -23,7 +23,7 @@ import AdminCustomValues from "@/components/admin/AdminCustomValues";
 import AdminTiers from "@/components/admin/AdminTiers";
 import AdminBumpPackages from "@/components/admin/AdminBumpPackages";
 import AdminPromotions from "@/components/admin/AdminPromotions";
-import AdminFeaturedSettings from "@/components/admin/AdminFeaturedSettings";
+
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Shield, Home, Eye } from "lucide-react";
@@ -77,11 +77,9 @@ const AdminDashboard = () => {
     if (path.includes('/listings')) return 'Listings Management';
     if (path.includes('/categories')) return 'Categories';
     if (path.includes('/packages')) return 'Subscription Packages';
-    if (path.includes('/addons')) return 'Add-ons';
     if (path.includes('/tiers')) return 'Ad Tiers';
     if (path.includes('/bump-packages')) return 'Bump Packages';
     if (path.includes('/promotions')) return 'Promotions';
-    if (path.includes('/featured')) return 'Featured Settings';
     if (path.includes('/support')) return 'Support Tickets';
     if (path.includes('/reports')) return 'Reports & Moderation';
     if (path.includes('/messaging')) return 'Messaging';
@@ -145,11 +143,9 @@ const AdminDashboard = () => {
                 {hasPermission("view_listings") && <Route path="listings" element={<AdminListings />} />}
                 <Route path="categories" element={<AdminCategories />} />
                 <Route path="packages" element={<AdminPackages />} />
-                <Route path="addons" element={<AdminAddons />} />
                 <Route path="tiers" element={<AdminTiers />} />
                 <Route path="bump-packages" element={<AdminBumpPackages />} />
                 <Route path="promotions" element={<AdminPromotions />} />
-                <Route path="featured" element={<AdminFeaturedSettings />} />
                 {hasPermission("view_support") && <Route path="support/*" element={<AdminSupport />} />}
                 {hasPermission("view_reports") && <Route path="reports" element={<AdminReports />} />}
                 <Route path="messaging" element={<AdminMessaging />} />

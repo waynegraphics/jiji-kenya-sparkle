@@ -39,7 +39,7 @@ const menuItems = [
   { title: "Subscription", url: "/seller-dashboard/subscription", icon: Package, description: "Manage your plan" },
   { title: "My Listings", url: "/seller-dashboard/listings", icon: FileText, description: "View and manage ads" },
   { title: "Messages", url: "/seller-dashboard/messages", icon: MessageCircle, description: "Your messages", showBadge: "messages" },
-  { title: "Add-ons", url: "/seller-dashboard/addons", icon: Zap, description: "Boost your listings" },
+  
   { title: "Analytics", url: "/seller-dashboard/analytics", icon: BarChart3, description: "View performance", requiresAnalytics: true },
   { title: "Favorites", url: "/seller-dashboard/favorites", icon: Heart, description: "Saved listings" },
   { title: "Followers", url: "/seller-dashboard/followers", icon: Users, description: "Your followers" },
