@@ -1163,27 +1163,39 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          file_name: string | null
+          file_size: number | null
+          file_url: string | null
           id: string
           is_read: boolean | null
           listing_id: string | null
+          message_type: string
           receiver_id: string
           sender_id: string
         }
         Insert: {
           content: string
           created_at?: string
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
           id?: string
           is_read?: boolean | null
           listing_id?: string | null
+          message_type?: string
           receiver_id: string
           sender_id: string
         }
         Update: {
           content?: string
           created_at?: string
+          file_name?: string | null
+          file_size?: number | null
+          file_url?: string | null
           id?: string
           is_read?: boolean | null
           listing_id?: string | null
+          message_type?: string
           receiver_id?: string
           sender_id?: string
         }
