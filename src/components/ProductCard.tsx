@@ -133,9 +133,9 @@ const ProductCard = ({
       <div className="p-3 md:p-4">
         <h3 className="font-semibold text-foreground text-sm md:text-base line-clamp-2 min-h-[2.5rem] md:min-h-[3rem]">{title}</h3>
         <p className="text-lg md:text-xl font-bold text-primary mt-1">{price}</p>
-        <div className="flex items-center justify-between mt-2 text-muted-foreground">
-          <div className="flex items-center gap-1 text-xs"><MapPin className="h-3 w-3" /><span className="truncate max-w-[80px]">{location}</span></div>
-          <div className="flex items-center gap-1 text-xs"><Clock className="h-3 w-3" /><span>{time}</span></div>
+        <div className="flex items-center justify-between mt-2 text-muted-foreground gap-1">
+          <div className="flex items-center gap-1 text-xs min-w-0"><MapPin className="h-3 w-3 flex-shrink-0" /><span className="truncate">{location}</span></div>
+          <div className="flex items-center gap-1 text-xs flex-shrink-0"><Clock className="h-3 w-3" /><span>{time}</span></div>
         </div>
       </div>
     </div>
