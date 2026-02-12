@@ -16,11 +16,21 @@ import {
   Tractor, Wheat, Apple,
   Dumbbell, Tent, Music,
   HardHat, PaintBucket, Ruler,
-  Grid, Search, X
+  Grid, Search, X, ChevronDown
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Map sub-category slugs to icons - popular ones get distinctive icons
 const subCategoryIconMap: Record<string, React.ReactNode> = {
@@ -100,13 +110,14 @@ const subCategoryIconMap: Record<string, React.ReactNode> = {
 };
 
 const getSubCategoryIcon = (slug: string) => {
-  // Check exact match first, then partial matches
   if (subCategoryIconMap[slug]) return subCategoryIconMap[slug];
   for (const [key, icon] of Object.entries(subCategoryIconMap)) {
     if (slug.includes(key) || key.includes(slug)) return icon;
   }
   return <Grid className="h-5 w-5" />;
 };
+
+const MOBILE_VISIBLE_COUNT = 5;
 
 interface CategoryQuickFiltersProps {
   categorySlug?: string;
@@ -117,8 +128,9 @@ const CategoryQuickFilters = ({ categorySlug, currentSubSlug }: CategoryQuickFil
   const { data: mainCategory } = useCategoryBySlug(categorySlug);
   const { data: subCategories } = useSubCategories(mainCategory?.id);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const isMobile = useIsMobile();
 
-  // Get ad counts per sub-category
   const { data: subCategoryCounts } = useQuery({
     queryKey: ["sub-category-counts", mainCategory?.id],
     queryFn: async () => {
@@ -147,25 +159,127 @@ const CategoryQuickFilters = ({ categorySlug, currentSubSlug }: CategoryQuickFil
     ? subCategories.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()))
     : subCategories;
 
+  const showMobilePopup = isMobile && subCategories.length > MOBILE_VISIBLE_COUNT;
+  const activeSubName = currentSubSlug 
+    ? subCategories.find(s => s.slug === currentSubSlug)?.name 
+    : "All";
+
+  // Render a single sub-category link item
+  const renderSubItem = (sub: any, isActive: boolean, compact = false) => {
+    const count = subCategoryCounts?.[sub.id] || 0;
+    return (
+      <Link
+        key={sub.id}
+        to={`/category/${categorySlug}/${sub.slug}`}
+        onClick={() => sheetOpen && setSheetOpen(false)}
+        className={`flex ${compact ? "flex-row items-center gap-3 p-3 rounded-lg" : "flex-col items-center gap-1.5 p-3 rounded-xl"} border text-center transition-all hover:shadow-md ${
+          isActive
+            ? "bg-primary/10 border-primary text-primary"
+            : "bg-card border-border hover:border-primary/50"
+        }`}
+      >
+        {getSubCategoryIcon(sub.slug)}
+        <span className={`${compact ? "text-sm" : "text-xs"} font-medium leading-tight ${compact ? "" : "line-clamp-2"}`}>{sub.name}</span>
+        {count > 0 && (
+          <span className={`${compact ? "ml-auto text-xs" : "text-[10px]"} text-muted-foreground`}>{count} ads</span>
+        )}
+      </Link>
+    );
+  };
+
+  // Mobile: show a few visible + "See All" button that opens sheet
+  if (showMobilePopup) {
+    const visibleSubs = subCategories.slice(0, MOBILE_VISIBLE_COUNT);
+    const remainingCount = subCategories.length - MOBILE_VISIBLE_COUNT;
+
+    return (
+      <div className="mb-6">
+        <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide">
+          <Link
+            to={`/category/${categorySlug}`}
+            className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center transition-all hover:shadow-md flex-shrink-0 min-w-[72px] ${
+              !currentSubSlug 
+                ? "bg-primary/10 border-primary text-primary" 
+                : "bg-card border-border hover:border-primary/50"
+            }`}
+          >
+            <Grid className="h-5 w-5" />
+            <span className="text-xs font-medium leading-tight">All</span>
+          </Link>
+          {visibleSubs.map((sub) => (
+            <div key={sub.id} className="flex-shrink-0 min-w-[72px]">
+              {renderSubItem(sub, currentSubSlug === sub.slug)}
+            </div>
+          ))}
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger asChild>
+              <button
+                className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-dashed border-primary/50 text-primary bg-primary/5 hover:bg-primary/10 transition-all flex-shrink-0 min-w-[72px]"
+              >
+                <ChevronDown className="h-5 w-5" />
+                <span className="text-xs font-medium">+{remainingCount} more</span>
+              </button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl">
+              <SheetHeader className="pb-2">
+                <SheetTitle>Browse {mainCategory?.name} Categories</SheetTitle>
+              </SheetHeader>
+              {/* Search inside sheet */}
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={`Search in ${mainCategory?.name || "category"}...`}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 h-9"
+                />
+              </div>
+              <ScrollArea className="h-[calc(70vh-120px)]">
+                <div className="space-y-1 pr-4">
+                  <Link
+                    to={`/category/${categorySlug}`}
+                    onClick={() => setSheetOpen(false)}
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                      !currentSubSlug 
+                        ? "bg-primary/10 border-primary text-primary" 
+                        : "bg-card border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <Grid className="h-5 w-5" />
+                    <span className="text-sm font-medium">All Categories</span>
+                  </Link>
+                  {filteredSubs.map((sub) => renderSubItem(sub, currentSubSlug === sub.slug, true))}
+                </div>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop / tablet with few categories: show full grid
   return (
     <div className="mb-6">
       {/* Search within sub-categories */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={`Search in ${mainCategory?.name || "category"}...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 h-9"
-          />
+      {subCategories.length > 8 && (
+        <div className="flex items-center gap-2 mb-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={`Search in ${mainCategory?.name || "category"}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+          {searchTerm && (
+            <Button variant="ghost" size="sm" onClick={() => setSearchTerm("")}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
-        {searchTerm && (
-          <Button variant="ghost" size="sm" onClick={() => setSearchTerm("")}>
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
+      )}
 
       {/* Sub-category grid with icons */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
@@ -180,27 +294,7 @@ const CategoryQuickFilters = ({ categorySlug, currentSubSlug }: CategoryQuickFil
           <Grid className="h-5 w-5" />
           <span className="text-xs font-medium leading-tight">All</span>
         </Link>
-        {filteredSubs.map((sub) => {
-          const count = subCategoryCounts?.[sub.id] || 0;
-          const isActive = currentSubSlug === sub.slug;
-          return (
-            <Link
-              key={sub.id}
-              to={`/category/${categorySlug}/${sub.slug}`}
-              className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center transition-all hover:shadow-md ${
-                isActive
-                  ? "bg-primary/10 border-primary text-primary"
-                  : "bg-card border-border hover:border-primary/50"
-              }`}
-            >
-              {getSubCategoryIcon(sub.slug)}
-              <span className="text-xs font-medium leading-tight line-clamp-2">{sub.name}</span>
-              {count > 0 && (
-                <span className="text-[10px] text-muted-foreground">{count} ads</span>
-              )}
-            </Link>
-          );
-        })}
+        {filteredSubs.map((sub) => renderSubItem(sub, currentSubSlug === sub.slug))}
       </div>
     </div>
   );
