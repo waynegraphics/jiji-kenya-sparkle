@@ -2,6 +2,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAffiliateClickTracker } from "@/hooks/useAffiliateClickTracker";
 import Index from "./pages/Index";
@@ -25,6 +26,21 @@ import TeamLogin from "./pages/TeamLogin";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
 import AffiliateApply from "./pages/AffiliateApply";
 import NotFound from "./pages/NotFound";
+import AboutUs from "./pages/AboutUs";
+import ContactUs from "./pages/ContactUs";
+import FAQs from "./pages/FAQs";
+import Sellers from "./pages/Sellers";
+import SavedAds from "./pages/SavedAds";
+import QuickLinks from "./pages/QuickLinks";
+import Disclaimer from "./pages/Disclaimer";
+import CopyrightInfringement from "./pages/CopyrightInfringement";
+import BillingPolicy from "./pages/BillingPolicy";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsConditions from "./pages/TermsConditions";
+import Blog from "./pages/Blog";
+import Careers from "./pages/Careers";
+import DataProtection from "./pages/DataProtection";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 function AffiliateTracker() {
@@ -34,13 +50,15 @@ function AffiliateTracker() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Sonner />
-        <BrowserRouter>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <TooltipProvider>
+        <AuthProvider>
+          <Sonner />
+          <BrowserRouter>
           <AffiliateTracker />
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/listing/:category/:slug" element={<ProductDetail />} />
             <Route path="/listing/:id" element={<ProductDetail />} />
             <Route path="/search" element={<SearchResults />} />
             <Route path="/post-ad" element={<PostAd />} />
@@ -72,12 +90,32 @@ const App = () => (
             <Route path="/affiliate/apply" element={<AffiliateApply />} />
             <Route path="/affiliate/dashboard/*" element={<AffiliateDashboard />} />
             
+            {/* Information Pages */}
+            <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/contact-us" element={<ContactUs />} />
+            <Route path="/faqs" element={<FAQs />} />
+            <Route path="/sellers" element={<Sellers />} />
+            <Route path="/saved-ads" element={<SavedAds />} />
+            <Route path="/quick-links" element={<QuickLinks />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/careers" element={<Careers />} />
+            
+            {/* Legal & Policy Pages */}
+            <Route path="/disclaimer" element={<Disclaimer />} />
+            <Route path="/copyright-infringement" element={<CopyrightInfringement />} />
+            <Route path="/billing-policy" element={<BillingPolicy />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-conditions" element={<TermsConditions />} />
+            <Route path="/data-protection" element={<DataProtection />} />
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ScrollToTop />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

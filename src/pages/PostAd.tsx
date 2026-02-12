@@ -25,6 +25,7 @@ import { useMainCategories, useSubCategories } from "@/hooks/useCategories";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, X, ImagePlus, AlertCircle, Package, ChevronRight, ChevronLeft, Check } from "lucide-react";
+import { generateListingUrl } from "@/lib/slugify";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { compressImage } from "@/lib/imageCompression";
@@ -38,7 +39,11 @@ import GenericFormFields from "@/components/forms/GenericFormFields";
 const ACCEPTED_IMAGE_TYPES = ".jpg,.jpeg,.png,.heic,.heif";
 const MAX_IMAGES = 10;
 
-const PostAd = () => {
+interface PostAdProps {
+  inDashboard?: boolean;
+}
+
+const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
   const navigate = useNavigate();
   const { user, profile, loading: authLoading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -172,16 +177,17 @@ const PostAd = () => {
   };
 
   const uploadImages = async (): Promise<string[]> => {
-    const uploadedUrls: string[] = [];
-    for (const { file } of images) {
+    // Upload all images in parallel for much faster performance
+    const uploadPromises = images.map(async ({ file }) => {
       const fileExt = file.name.split(".").pop();
       const fileName = `${user!.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from("listings").upload(fileName, file);
       if (uploadError) throw new Error("Failed to upload image");
       const { data: urlData } = supabase.storage.from("listings").getPublicUrl(fileName);
-      uploadedUrls.push(urlData.publicUrl);
-    }
-    return uploadedUrls;
+      return urlData.publicUrl;
+    });
+    
+    return Promise.all(uploadPromises);
   };
 
   const validateStep = (step: number): boolean => {
@@ -240,32 +246,52 @@ const PostAd = () => {
     setIsSubmitting(true);
 
     try {
-      const imageUrls = await uploadImages();
+      // Upload images and create listing in parallel for faster submission
+      const [imageUrls, listingResult] = await Promise.all([
+        uploadImages(),
+        // Pre-create listing with placeholder images, we'll update with real URLs
+        supabase
+          .from("base_listings")
+          .insert({
+            user_id: user!.id,
+            main_category_id: selectedMainCategoryId,
+            sub_category_id: baseFormData.subCategoryId || null,
+            title: baseFormData.title.trim(),
+            description: baseFormData.description.trim() || null,
+            price: isJobCategory ? 0 : parseFloat(baseFormData.price),
+            location: baseFormData.location,
+            is_negotiable: baseFormData.isNegotiable,
+            images: [], // Will update after upload
+            status: "pending", // All new listings require verification
+          })
+          .select()
+          .single()
+      ]);
 
-      const { data: listing, error: baseError } = await supabase
-        .from("base_listings")
-        .insert({
-          user_id: user!.id,
-          main_category_id: selectedMainCategoryId,
-          sub_category_id: baseFormData.subCategoryId || null,
-          title: baseFormData.title.trim(),
-          description: baseFormData.description.trim() || null,
-          price: isJobCategory ? 0 : parseFloat(baseFormData.price),
-          location: baseFormData.location,
-          is_negotiable: baseFormData.isNegotiable,
-          images: imageUrls,
-        })
-        .select()
-        .single();
-
+      const { data: listing, error: baseError } = listingResult;
       if (baseError) throw baseError;
 
-      await insertCategorySpecificData(listing.id, categorySlug, categoryFormData);
-      await incrementAdsUsed();
+      // Update listing with image URLs and insert category data in parallel
+      await Promise.all([
+        supabase
+          .from("base_listings")
+          .update({ images: imageUrls })
+          .eq("id", listing.id),
+        insertCategorySpecificData(listing.id, categorySlug, categoryFormData),
+        incrementAdsUsed()
+      ]);
+
       queryClient.invalidateQueries({ queryKey: ["subscription-limits"] });
 
-      toast.success("Your ad has been posted!");
-      navigate(`/listing/${listing.id}`);
+      toast.success("Your ad has been submitted for review. It will go live once approved.");
+      if (inDashboard) {
+        navigate("/seller-dashboard/listings");
+      } else {
+        const url = categorySlug 
+          ? generateListingUrl(listing.id, categorySlug, baseFormData.title.trim())
+          : `/listing/${listing.id}`;
+        navigate(url);
+      }
     } catch (error) {
       console.error("Error posting ad:", error);
       toast.error("Failed to post ad. Please try again.");
@@ -683,122 +709,130 @@ const PostAd = () => {
     </div>
   );
 
+  const formContent = (
+    <>
+      <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6">Post Your Ad</h1>
+
+      {/* Seller Verification Check */}
+      {!limits?.isAdminBypass && !verificationLoading && verification?.status !== "approved" && (
+        <div className="mb-6">
+          <SellerVerificationForm />
+          <p className="text-center text-sm text-muted-foreground mt-4">
+            You must complete seller verification before posting listings.
+          </p>
+        </div>
+      )}
+
+      {!limits?.isAdminBypass && verification?.status === "approved" && !feeCheckLoading && !registrationFeePaid && (
+        <div className="mb-6">
+          <RegistrationFeeCheckout onPaymentSuccess={() => setRegistrationFeePaid(true)} />
+          <p className="text-center text-sm text-muted-foreground mt-4">
+            Pay the one-time registration fee to start posting listings.
+          </p>
+        </div>
+      )}
+
+      {(!limits?.isAdminBypass && ((verification?.status !== "approved" || (!registrationFeePaid && !feeCheckLoading)) && !verificationLoading)) ? null : (
+        <>
+          {/* Subscription Status Banner */}
+          {limits?.isAdminBypass ? (
+            <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">Admin — Unlimited Posting</span>
+              </div>
+            </div>
+          ) : limitsLoading ? (
+            <div className="mb-6 bg-muted rounded-lg p-4 animate-pulse">
+              <div className="h-4 bg-muted-foreground/20 rounded w-1/3"></div>
+            </div>
+          ) : !limits?.hasActiveSubscription ? (
+            <Alert className="mb-6 border-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>No Active Subscription</AlertTitle>
+              <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <span>You need an active subscription to post ads.</span>
+                <Link to="/pricing"><Button size="sm" variant="default"><Package className="h-4 w-4 mr-2" />Get a Subscription</Button></Link>
+              </AlertDescription>
+            </Alert>
+          ) : !limits.canPostAd ? (
+            <Alert className="mb-6 border-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Ad Limit Reached</AlertTitle>
+              <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <span>You've used all {limits.maxAds} ads in your {limits.subscriptionName} plan.</span>
+                <Link to="/pricing"><Button size="sm" variant="default">Upgrade Plan</Button></Link>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium">{limits.subscriptionName} - Ads Usage</span>
+                <span className="text-sm text-muted-foreground">{limits.adsUsed} / {limits.maxAds} used</span>
+              </div>
+              <Progress value={(limits.adsUsed / limits.maxAds) * 100} className="h-2" />
+              <p className="text-xs text-muted-foreground mt-1">{limits.adsRemaining} ads remaining</p>
+            </div>
+          )}
+
+          {/* Step Progress */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              {steps.map((step, i) => (
+                <div key={i} className="flex items-center">
+                  <button type="button" onClick={() => i < currentStep && setCurrentStep(i)}
+                    className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium px-2 py-1 rounded-full transition-colors ${
+                      i === currentStep ? "bg-primary text-primary-foreground" :
+                      i < currentStep ? "bg-primary/20 text-primary cursor-pointer" :
+                      "bg-muted text-muted-foreground"
+                    }`}>
+                    {i < currentStep ? <Check className="h-3 w-3" /> : <span>{step.icon}</span>}
+                    <span className="hidden sm:inline">{step.title}</span>
+                    <span className="sm:hidden">{i + 1}</span>
+                  </button>
+                  {i < steps.length - 1 && <div className={`w-4 sm:w-8 h-0.5 mx-1 ${i < currentStep ? "bg-primary" : "bg-muted"}`} />}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {renderStepContent()}
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-between gap-4">
+              {currentStep > 0 && (
+                <Button type="button" variant="outline" onClick={handleBack}>
+                  <ChevronLeft className="h-4 w-4 mr-2" /> Back
+                </Button>
+              )}
+              <div className="ml-auto">
+                {currentStep < steps.length - 1 ? (
+                  <Button type="button" onClick={handleNext}>
+                    Next <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button type="submit" size="lg" disabled={isSubmitting || (!limits?.isAdminBypass && !limits?.canPostAd)}>
+                    {isSubmitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Posting...</> : "Post Ad"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </form>
+        </>
+      )}
+    </>
+  );
+
+  if (inDashboard) {
+    return <div className="space-y-6">{formContent}</div>;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
-
       <main className="container mx-auto py-6 max-w-3xl">
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6">Post Your Ad</h1>
-
-        {/* Seller Verification Check */}
-        {!limits?.isAdminBypass && !verificationLoading && verification?.status !== "approved" && (
-          <div className="mb-6">
-            <SellerVerificationForm />
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              You must complete seller verification before posting listings.
-            </p>
-          </div>
-        )}
-
-        {!limits?.isAdminBypass && verification?.status === "approved" && !feeCheckLoading && !registrationFeePaid && (
-          <div className="mb-6">
-            <RegistrationFeeCheckout onPaymentSuccess={() => setRegistrationFeePaid(true)} />
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              Pay the one-time registration fee to start posting listings.
-            </p>
-          </div>
-        )}
-
-        {(!limits?.isAdminBypass && ((verification?.status !== "approved" || (!registrationFeePaid && !feeCheckLoading)) && !verificationLoading)) ? null : (
-          <>
-            {/* Subscription Status Banner */}
-            {limits?.isAdminBypass ? (
-              <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Admin — Unlimited Posting</span>
-                </div>
-              </div>
-            ) : limitsLoading ? (
-              <div className="mb-6 bg-muted rounded-lg p-4 animate-pulse">
-                <div className="h-4 bg-muted-foreground/20 rounded w-1/3"></div>
-              </div>
-            ) : !limits?.hasActiveSubscription ? (
-              <Alert className="mb-6 border-destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>No Active Subscription</AlertTitle>
-                <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <span>You need an active subscription to post ads.</span>
-                  <Link to="/pricing"><Button size="sm" variant="default"><Package className="h-4 w-4 mr-2" />Get a Subscription</Button></Link>
-                </AlertDescription>
-              </Alert>
-            ) : !limits.canPostAd ? (
-              <Alert className="mb-6 border-destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Ad Limit Reached</AlertTitle>
-                <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-3">
-                  <span>You've used all {limits.maxAds} ads in your {limits.subscriptionName} plan.</span>
-                  <Link to="/pricing"><Button size="sm" variant="default">Upgrade Plan</Button></Link>
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <div className="mb-6 bg-primary/10 border border-primary/20 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium">{limits.subscriptionName} - Ads Usage</span>
-                  <span className="text-sm text-muted-foreground">{limits.adsUsed} / {limits.maxAds} used</span>
-                </div>
-                <Progress value={(limits.adsUsed / limits.maxAds) * 100} className="h-2" />
-                <p className="text-xs text-muted-foreground mt-1">{limits.adsRemaining} ads remaining</p>
-              </div>
-            )}
-
-            {/* Step Progress */}
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-3">
-                {steps.map((step, i) => (
-                  <div key={i} className="flex items-center">
-                    <button type="button" onClick={() => i < currentStep && setCurrentStep(i)}
-                      className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium px-2 py-1 rounded-full transition-colors ${
-                        i === currentStep ? "bg-primary text-primary-foreground" :
-                        i < currentStep ? "bg-primary/20 text-primary cursor-pointer" :
-                        "bg-muted text-muted-foreground"
-                      }`}>
-                      {i < currentStep ? <Check className="h-3 w-3" /> : <span>{step.icon}</span>}
-                      <span className="hidden sm:inline">{step.title}</span>
-                      <span className="sm:hidden">{i + 1}</span>
-                    </button>
-                    {i < steps.length - 1 && <div className={`w-4 sm:w-8 h-0.5 mx-1 ${i < currentStep ? "bg-primary" : "bg-muted"}`} />}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {renderStepContent()}
-
-              {/* Navigation Buttons */}
-              <div className="flex justify-between gap-4">
-                {currentStep > 0 && (
-                  <Button type="button" variant="outline" onClick={handleBack}>
-                    <ChevronLeft className="h-4 w-4 mr-2" /> Back
-                  </Button>
-                )}
-                <div className="ml-auto">
-                  {currentStep < steps.length - 1 ? (
-                    <Button type="button" onClick={handleNext}>
-                      Next <ChevronRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  ) : (
-                    <Button type="submit" size="lg" disabled={isSubmitting || (!limits?.isAdminBypass && !limits?.canPostAd)}>
-                      {isSubmitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Posting...</> : "Post Ad"}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </form>
-          </>
-        )}
+        {formContent}
       </main>
-
       <Footer />
     </div>
   );

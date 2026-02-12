@@ -23,6 +23,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { format } from "date-fns";
+import { CountdownTimer } from "@/components/CountdownTimer";
 
 const SellerOverview = () => {
   const { user } = useAuth();
@@ -33,7 +34,10 @@ const SellerOverview = () => {
     totalListings: 0,
     totalViews: 0,
     totalMessages: 0,
-    recentListings: [] as { id: string; title: string; views: number }[]
+    recentListings: [] as { id: string; title: string; views: number }[],
+    tierUsage: { active: 0, total: 0 },
+    promotionUsage: { active: 0, total: 0 },
+    bumpUsage: { used: 0, total: 0 }
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -44,8 +48,8 @@ const SellerOverview = () => {
       try {
         // Fetch listings
         const { data: listings } = await supabase
-          .from("listings")
-          .select("id, title, views")
+          .from("base_listings")
+          .select("id, title, views, tier_id, tier_expires_at, promotion_type_id, promotion_expires_at, bumped_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false });
 
@@ -55,13 +59,46 @@ const SellerOverview = () => {
           .select("id")
           .eq("receiver_id", user.id);
 
+        // Fetch tier purchases
+        const { data: tierPurchases } = await supabase
+          .from("listing_tier_purchases")
+          .select("id, status, expires_at")
+          .eq("user_id", user.id);
+
+        // Fetch promotion purchases
+        const { data: promotionPurchases } = await supabase
+          .from("listing_promotions")
+          .select("id, expires_at")
+          .eq("user_id", user.id);
+
+        // Fetch bump transactions
+        const { data: bumpTransactions } = await supabase
+          .from("bump_transactions")
+          .select("credits, type")
+          .eq("user_id", user.id);
+
         const totalViews = listings?.reduce((sum, l) => sum + (l.views || 0), 0) || 0;
+        
+        // Calculate tier usage
+        const activeTiers = listings?.filter(l => l.tier_id && l.tier_expires_at && new Date(l.tier_expires_at) > new Date()).length || 0;
+        const totalTierPurchases = tierPurchases?.length || 0;
+
+        // Calculate promotion usage
+        const activePromotions = listings?.filter(l => l.promotion_type_id && l.promotion_expires_at && new Date(l.promotion_expires_at) > new Date()).length || 0;
+        const totalPromotionPurchases = promotionPurchases?.length || 0;
+
+        // Calculate bump usage
+        const bumpPurchases = bumpTransactions?.filter(t => t.type === 'purchase').reduce((sum, t) => sum + (t.credits || 0), 0) || 0;
+        const bumpUsed = Math.abs(bumpTransactions?.filter(t => t.type === 'use').reduce((sum, t) => sum + (t.credits || 0), 0) || 0);
 
         setStats({
           totalListings: listings?.length || 0,
           totalViews,
           totalMessages: messages?.length || 0,
-          recentListings: listings?.slice(0, 3) || []
+          recentListings: listings?.slice(0, 3).map(l => ({ id: l.id, title: l.title, views: l.views || 0 })) || [],
+          tierUsage: { active: activeTiers, total: totalTierPurchases },
+          promotionUsage: { active: activePromotions, total: totalPromotionPurchases },
+          bumpUsage: { used: bumpUsed, total: bumpPurchases }
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -102,7 +139,7 @@ const SellerOverview = () => {
           <h2 className="text-2xl font-bold">Dashboard Overview</h2>
           <p className="text-muted-foreground">Welcome back! Here's what's happening.</p>
         </div>
-        <Link to="/post-ad">
+        <Link to="/seller-dashboard/post-ad">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Post New Ad
@@ -130,10 +167,7 @@ const SellerOverview = () => {
                       {limits.adsUsed} / {limits.maxAds} ads used
                     </span>
                     {limits.expiresAt && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        Expires {format(new Date(limits.expiresAt), "MMM dd, yyyy")}
-                      </span>
+                      <CountdownTimer expiresAt={limits.expiresAt} variant="compact" />
                     )}
                   </div>
                 </div>
@@ -229,23 +263,42 @@ const SellerOverview = () => {
               <div className="flex items-center justify-between p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
                 <div className="flex items-center gap-2">
                   <Zap className="h-4 w-4 text-yellow-600" />
-                  <span className="font-medium">Bump Credits</span>
+                  <div>
+                    <span className="font-medium">Bump Credits</span>
+                    <p className="text-xs text-muted-foreground">Used: {stats.bumpUsage.used} / {stats.bumpUsage.total}</p>
+                  </div>
                 </div>
                 <Badge variant="secondary">{bumpCredits}</Badge>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20">
                 <div className="flex items-center gap-2">
                   <Star className="h-4 w-4 text-purple-600" />
-                  <span className="font-medium">Featured Credits</span>
+                  <div>
+                    <span className="font-medium">Featured Credits</span>
+                    <p className="text-xs text-muted-foreground">Available</p>
+                  </div>
                 </div>
                 <Badge variant="secondary">{featuredCredits}</Badge>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium">Promotion Credits</span>
+                  <div>
+                    <span className="font-medium">Promotion Credits</span>
+                    <p className="text-xs text-muted-foreground">Available</p>
+                  </div>
                 </div>
                 <Badge variant="secondary">{promotionCredits}</Badge>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between text-sm p-2 bg-muted rounded">
+                <span className="text-muted-foreground">Active Tiers:</span>
+                <Badge>{stats.tierUsage.active} / {stats.tierUsage.total}</Badge>
+              </div>
+              <div className="flex items-center justify-between text-sm p-2 bg-muted rounded">
+                <span className="text-muted-foreground">Active Promotions:</span>
+                <Badge>{stats.promotionUsage.active} / {stats.promotionUsage.total}</Badge>
               </div>
             </div>
             <Link to="/seller-dashboard/addons" className="block mt-4">

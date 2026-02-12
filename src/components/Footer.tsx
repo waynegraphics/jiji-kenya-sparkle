@@ -6,40 +6,48 @@ const Footer = () => {
   return (
     <footer className="bg-foreground text-card py-10">
       <div className="container mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-          {/* About */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-8">
+          {/* About & Company */}
           <div>
             <h3 className="text-lg font-bold text-card mb-4">About APA Bazaar</h3>
             <ul className="space-y-2 text-sm text-muted">
-              <li><a href="#" className="hover:text-card transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-card transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-card transition-colors">Press</a></li>
-              <li><a href="#" className="hover:text-card transition-colors">Terms of Use</a></li>
-              <li><a href="#" className="hover:text-card transition-colors">Privacy Policy</a></li>
+              <li><Link to="/about-us" className="hover:text-card transition-colors">About Us</Link></li>
+              <li><Link to="/careers" className="hover:text-card transition-colors">Careers</Link></li>
+              <li><Link to="/blog" className="hover:text-card transition-colors">Blog</Link></li>
+              <li><Link to="/quick-links" className="hover:text-card transition-colors">Quick Links</Link></li>
             </ul>
           </div>
 
-          {/* Support */}
+          {/* Support & Help */}
           <div>
-            <h3 className="text-lg font-bold text-card mb-4">Support</h3>
+            <h3 className="text-lg font-bold text-card mb-4">Support & Help</h3>
             <ul className="space-y-2 text-sm text-muted">
+              <li><Link to="/contact-us" className="hover:text-card transition-colors">Contact Us</Link></li>
+              <li><Link to="/faqs" className="hover:text-card transition-colors">FAQs</Link></li>
               <li><Link to="/safety-tips" className="hover:text-card transition-colors">Safety Tips</Link></li>
-              <li><a href="#" className="hover:text-card transition-colors">Contact Us</a></li>
-              <li><a href="#" className="hover:text-card transition-colors">FAQ</a></li>
-              <li><Link to="/verified-sellers" className="hover:text-card transition-colors">Verified Sellers</Link></li>
-              <li><a href="#" className="hover:text-card transition-colors">Sitemap</a></li>
+              <li><Link to="/saved-ads" className="hover:text-card transition-colors">Saved Ads</Link></li>
             </ul>
           </div>
 
-          {/* Regions */}
+          {/* Sellers & Marketplace */}
           <div>
-            <h3 className="text-lg font-bold text-card mb-4">Our Regions</h3>
+            <h3 className="text-lg font-bold text-card mb-4">Sellers & Marketplace</h3>
             <ul className="space-y-2 text-sm text-muted">
-              <li><a href="#" className="hover:text-card transition-colors">Nairobi</a></li>
-              <li><a href="#" className="hover:text-card transition-colors">Mombasa</a></li>
-              <li><a href="#" className="hover:text-card transition-colors">Kisumu</a></li>
-              <li><a href="#" className="hover:text-card transition-colors">Nakuru</a></li>
-              <li><a href="#" className="hover:text-card transition-colors">All Regions</a></li>
+              <li><Link to="/sellers" className="hover:text-card transition-colors">All Sellers</Link></li>
+              <li><Link to="/verified-sellers" className="hover:text-card transition-colors">Verified Sellers</Link></li>
+            </ul>
+          </div>
+
+          {/* Legal & Policies */}
+          <div>
+            <h3 className="text-lg font-bold text-card mb-4">Legal & Policies</h3>
+            <ul className="space-y-2 text-sm text-muted">
+              <li><Link to="/terms-conditions" className="hover:text-card transition-colors">Terms & Conditions</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-card transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/data-protection" className="hover:text-card transition-colors">Data Protection</Link></li>
+              <li><Link to="/disclaimer" className="hover:text-card transition-colors">Disclaimer</Link></li>
+              <li><Link to="/copyright-infringement" className="hover:text-card transition-colors">Copyright Infringement</Link></li>
+              <li><Link to="/billing-policy" className="hover:text-card transition-colors">Billing Policy</Link></li>
             </ul>
           </div>
 

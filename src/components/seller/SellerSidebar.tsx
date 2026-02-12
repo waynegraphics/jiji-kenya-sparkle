@@ -10,6 +10,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import logo from "@/assets/logo.png";
 import { 
   LayoutDashboard, 
   Package, 
@@ -82,9 +83,20 @@ export function SellerSidebar() {
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent>
+        {/* Logo */}
+        <div className={`p-3 border-b ${collapsed ? "px-2" : ""}`}>
+          <Link to="/" className="flex items-center gap-2">
+            {collapsed ? (
+              <img src={logo} alt="Apa Bazaar" className="h-8 w-8 object-contain" />
+            ) : (
+              <img src={logo} alt="Apa Bazaar" className="h-10 w-auto object-contain" />
+            )}
+          </Link>
+        </div>
+        
         {/* Quick Action */}
         <div className={`p-3 ${collapsed ? "px-2" : ""}`}>
-          <Link to="/post-ad">
+          <Link to="/seller-dashboard/post-ad">
             <button className={`w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-lg py-2.5 px-4 hover:bg-primary/90 transition-colors ${collapsed ? "px-2" : ""}`}>
               <Plus className="h-4 w-4" />
               {!collapsed && <span className="font-medium">Post New Ad</span>}

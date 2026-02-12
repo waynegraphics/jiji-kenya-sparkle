@@ -12,11 +12,13 @@ import {
   Package, Zap, Crown, TrendingUp, BarChart3, ShoppingCart,
   Clock, CheckCircle2, AlertCircle, Megaphone, ArrowRight
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { CountdownTimer } from "@/components/CountdownTimer";
 
 const SellerSubscriptionDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { data: subscription, isLoading: subLoading } = useSellerSubscription(user?.id);
   const { data: packages } = useSubscriptionPackages(true);
 
@@ -102,7 +104,13 @@ const SellerSubscriptionDashboard = () => {
                   <div><p className="opacity-60">Price</p><p className="font-semibold">{fmt(pkg?.price || 0)}</p></div>
                   <div><p className="opacity-60">Duration</p><p className="font-semibold">{pkg?.duration_days} days</p></div>
                   <div><p className="opacity-60">Analytics</p><p className="font-semibold">{pkg?.analytics_access ? 'Included' : 'Basic'}</p></div>
-                  <div><p className="opacity-60">Expires</p><p className="font-semibold flex items-center gap-1"><Clock className="h-3 w-3" />{subscription.expires_at ? format(new Date(subscription.expires_at), 'MMM dd, yyyy') : 'N/A'}</p></div>
+                  <div><p className="opacity-60">Expires</p><div className="font-semibold">
+                    {subscription.expires_at ? (
+                      <CountdownTimer expiresAt={subscription.expires_at} variant="compact" />
+                    ) : (
+                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" />N/A</span>
+                    )}
+                  </div></div>
                 </div>
               </div>
               <div>
@@ -168,12 +176,17 @@ const SellerSubscriptionDashboard = () => {
           <CardContent>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {tiers.map(t => (
-                <div key={t.id} className="rounded-lg border-2 p-4 text-center" style={{ borderColor: t.badge_color }}>
+                <button
+                  key={t.id}
+                  onClick={() => navigate(`/checkout/tier/${t.id}`)}
+                  className="rounded-lg border-2 p-4 text-center hover:shadow-md transition-all cursor-pointer"
+                  style={{ borderColor: t.badge_color }}
+                >
                   <Crown className="h-5 w-5 mx-auto mb-1" style={{ color: t.badge_color }} />
                   <h4 className="font-bold">{t.name}</h4>
                   <p className="text-lg font-extrabold mt-1">{t.price === 0 ? "Free" : fmt(t.price)}</p>
                   <p className="text-xs text-muted-foreground">Weight: {t.priority_weight}{t.included_featured_days > 0 ? ` • ${t.included_featured_days}d featured` : ""}</p>
-                </div>
+                </button>
               ))}
             </div>
           </CardContent>
@@ -190,12 +203,16 @@ const SellerSubscriptionDashboard = () => {
           <CardContent>
             <div className="grid sm:grid-cols-3 gap-3">
               {bumpPackages.map(bp => (
-                <div key={bp.id} className="rounded-lg border p-4 text-center hover:shadow-md transition-shadow">
+                <button
+                  key={bp.id}
+                  onClick={() => navigate(`/checkout/bump/${bp.id}`)}
+                  className="rounded-lg border p-4 text-center hover:shadow-md transition-all cursor-pointer"
+                >
                   <Zap className="h-5 w-5 mx-auto mb-1 text-blue-500" />
                   <h4 className="font-bold">{bp.name}</h4>
                   <p className="text-lg font-extrabold">{fmt(bp.price)}</p>
                   <p className="text-xs text-muted-foreground">{bp.credits} bumps</p>
-                </div>
+                </button>
               ))}
             </div>
           </CardContent>
@@ -212,14 +229,18 @@ const SellerSubscriptionDashboard = () => {
           <CardContent>
             <div className="grid sm:grid-cols-2 gap-3">
               {promotions.map(p => (
-                <div key={p.id} className="rounded-lg border p-4 flex items-center gap-3">
+                <button
+                  key={p.id}
+                  onClick={() => navigate(`/checkout/promotion/${p.id}`)}
+                  className="rounded-lg border p-4 flex items-center gap-3 hover:shadow-md transition-all cursor-pointer text-left"
+                >
                   <TrendingUp className="h-5 w-5 text-orange-500 flex-shrink-0" />
                   <div className="flex-1">
                     <h4 className="font-semibold text-sm">{p.name}</h4>
                     <p className="text-xs text-muted-foreground">{p.duration_days} days • Max {p.max_ads} ads</p>
                   </div>
                   <span className="font-bold text-sm">{fmt(p.price)}</span>
-                </div>
+                </button>
               ))}
             </div>
           </CardContent>
@@ -227,7 +248,14 @@ const SellerSubscriptionDashboard = () => {
       )}
 
       <div className="text-center">
-        <Link to="/pricing"><Button variant="outline">View Full Pricing Details <ArrowRight className="h-4 w-4 ml-2" /></Button></Link>
+            <div className="flex gap-2 justify-center">
+              {packages && packages.length > 0 && (
+                <Button onClick={() => navigate(`/checkout/subscription/${packages[0].id}`)}>
+                  <ShoppingCart className="h-4 w-4 mr-2" /> Subscribe Now
+                </Button>
+              )}
+              <Link to="/pricing"><Button variant="outline">View Full Pricing Details <ArrowRight className="h-4 w-4 ml-2" /></Button></Link>
+            </div>
       </div>
     </div>
   );

@@ -179,7 +179,11 @@ const AdminUsers = () => {
       const { error } = await supabase.from("profiles").update({ is_verified: !isVerified }).eq("user_id", userId);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Verification status updated"); },
+    onSuccess: () => { 
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      queryClient.refetchQueries({ queryKey: ["admin-users"] }); // Force refetch to update UI immediately
+      toast.success("Verification status updated"); 
+    },
     onError: () => toast.error("Failed to update verification status"),
   });
 
@@ -466,17 +470,41 @@ const AdminUsers = () => {
                 if (!assignTierUser || !selectedTierId) return;
                 try {
                   const tier = listingTiers?.find(t => t.id === selectedTierId);
+                  
+                  // Get user's first active listing to use for the tier purchase
+                  // If they don't have any listings, we'll need to handle that
+                  const { data: userListings } = await supabase
+                    .from("base_listings")
+                    .select("id")
+                    .eq("user_id", assignTierUser.user_id)
+                    .eq("status", "active")
+                    .limit(1)
+                    .single();
+
+                  if (!userListings) {
+                    toast.error("User must have at least one active listing to assign a tier. Please create a listing first.");
+                    return;
+                  }
+
                   const { error } = await supabase.from("listing_tier_purchases").insert({
                     user_id: assignTierUser.user_id,
                     tier_id: selectedTierId,
-                    listing_id: "00000000-0000-0000-0000-000000000000", // placeholder - user will apply to specific listing
+                    listing_id: userListings.id,
                     status: "active",
                     payment_status: "completed",
                     payment_reference: "admin_assigned",
                     expires_at: tier?.included_featured_days ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null,
                   });
                   if (error) throw error;
-                  toast.success(`${tier?.name} tier assigned to ${assignTierUser.display_name}`);
+                  
+                  // Also update the listing to use this tier
+                  await supabase
+                    .from("base_listings")
+                    .update({ tier_id: selectedTierId, tier_priority: tier?.priority_weight || 0 })
+                    .eq("id", userListings.id);
+                  
+                  toast.success(`${tier?.name} tier assigned to ${assignTierUser.display_name}'s listing`);
+                  queryClient.invalidateQueries({ queryKey: ["admin-users"] });
                   setAssignTierUser(null);
                   setSelectedTierId("");
                 } catch (err: any) {
@@ -547,20 +575,44 @@ const AdminUsers = () => {
                 try {
                   const promo = promotionTypes?.find(p => p.id === selectedPromoId);
                   if (!promo) throw new Error("Promotion not found");
+                  
+                  // Get user's first active listing to use for the promotion
+                  const { data: userListings } = await supabase
+                    .from("base_listings")
+                    .select("id")
+                    .eq("user_id", assignPromoUser.user_id)
+                    .eq("status", "active")
+                    .limit(1)
+                    .single();
+
+                  if (!userListings) {
+                    toast.error("User must have at least one active listing to assign a promotion. Please create a listing first.");
+                    return;
+                  }
+
                   const expiresAt = new Date(Date.now() + promo.duration_days * 24 * 60 * 60 * 1000);
-                  // Note: listing_id is required. Admin can assign a placeholder or specific listing.
-                  // For now, we create a record that the user can link to a listing.
                   const { error } = await supabase.from("listing_promotions").insert({
                     user_id: assignPromoUser.user_id,
                     promotion_type_id: selectedPromoId,
-                    listing_id: "00000000-0000-0000-0000-000000000000", // placeholder
+                    listing_id: userListings.id,
                     status: "active",
                     payment_status: "completed",
                     payment_reference: "admin_assigned",
                     expires_at: expiresAt.toISOString(),
                   });
                   if (error) throw error;
-                  toast.success(`${promo.name} promotion assigned to ${assignPromoUser.display_name}`);
+                  
+                  // Also update the listing to use this promotion
+                  await supabase
+                    .from("base_listings")
+                    .update({ 
+                      promotion_type_id: selectedPromoId,
+                      promotion_expires_at: expiresAt.toISOString()
+                    })
+                    .eq("id", userListings.id);
+                  
+                  toast.success(`${promo.name} promotion assigned to ${assignPromoUser.display_name}'s listing`);
+                  queryClient.invalidateQueries({ queryKey: ["admin-users"] });
                   setAssignPromoUser(null);
                   setSelectedPromoId("");
                 } catch (err: any) {

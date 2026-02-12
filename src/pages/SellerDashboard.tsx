@@ -15,20 +15,28 @@ import SellerMessages from "@/components/seller/SellerMessages";
 import SellerFavorites from "@/components/seller/SellerFavorites";
 import SellerSettingsPage from "@/components/seller/SellerSettingsPage";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Shield, Heart, Bell, MessageCircle } from "lucide-react";
+import { Home, Shield, Heart, Bell, MessageCircle, LogOut } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useNotifications } from "@/hooks/useNotifications";
+import PostAd from "@/pages/PostAd";
+import EditAd from "@/pages/EditAd";
 
 const SellerDashboard = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const { data: limits } = useSubscriptionLimits();
   const { isSuperAdmin, isTeamMember } = useIsSuperAdmin();
   const unreadMessages = useUnreadMessages();
   const { unreadCount: unreadNotifications } = useNotifications();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   if (loading) {
     return (
@@ -44,6 +52,8 @@ const SellerDashboard = () => {
     const path = location.pathname;
     if (path.includes('/subscription')) return 'Subscription';
     if (path.includes('/listings')) return 'My Listings';
+    if (path.includes('/post-ad')) return 'Post Ad';
+    if (path.includes('/edit-ad')) return 'Edit Ad';
     if (path.includes('/messages')) return 'Messages';
     if (path.includes('/analytics')) return 'Analytics';
     if (path.includes('/billing')) return 'Billing';
@@ -108,6 +118,10 @@ const SellerDashboard = () => {
                 </Link>
               )}
               <Link to="/"><Button variant="outline" size="sm" className="ml-1"><Home className="h-4 w-4 mr-2" />Site</Button></Link>
+              <Button variant="outline" size="sm" onClick={handleLogout} className="ml-1">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </header>
           <main className="flex-1 p-6 overflow-auto">
@@ -116,6 +130,8 @@ const SellerDashboard = () => {
                 <Route index element={<SellerOverview />} />
                 <Route path="subscription" element={<SellerSubscriptionDashboard />} />
                 <Route path="listings" element={<SellerListings />} />
+                <Route path="post-ad" element={<PostAd inDashboard={true} />} />
+                <Route path="edit-ad/:id" element={<EditAd inDashboard={true} />} />
                 <Route path="messages" element={<SellerMessages />} />
                 <Route path="analytics" element={
                   limits?.analyticsAccess ? <SellerAnalytics /> : (

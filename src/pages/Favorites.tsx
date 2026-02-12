@@ -50,11 +50,16 @@ const Favorites = () => {
     setFavoriteIds(new Set(ids));
 
     // Fetch the actual listings
-    const { data: listingsData } = await supabase
-      .from("listings")
+    const { data: listingsData, error } = await supabase
+      .from("base_listings")
       .select("id, title, price, location, images, is_featured, is_urgent, created_at")
       .in("id", ids)
+      .eq("status", "active")
       .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching favorite listings:", error);
+    }
 
     if (listingsData) {
       setListings(listingsData as Listing[]);

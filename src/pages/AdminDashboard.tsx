@@ -26,14 +26,19 @@ import AdminPromotions from "@/components/admin/AdminPromotions";
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Shield, Home, Eye } from "lucide-react";
+import { Shield, Home, Eye, LogOut } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 
 const AdminDashboard = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { isSuperAdmin, isTeamMember, teamMember } = useIsSuperAdmin();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
 
   // Check if user is admin
   const { data: isAdmin, isLoading } = useQuery({
@@ -131,6 +136,10 @@ const AdminDashboard = () => {
                   View Site
                 </Button>
               </Link>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </header>
 

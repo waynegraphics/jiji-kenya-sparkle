@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import LocationSelector from "@/components/LocationSelector";
 import { useParams, Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
+import { generateListingUrl } from "@/lib/slugify";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -279,34 +280,40 @@ const CategoryPage = () => {
                         image={listing.images?.[0] || "/placeholder.svg"}
                         isFeatured={listing.is_featured || false}
                         isUrgent={listing.is_urgent || false}
+                        categorySlug={categorySlug}
                       />
                     ))}
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {listingsData.listings.map((listing) => (
-                      <Link key={listing.id} to={`/listing/${listing.id}`} className="block">
-                        <div className="bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-all flex">
-                          <div className="w-40 h-28 flex-shrink-0">
-                            <img src={listing.images?.[0] || "/placeholder.svg"} alt={listing.title} className="w-full h-full object-cover" />
-                          </div>
-                          <div className="flex-1 p-3 flex flex-col justify-between">
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                {listing.is_featured && <Badge className="bg-primary text-primary-foreground text-[10px]">FEATURED</Badge>}
-                                {listing.is_urgent && <Badge variant="destructive" className="text-[10px]">URGENT</Badge>}
+                    {listingsData.listings.map((listing) => {
+                      const listingUrl = categorySlug 
+                        ? generateListingUrl(listing.id, categorySlug, listing.title)
+                        : `/listing/${listing.id}`;
+                      return (
+                        <Link key={listing.id} to={listingUrl} className="block">
+                          <div className="bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-all flex">
+                            <div className="w-40 h-28 flex-shrink-0">
+                              <img src={listing.images?.[0] || "/placeholder.svg"} alt={listing.title} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-1 p-3 flex flex-col justify-between">
+                              <div>
+                                <div className="flex items-center gap-2 mb-1">
+                                  {listing.is_featured && <Badge className="bg-primary text-primary-foreground text-[10px]">FEATURED</Badge>}
+                                  {listing.is_urgent && <Badge variant="destructive" className="text-[10px]">URGENT</Badge>}
+                                </div>
+                                <h3 className="font-semibold text-foreground line-clamp-1">{listing.title}</h3>
+                                <p className="text-lg font-bold text-primary">KES {listing.price.toLocaleString()}</p>
                               </div>
-                              <h3 className="font-semibold text-foreground line-clamp-1">{listing.title}</h3>
-                              <p className="text-lg font-bold text-primary">KES {listing.price.toLocaleString()}</p>
-                            </div>
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                              <span>{listing.location}</span>
-                              <span>{formatDistanceToNow(new Date(listing.created_at!), { addSuffix: true })}</span>
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                <span>{listing.location}</span>
+                                <span>{formatDistanceToNow(new Date(listing.created_at!), { addSuffix: true })}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </Link>
-                    ))}
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
 

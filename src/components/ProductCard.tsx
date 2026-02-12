@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { generateListingUrl } from "@/lib/slugify";
 
 interface TierInfo {
   name: string;
@@ -27,12 +28,13 @@ interface ProductCardProps {
   onFavoriteChange?: () => void;
   tier?: TierInfo | null;
   isPromoted?: boolean;
+  categorySlug?: string;
 }
 
 const ProductCard = ({
   id, title, price, location, time, image,
   isFeatured = false, isUrgent = false, isFavorited = false,
-  onFavoriteChange, tier, isPromoted = false,
+  onFavoriteChange, tier, isPromoted = false, categorySlug,
 }: ProductCardProps) => {
   const [isFavorite, setIsFavorite] = useState(isFavorited);
   const navigate = useNavigate();
@@ -82,7 +84,12 @@ const ProductCard = ({
     <div
       className="group bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-200 hover:-translate-y-1 cursor-pointer relative"
       style={cardStyle}
-      onClick={() => navigate(`/listing/${id}`)}
+      onClick={() => {
+        const url = categorySlug 
+          ? generateListingUrl(id, categorySlug, title)
+          : `/listing/${id}`;
+        navigate(url);
+      }}
     >
       {/* Tier Ribbon */}
       {hasTier && tier.ribbon_text && (

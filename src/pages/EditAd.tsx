@@ -46,7 +46,11 @@ const categoryTableMap: Record<string, string> = {
   "leisure-activities": "leisure_listings",
 };
 
-const EditAd = () => {
+interface EditAdProps {
+  inDashboard?: boolean;
+}
+
+const EditAd = ({ inDashboard = false }: EditAdProps = {}) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -408,57 +412,67 @@ const EditAd = () => {
     </div>
   );
 
+  const formContent = (
+    <>
+      <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6">Edit Ad</h1>
+
+      {/* Step Progress */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          {steps.map((step, i) => (
+            <div key={i} className="flex items-center">
+              <button type="button" onClick={() => i < currentStep && setCurrentStep(i)}
+                className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium px-2 py-1 rounded-full transition-colors ${
+                  i === currentStep ? "bg-primary text-primary-foreground" :
+                  i < currentStep ? "bg-primary/20 text-primary cursor-pointer" :
+                  "bg-muted text-muted-foreground"
+                }`}>
+                {i < currentStep ? <Check className="h-3 w-3" /> : <span>{step.icon}</span>}
+                <span className="hidden sm:inline">{step.title}</span>
+                <span className="sm:hidden">{i + 1}</span>
+              </button>
+              {i < steps.length - 1 && <div className={`w-4 sm:w-8 h-0.5 mx-1 ${i < currentStep ? "bg-primary" : "bg-muted"}`} />}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {renderStepContent()}
+
+        <div className="flex justify-between gap-4">
+          {currentStep > 0 && (
+            <Button type="button" variant="outline" onClick={() => setCurrentStep(p => p - 1)}>
+              <ChevronLeft className="h-4 w-4 mr-2" /> Back
+            </Button>
+          )}
+          <div className="ml-auto">
+            {currentStep < steps.length - 1 ? (
+              <Button type="button" onClick={() => {
+                if (validateStep(currentStep)) setCurrentStep(p => p + 1);
+              }}>
+                Next <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            ) : (
+              <Button type="submit" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</> : <><CheckCircle className="h-4 w-4 mr-2" /> Save & Submit for Review</>}
+              </Button>
+            )}
+          </div>
+        </div>
+      </form>
+    </>
+  );
+
+  if (inDashboard) {
+    return <div className="space-y-6">{formContent}</div>;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto py-6 max-w-3xl">
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6">Edit Ad</h1>
-
-        {/* Step Progress */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            {steps.map((step, i) => (
-              <div key={i} className="flex items-center">
-                <button type="button" onClick={() => i < currentStep && setCurrentStep(i)}
-                  className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium px-2 py-1 rounded-full transition-colors ${
-                    i === currentStep ? "bg-primary text-primary-foreground" :
-                    i < currentStep ? "bg-primary/20 text-primary cursor-pointer" :
-                    "bg-muted text-muted-foreground"
-                  }`}>
-                  {i < currentStep ? <Check className="h-3 w-3" /> : <span>{step.icon}</span>}
-                  <span className="hidden sm:inline">{step.title}</span>
-                  <span className="sm:hidden">{i + 1}</span>
-                </button>
-                {i < steps.length - 1 && <div className={`w-4 sm:w-8 h-0.5 mx-1 ${i < currentStep ? "bg-primary" : "bg-muted"}`} />}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {renderStepContent()}
-
-          <div className="flex justify-between gap-4">
-            {currentStep > 0 && (
-              <Button type="button" variant="outline" onClick={() => setCurrentStep(p => p - 1)}>
-                <ChevronLeft className="h-4 w-4 mr-2" /> Back
-              </Button>
-            )}
-            <div className="ml-auto">
-              {currentStep < steps.length - 1 ? (
-                <Button type="button" onClick={() => {
-                  if (validateStep(currentStep)) setCurrentStep(p => p + 1);
-                }}>
-                  Next <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
-              ) : (
-                <Button type="submit" size="lg" disabled={isSubmitting}>
-                  {isSubmitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</> : <><CheckCircle className="h-4 w-4 mr-2" /> Save & Submit for Review</>}
-                </Button>
-              )}
-            </div>
-          </div>
-        </form>
+        {formContent}
       </main>
       <Footer />
     </div>

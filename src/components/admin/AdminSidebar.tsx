@@ -10,6 +10,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import logo from "@/assets/logo.png";
 import { 
   LayoutDashboard, Users, FileText, FolderTree, Package, 
   MessageSquare, LifeBuoy, Flag, Settings, Shield, ShieldCheck,
@@ -67,16 +68,25 @@ const AdminSidebar = () => {
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent>
-        {/* Admin Header */}
+        {/* Logo & Admin Header */}
         <div className={`p-3 border-b ${collapsed ? "px-2" : ""}`}>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Shield className="h-4 w-4 text-primary-foreground" />
-            </div>
+            <Link to="/" className="flex-shrink-0">
+              {collapsed ? (
+                <img src={logo} alt="Apa Bazaar" className="h-8 w-8 object-contain" />
+              ) : (
+                <img src={logo} alt="Apa Bazaar" className="h-10 w-auto object-contain mb-2" />
+              )}
+            </Link>
             {!collapsed && (
-              <div>
-                <h2 className="font-semibold text-sm">APA Admin</h2>
-                <p className="text-xs text-muted-foreground">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
+                    <Shield className="h-3 w-3 text-primary-foreground" />
+                  </div>
+                  <h2 className="font-semibold text-sm">APA Admin</h2>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
                   {isSuperAdmin ? "Super Admin" : teamMember?.designation ? teamMember.designation.charAt(0).toUpperCase() + teamMember.designation.slice(1) : "Admin"}
                 </p>
               </div>

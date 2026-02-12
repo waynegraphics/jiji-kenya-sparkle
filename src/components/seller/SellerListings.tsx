@@ -28,6 +28,7 @@ import {
   CheckCircle, XCircle, FileText, Crown, Wallet
 } from "lucide-react";
 import Pagination from "@/components/Pagination";
+import { CountdownTimer } from "@/components/CountdownTimer";
 
 interface BaseListing {
   id: string;
@@ -46,6 +47,9 @@ interface BaseListing {
   rejection_note: string | null;
   tier_id: string | null;
   tier_priority: number;
+  tier_expires_at: string | null;
+  promotion_type_id: string | null;
+  promotion_expires_at: string | null;
   bumped_at: string | null;
   main_categories?: { name: string; slug: string } | null;
   listing_tiers?: { name: string; badge_label: string | null; badge_color: string } | null;
@@ -211,7 +215,7 @@ const SellerListings = () => {
             <Wallet className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">{profile?.bump_wallet_balance || 0} bumps</span>
           </div>
-          <Button onClick={() => navigate("/post-ad")}>
+          <Button onClick={() => navigate("/seller-dashboard/post-ad")}>
             <Plus className="h-4 w-4 mr-2" /> Post New Ad
           </Button>
         </div>
@@ -295,7 +299,7 @@ const SellerListings = () => {
             {listings.length === 0 ? "Start selling by posting your first ad!" : "Try adjusting your filters."}
           </p>
           {listings.length === 0 && (
-            <Button onClick={() => navigate("/post-ad")} size="lg">
+            <Button onClick={() => navigate("/seller-dashboard/post-ad")} size="lg">
               <Plus className="h-4 w-4 mr-2" /> Post Your First Ad
             </Button>
           )}
@@ -321,6 +325,16 @@ const SellerListings = () => {
                 <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                   <Eye className="h-3 w-3" /> {listing.views || 0} views
                 </div>
+                {(listing.tier_expires_at || listing.promotion_expires_at) && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {listing.tier_expires_at && (
+                      <CountdownTimer expiresAt={listing.tier_expires_at} variant="badge" showIcon={false} className="text-[10px] px-1.5 py-0.5" />
+                    )}
+                    {listing.promotion_expires_at && (
+                      <CountdownTimer expiresAt={listing.promotion_expires_at} variant="badge" showIcon={false} className="text-[10px] px-1.5 py-0.5" />
+                    )}
+                  </div>
+                )}
                 {listing.status === "rejected" && listing.rejection_note && (
                   <button onClick={() => setRejectionNoteDialog(listing.rejection_note)}
                     className="text-xs text-red-600 underline mt-1 flex items-center gap-1">
@@ -333,7 +347,7 @@ const SellerListings = () => {
                       <Zap className="h-3 w-3" />
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => navigate(`/edit-ad/${listing.id}`)}>
+                  <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => navigate(`/seller-dashboard/edit-ad/${listing.id}`)}>
                     <Pencil className="h-3 w-3" />
                   </Button>
                   <Button variant="outline" size="sm" className="text-xs h-7 text-destructive" onClick={() => { setListingToDelete(listing); setDeleteDialogOpen(true); }}>
@@ -375,6 +389,24 @@ const SellerListings = () => {
                         <Badge variant="outline" className="text-xs">{listing.main_categories.name}</Badge>
                       )}
                     </div>
+                    {(listing.tier_expires_at || listing.promotion_expires_at) && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {listing.tier_expires_at && (
+                          <div className="flex items-center gap-1 text-xs">
+                            <Crown className="h-3 w-3 text-yellow-600" />
+                            <span className="text-muted-foreground">Tier:</span>
+                            <CountdownTimer expiresAt={listing.tier_expires_at} variant="badge" showIcon={false} />
+                          </div>
+                        )}
+                        {listing.promotion_expires_at && (
+                          <div className="flex items-center gap-1 text-xs">
+                            <TrendingUp className="h-3 w-3 text-orange-600" />
+                            <span className="text-muted-foreground">Promo:</span>
+                            <CountdownTimer expiresAt={listing.promotion_expires_at} variant="badge" showIcon={false} />
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {listing.status === "rejected" && listing.rejection_note && (
                       <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700 flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
@@ -389,7 +421,7 @@ const SellerListings = () => {
                     <Button variant="outline" size="sm" onClick={() => navigate(`/listing/${listing.id}`)}>
                       <Eye className="h-4 w-4 mr-1" /> View
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/edit-ad/${listing.id}`)}>
+                    <Button variant="outline" size="sm" onClick={() => navigate(`/seller-dashboard/edit-ad/${listing.id}`)}>
                       <Pencil className="h-4 w-4 mr-1" /> Edit
                     </Button>
                     {listing.status === "active" && (

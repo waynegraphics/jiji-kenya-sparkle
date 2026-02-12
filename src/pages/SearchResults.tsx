@@ -17,6 +17,7 @@ import { useMainCategories } from "@/hooks/useCategories";
 import { formatDistanceToNow } from "date-fns";
 import { Search, SlidersHorizontal, X, Grid, List } from "lucide-react";
 import { Link } from "react-router-dom";
+import { generateListingUrl } from "@/lib/slugify";
 
 interface Listing {
   id: string;
@@ -28,6 +29,7 @@ interface Listing {
   is_urgent: boolean;
   created_at: string;
   main_category_id: string;
+  main_category?: { slug: string };
 }
 
 const sortOptions = [
@@ -87,7 +89,7 @@ const SearchResults = () => {
     // Data query
     let queryBuilder = supabase
       .from("base_listings")
-      .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id")
+      .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id, main_category:main_categories(slug)")
       .eq("status", "active");
 
     if (query) queryBuilder = queryBuilder.or(`title.ilike.%${query}%,description.ilike.%${query}%`);
@@ -299,13 +301,20 @@ const SearchResults = () => {
                     isUrgent={listing.is_urgent}
                     isFavorited={favorites.has(listing.id)}
                     onFavoriteChange={fetchFavorites}
+                    categorySlug={listing.main_category?.slug}
                   />
                 ))}
               </div>
             ) : (
               <div className="space-y-3">
                 {listings.map((listing) => (
-                  <Link key={listing.id} to={`/listing/${listing.id}`} className="block">
+                  <Link 
+                    key={listing.id} 
+                    to={listing.main_category?.slug 
+                      ? generateListingUrl(listing.id, listing.main_category.slug, listing.title)
+                      : `/listing/${listing.id}`} 
+                    className="block"
+                  >
                     <div className="bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-all flex">
                       <div className="w-40 h-28 flex-shrink-0">
                         <img src={listing.images?.[0] || "/placeholder.svg"} alt={listing.title} className="w-full h-full object-cover" />

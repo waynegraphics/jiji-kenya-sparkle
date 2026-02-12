@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -23,8 +23,33 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
   const [displayName, setDisplayName] = useState("");
   const [accountType, setAccountType] = useState<"customer" | "seller">("customer");
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+
+  // Check if user is admin after OAuth login
+  useEffect(() => {
+    const checkAdminAfterOAuth = async () => {
+      if (user && isOpen) {
+        const { data: teamMember } = await supabase
+          .from("team_members")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: user.id });
+
+        if (teamMember || isAdmin) {
+          await supabase.auth.signOut();
+          toast.error("Admins must login through the admin portal");
+          onClose();
+          navigate('/apa/login');
+        }
+      }
+    };
+
+    checkAdminAfterOAuth();
+  }, [user, isOpen, navigate, onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +61,29 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
         if (error) {
           toast.error(error.message);
         } else {
+          // Check if user is admin or team member
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { data: teamMember } = await supabase
+              .from("team_members")
+              .select("*")
+              .eq("user_id", user.id)
+              .eq("is_active", true)
+              .maybeSingle();
+
+            const { data: isAdmin } = await supabase.rpc("is_admin", { _user_id: user.id });
+
+            if (teamMember || isAdmin) {
+              // Sign out admin/team members who try to login through frontend
+              await supabase.auth.signOut();
+              toast.error("Admins must login through the admin portal");
+              onClose();
+              resetForm();
+              navigate('/apa/login');
+              return;
+            }
+          }
+
           toast.success("Welcome back!");
           onClose();
           resetForm();
@@ -244,7 +292,13 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
                 const { error } = await lovable.auth.signInWithOAuth("google", {
                   redirect_uri: window.location.origin,
                 });
-                if (error) toast.error(error.message);
+                if (error) {
+                  toast.error(error.message);
+                } else {
+                  // Check admin status after OAuth redirect
+                  // This will be handled by the auth state change listener
+                  // We'll add a check in useEffect to handle this
+                }
               } catch (err: any) {
                 toast.error(err.message || "Google sign-in failed");
               } finally {

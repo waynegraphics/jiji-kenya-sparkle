@@ -42,7 +42,7 @@ const FeaturedListings = () => {
     // Dynamic ranking: promotions first, then featured by tier, then by tier priority, then by bump, then by date
     const { data, error } = await supabase
       .from("base_listings")
-      .select("id, title, price, location, images, is_featured, is_urgent, created_at, tier_priority, bumped_at, promotion_type_id, promotion_expires_at, featured_until, listing_tiers(name, badge_label, badge_color, border_style, shadow_intensity, ribbon_text)")
+      .select("id, title, price, location, images, is_featured, is_urgent, created_at, tier_priority, bumped_at, promotion_type_id, promotion_expires_at, featured_until, main_category_id, listing_tiers(name, badge_label, badge_color, border_style, shadow_intensity, ribbon_text), main_category:main_categories(slug)")
       .eq("status", "active")
       .order("tier_priority", { ascending: false })
       .order("bumped_at", { ascending: false, nullsFirst: false })
@@ -134,6 +134,7 @@ const FeaturedListings = () => {
               onFavoriteChange={fetchFavorites}
               tier={listing.listing_tiers || null}
               isPromoted={!!(listing.promotion_type_id && (!listing.promotion_expires_at || listing.promotion_expires_at > now))}
+              categorySlug={(listing as any).main_category?.slug}
             />
           ))}
         </div>

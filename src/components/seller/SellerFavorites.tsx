@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Heart, MapPin, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { generateListingUrl } from "@/lib/slugify";
 
 const SellerFavorites = () => {
   const { user } = useAuth();
@@ -15,11 +16,23 @@ const SellerFavorites = () => {
 
   const fetchFavorites = async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("favorites")
-      .select("*, listing:listings(*)")
+      .select(`
+        *,
+        listing:base_listings(
+          *,
+          main_categories(slug, name)
+        )
+      `)
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
+    
+    if (error) {
+      console.error("Error fetching favorites:", error);
+      toast.error("Failed to load favorites");
+    }
+    
     setFavorites(data || []);
     setLoading(false);
   };
@@ -48,12 +61,30 @@ const SellerFavorites = () => {
           {favorites.map((fav) => (
             <Card key={fav.id} className="overflow-hidden hover:shadow-md transition-shadow">
               <div className="flex">
-                <div className="w-32 h-28 flex-shrink-0 cursor-pointer" onClick={() => navigate(`/listing/${fav.listing?.id}`)}>
+                <div 
+                  className="w-32 h-28 flex-shrink-0 cursor-pointer" 
+                  onClick={() => {
+                    if (fav.listing?.id && fav.listing?.title && fav.listing?.main_categories?.slug) {
+                      navigate(generateListingUrl(fav.listing.id, fav.listing.main_categories.slug, fav.listing.title));
+                    } else {
+                      navigate(`/listing/${fav.listing?.id}`);
+                    }
+                  }}
+                >
                   <img src={fav.listing?.images?.[0] || "/placeholder.svg"} alt={fav.listing?.title} className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 p-3 flex flex-col justify-between">
                   <div>
-                    <h4 className="font-semibold text-sm line-clamp-1 cursor-pointer hover:text-primary" onClick={() => navigate(`/listing/${fav.listing?.id}`)}>
+                    <h4 
+                      className="font-semibold text-sm line-clamp-1 cursor-pointer hover:text-primary" 
+                      onClick={() => {
+                        if (fav.listing?.id && fav.listing?.title && fav.listing?.main_categories?.slug) {
+                          navigate(generateListingUrl(fav.listing.id, fav.listing.main_categories.slug, fav.listing.title));
+                        } else {
+                          navigate(`/listing/${fav.listing?.id}`);
+                        }
+                      }}
+                    >
                       {fav.listing?.title}
                     </h4>
                     <p className="text-primary font-bold text-sm mt-1">KES {fav.listing?.price?.toLocaleString()}</p>

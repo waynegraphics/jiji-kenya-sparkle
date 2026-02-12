@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import BentoGallery from "@/components/BentoGallery";
 import ReportAdDialog from "@/components/ReportAdDialog";
 import ProductCard from "@/components/ProductCard";
+import { PremiumFeatureDisplay } from "@/components/PremiumFeatureDisplay";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -17,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/AuthModal";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { extractListingId, generateListingUrl } from "@/lib/slugify";
 
 interface BaseListing {
   id: string; title: string; description: string | null; price: number;
@@ -32,7 +34,7 @@ interface SellerProfile {
   account_type: string; business_name: string | null;
 }
 
-const SidebarPromotionSlot = ({ promos }: { promos: any[] }) => {
+const SidebarPromotionSlot = ({ promos, categorySlug }: { promos: any[]; categorySlug?: string }) => {
   const navigate = useNavigate();
   if (promos.length === 0) return null;
   const formatPrice = (price: number) =>
@@ -44,8 +46,12 @@ const SidebarPromotionSlot = ({ promos }: { promos: any[] }) => {
         <span className="text-xs text-muted-foreground">Promoted listings</span>
       </div>
       <div className="space-y-3">
-        {promos.map((ad) => (
-          <div key={ad.id} className="flex gap-3 cursor-pointer group" onClick={() => navigate(`/listing/${ad.id}`)}>
+        {promos.map((ad) => {
+          const promoUrl = categorySlug && ad.title
+            ? generateListingUrl(ad.id, categorySlug, ad.title)
+            : `/listing/${ad.id}`;
+          return (
+          <div key={ad.id} className="flex gap-3 cursor-pointer group" onClick={() => navigate(promoUrl)}>
             <img src={ad.images?.[0] || "/placeholder.svg"} alt={ad.title}
               className="w-16 h-16 rounded-lg object-cover flex-shrink-0 group-hover:opacity-80 transition-opacity" />
             <div className="min-w-0">
@@ -53,19 +59,27 @@ const SidebarPromotionSlot = ({ promos }: { promos: any[] }) => {
               <p className="text-sm font-bold text-primary">{formatPrice(ad.price)}</p>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
 };
 
 const ProductDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ category?: string; slug?: string; id?: string }>();
   const navigate = useNavigate();
+  
+  // Extract listing ID from URL (supports both old and new formats)
+  // New format: /listing/category/title-slug-id
+  // Old format: /listing/id
+  // Always try to extract from pathname as it handles both formats
+  const listingId = params.id || extractListingId(window.location.pathname);
   const { user } = useAuth();
   const [listing, setListing] = useState<BaseListing | null>(null);
   const [categoryDetails, setCategoryDetails] = useState<Record<string, any>>({});
   const [categoryName, setCategoryName] = useState("");
+  const [categorySlug, setCategorySlug] = useState<string | undefined>(undefined);
   const [seller, setSeller] = useState<SellerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -76,71 +90,126 @@ const ProductDetail = () => {
 
   useEffect(() => {
     const fetchListing = async () => {
-      if (!id) return;
-      const { data: baseData, error: baseError } = await supabase
-        .from("base_listings").select("*").eq("id", id).single();
-
-      if (baseError || !baseData) {
-        const { data: oldData, error: oldError } = await supabase
-          .from("listings").select("*").eq("id", id).single();
-        if (oldError || !oldData) { toast.error("Listing not found"); navigate("/"); return; }
-        setListing({
-          id: oldData.id, title: oldData.title, description: oldData.description,
-          price: oldData.price, location: oldData.location, images: oldData.images || [],
-          is_featured: oldData.is_featured || false, is_urgent: oldData.is_urgent || false,
-          is_negotiable: oldData.is_negotiable || false, views: oldData.views || 0,
-          created_at: oldData.created_at, user_id: oldData.user_id, currency: "KES",
-          status: "active", main_category_id: "", sub_category_id: null,
-        });
-        setCategoryName(oldData.category || "");
-      } else {
-        setListing(baseData as BaseListing);
-        if (baseData.main_category_id) {
-          const { data: catData } = await supabase.from("main_categories")
-            .select("name, slug").eq("id", baseData.main_category_id).single();
-          if (catData) setCategoryName(catData.name);
-          await fetchCategoryDetails(baseData.id, catData?.slug || "");
-        }
+      if (!listingId) {
+        console.error("No listing ID found in URL:", window.location.pathname, params);
+        toast.error("Invalid listing URL");
+        navigate("/");
+        return;
       }
-
-      const userId = baseData?.user_id || "";
-      const { data: profileData } = await supabase.from("profiles")
-        .select("*").eq("user_id", userId).single();
-      if (profileData) setSeller(profileData as SellerProfile);
-
-      if (user) {
-        const { data: favData } = await supabase.from("favorites")
-          .select("id").eq("user_id", user.id).eq("listing_id", id).maybeSingle();
-        setIsFavorite(!!favData);
-      }
-
-      if (baseData) {
-        await supabase.rpc("increment_listing_views", { p_listing_id: id });
-      }
-
-      // Fetch sidebar promoted listings
-      const { data: sidebarData } = await supabase
-        .from("base_listings")
-        .select("id, title, price, images, location, created_at, promotion_type_id")
-        .eq("status", "active")
-        .not("promotion_type_id", "is", null)
-        .neq("id", id)
-        .limit(3);
       
-      if (sidebarData && sidebarData.length > 0) {
-        // Filter to only sidebar promotions
-        const { data: promoTypes } = await supabase
-          .from("promotion_types")
-          .select("id")
-          .eq("placement", "sidebar");
-        const sidebarTypeIds = new Set((promoTypes || []).map(p => p.id));
-        setSidebarPromos(sidebarData.filter(l => sidebarTypeIds.has(l.promotion_type_id)));
-      }
+      try {
+        // Fetch base listing first (critical path)
+        const { data: baseData, error: baseError } = await supabase
+          .from("base_listings").select("*").eq("id", listingId).single();
 
-      setLoading(false);
+        if (baseError || !baseData) {
+        const { data: oldData, error: oldError } = await supabase
+          .from("listings").select("*").eq("id", listingId).single();
+          if (oldError || !oldData) { 
+            toast.error("Listing not found"); 
+            navigate("/"); 
+            return; 
+          }
+          setListing({
+            id: oldData.id, title: oldData.title, description: oldData.description,
+            price: oldData.price, location: oldData.location, images: oldData.images || [],
+            is_featured: oldData.is_featured || false, is_urgent: oldData.is_urgent || false,
+            is_negotiable: oldData.is_negotiable || false, views: oldData.views || 0,
+            created_at: oldData.created_at, user_id: oldData.user_id, currency: "KES",
+            status: "active", main_category_id: "", sub_category_id: null,
+          });
+          setCategoryName(oldData.category || "");
+          setLoading(false);
+          return;
+        }
+
+        // Set listing immediately for faster display
+        setListing(baseData as BaseListing);
+        
+        const userId = baseData.user_id;
+        const mainCategoryId = baseData.main_category_id;
+
+        // Fetch all non-critical data in parallel for faster loading
+        const [
+          categoryResult,
+          profileResult,
+          favoriteResult
+        ] = await Promise.allSettled([
+          // Category data
+          mainCategoryId 
+            ? supabase.from("main_categories")
+                .select("name, slug").eq("id", mainCategoryId).single()
+            : Promise.resolve({ data: null, error: null }),
+          // Seller profile
+          supabase.from("profiles")
+            .select("*").eq("user_id", userId).single(),
+          // Favorite status (only if user is logged in)
+          user 
+            ? supabase.from("favorites")
+                .select("id").eq("user_id", user.id).eq("listing_id", listingId).maybeSingle()
+            : Promise.resolve({ data: null, error: null })
+        ]);
+
+        // Process category data
+        if (categoryResult.status === 'fulfilled' && categoryResult.value.data) {
+          setCategoryName(categoryResult.value.data.name);
+          if (categoryResult.value.data.slug) {
+            setCategorySlug(categoryResult.value.data.slug);
+            // Fetch category details in background (non-blocking)
+            fetchCategoryDetails(baseData.id, categoryResult.value.data.slug).catch(console.error);
+          }
+        }
+
+        // Process seller profile
+        if (profileResult.status === 'fulfilled' && profileResult.value.data) {
+          setSeller(profileResult.value.data as SellerProfile);
+        }
+
+        // Process favorite status
+        if (favoriteResult.status === 'fulfilled' && favoriteResult.value.data) {
+          setIsFavorite(true);
+        }
+
+        // Fetch sidebar promotions in background (non-blocking)
+        supabase
+          .from("base_listings")
+          .select("id, title, price, images, location, created_at, promotion_type_id")
+          .eq("status", "active")
+          .not("promotion_type_id", "is", null)
+          .neq("id", listingId)
+          .limit(3)
+          .then(({ data: sidebarData }) => {
+            if (sidebarData && sidebarData.length > 0) {
+              return supabase
+                .from("promotion_types")
+                .select("id")
+                .eq("placement", "sidebar")
+                .then(({ data: promoTypes }) => {
+                  if (promoTypes) {
+                    const sidebarTypeIds = new Set(promoTypes.map(p => p.id));
+                    setSidebarPromos(sidebarData.filter(l => sidebarTypeIds.has(l.promotion_type_id)));
+                  }
+                });
+            }
+          })
+          .catch(console.error);
+
+        // Increment views in background (fire-and-forget, non-blocking)
+        supabase.rpc("increment_listing_views", { p_listing_id: listingId })
+          .then(() => {})
+          .catch((err) => {
+            console.error("Error incrementing views:", err);
+          });
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching listing:", error);
+        toast.error("Failed to load listing");
+        setLoading(false);
+      }
     };
     fetchListing();
-  }, [id, user, navigate]);
+  }, [listingId, user, navigate]);
 
   const fetchCategoryDetails = async (listingId: string, slug: string) => {
     const tableMap: Record<string, string> = {
@@ -154,8 +223,34 @@ const ProductDetail = () => {
     };
     const table = tableMap[slug];
     if (!table) return;
-    const { data } = await supabase.from(table as any).select("*").eq("id", listingId).single();
-    if (data) setCategoryDetails(data);
+    
+    // For vehicles, fetch with make and model joins
+    if (slug === 'vehicles') {
+      const { data } = await supabase
+        .from(table as any)
+        .select("*, make:vehicle_makes(name), model:vehicle_models(name)")
+        .eq("id", listingId)
+        .single();
+      if (data) {
+        // Transform make_id and model_id to display names
+        const transformed = { ...data };
+        if (data.make_id && data.make) {
+          transformed.make_name = data.make.name;
+          delete transformed.make_id; // Remove ID, keep name
+        }
+        if (data.model_id && data.model) {
+          transformed.model_name = data.model.name;
+          delete transformed.model_id; // Remove ID, keep name
+        }
+        // Remove the joined objects
+        delete transformed.make;
+        delete transformed.model;
+        setCategoryDetails(transformed);
+      }
+    } else {
+      const { data } = await supabase.from(table as any).select("*").eq("id", listingId).single();
+      if (data) setCategoryDetails(data);
+    }
   };
 
   const toggleFavorite = async () => {
@@ -169,6 +264,16 @@ const ProductDetail = () => {
       setIsFavorite(true); toast.success("Added to favorites");
     }
   };
+
+  // Update URL to SEO-friendly format if needed (redirect old format to new)
+  useEffect(() => {
+    if (listing && categorySlug && !params.slug && params.id) {
+      const newUrl = generateListingUrl(listing.id, categorySlug, listing.title);
+      if (window.location.pathname !== newUrl) {
+        window.history.replaceState({}, "", newUrl);
+      }
+    }
+  }, [listing, categorySlug, params.slug, params.id]);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -212,32 +317,6 @@ const ProductDetail = () => {
 
   const images = listing.images?.length > 0 ? listing.images : ["/placeholder.svg"];
 
-  const renderCategoryDetails = () => {
-    if (Object.keys(categoryDetails).length === 0) return null;
-    const details = { ...categoryDetails };
-    delete details.id; delete details.created_at;
-    const entries = Object.entries(details).filter(([_, v]) => v != null && v !== "" && v !== false);
-    if (entries.length === 0) return null;
-    const formatKey = (key: string) => key.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-    const formatValue = (val: any) => {
-      if (typeof val === "boolean") return val ? "Yes" : "No";
-      if (Array.isArray(val)) return val.join(", ");
-      return String(val);
-    };
-    return (
-      <div className="bg-card rounded-xl p-6 shadow-card">
-        <h2 className="text-lg font-semibold mb-3">Specifications</h2>
-        <div className="grid grid-cols-2 gap-3">
-          {entries.map(([key, val]) => (
-            <div key={key} className="flex flex-col">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">{formatKey(key)}</span>
-              <span className="text-sm font-medium">{formatValue(val)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -281,7 +360,10 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            {renderCategoryDetails()}
+            <PremiumFeatureDisplay 
+              categoryDetails={categoryDetails} 
+              categorySlug={categorySlug}
+            />
 
             <div className="bg-card rounded-xl p-6 shadow-card">
               <h2 className="text-lg font-semibold mb-3">Description</h2>
@@ -401,7 +483,7 @@ const ProductDetail = () => {
             </div>
 
             {/* Sidebar Promotion Slot */}
-            <SidebarPromotionSlot promos={sidebarPromos} />
+            <SidebarPromotionSlot promos={sidebarPromos} categorySlug={categorySlug} />
 
             {/* Safety Tips */}
             <div className="bg-card rounded-xl p-5 shadow-card border border-border/50">
@@ -442,7 +524,7 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        <SimilarAds categoryId={listing.main_category_id} currentId={listing.id} />
+        <SimilarAds categoryId={listing.main_category_id} currentId={listing.id} categorySlug={categorySlug} />
       </main>
 
       <Footer />
@@ -451,7 +533,7 @@ const ProductDetail = () => {
   );
 };
 
-const SimilarAds = ({ categoryId, currentId }: { categoryId: string; currentId: string }) => {
+const SimilarAds = ({ categoryId, currentId, categorySlug }: { categoryId: string; currentId: string; categorySlug?: string }) => {
   const [ads, setAds] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -459,7 +541,8 @@ const SimilarAds = ({ categoryId, currentId }: { categoryId: string; currentId: 
     const load = async () => {
       if (!categoryId) return;
       setLoading(true);
-      const { data } = await supabase.from("base_listings").select("*")
+      const { data } = await supabase.from("base_listings")
+        .select("*, main_category:main_categories(slug)")
         .eq("main_category_id", categoryId).eq("status", "active")
         .neq("id", currentId).order("created_at", { ascending: false }).limit(6);
       if (data) setAds(data);
@@ -478,9 +561,18 @@ const SimilarAds = ({ categoryId, currentId }: { categoryId: string; currentId: 
       <h2 className="text-xl font-bold mb-4">Similar Ads</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {ads.map((ad) => (
-          <ProductCard key={ad.id} id={ad.id} title={ad.title} price={formatPrice(ad.price)}
-            location={ad.location} time={formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}
-            image={ad.images?.[0] || "/placeholder.svg"} isFeatured={ad.is_featured} isUrgent={ad.is_urgent} />
+          <ProductCard 
+            key={ad.id} 
+            id={ad.id} 
+            title={ad.title} 
+            price={formatPrice(ad.price)}
+            location={ad.location} 
+            time={formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}
+            image={ad.images?.[0] || "/placeholder.svg"} 
+            isFeatured={ad.is_featured} 
+            isUrgent={ad.is_urgent}
+            categorySlug={(ad as any).main_category?.slug || categorySlug}
+          />
         ))}
       </div>
     </div>

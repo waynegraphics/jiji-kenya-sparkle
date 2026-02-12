@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useMainCategories } from "@/hooks/useCategories";
+import { generateListingUrl } from "@/lib/slugify";
 
 interface SearchResult {
   id: string;
@@ -179,26 +180,31 @@ const AjaxSearch = ({ className = "", inputClassName = "", placeholder = "Search
                       {group.count} {group.count === 1 ? "ad" : "ads"}
                     </span>
                   </button>
-                  {group.items.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        navigate(`/listing/${item.id}`);
-                        setIsOpen(false);
-                      }}
-                      className="w-full px-4 py-2 flex items-center gap-3 hover:bg-muted/30 transition-colors text-left"
-                    >
-                      <img
-                        src={item.images?.[0] || "/placeholder.svg"}
-                        alt=""
-                        className="w-10 h-10 rounded object-cover flex-shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground truncate">{item.title}</p>
-                        <p className="text-xs font-semibold text-primary">{formatPrice(item.price)}</p>
-                      </div>
-                    </button>
-                  ))}
+                  {group.items.map((item) => {
+                    const listingUrl = group.categorySlug && item.title
+                      ? generateListingUrl(item.id, group.categorySlug, item.title)
+                      : `/listing/${item.id}`;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          navigate(listingUrl);
+                          setIsOpen(false);
+                        }}
+                        className="w-full px-4 py-2 flex items-center gap-3 hover:bg-muted/30 transition-colors text-left"
+                      >
+                        <img
+                          src={item.images?.[0] || "/placeholder.svg"}
+                          alt=""
+                          className="w-10 h-10 rounded object-cover flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground truncate">{item.title}</p>
+                          <p className="text-xs font-semibold text-primary">{formatPrice(item.price)}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               ))}
               <button
