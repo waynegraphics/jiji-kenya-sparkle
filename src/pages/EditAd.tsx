@@ -72,6 +72,8 @@ const EditAd = () => {
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<{ file: File; preview: string }[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [defaultCountyName, setDefaultCountyName] = useState("");
+  const [defaultTownName, setDefaultTownName] = useState("");
 
   const isJobCategory = categorySlug === "jobs";
 
@@ -107,6 +109,11 @@ const EditAd = () => {
       });
       setExistingImages(listing.images?.filter(Boolean) || []);
 
+      // Pre-populate location selector
+      const locationParts = listing.location?.split(", ") || [];
+      if (locationParts.length >= 1) setDefaultCountyName(locationParts[0]);
+      if (locationParts.length >= 2) setDefaultTownName(locationParts[1]);
+
       // Store original data for edit tracking
       setOriginalData({
         title: listing.title,
@@ -136,6 +143,26 @@ const EditAd = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const validateStep = (step: number): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (step === 0) {
+      if (!selectedMainCategoryId) newErrors.category = "Please select a category";
+      if (!baseFormData.location) newErrors.location = "Please select a location";
+    }
+    if (step === steps.length - 1) {
+      if (!baseFormData.title.trim() || baseFormData.title.length < 5)
+        newErrors.title = "Title must be at least 5 characters";
+      if (!isJobCategory && (!baseFormData.price || parseFloat(baseFormData.price) < 1))
+        newErrors.price = "Price must be at least 1";
+    }
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast.error("Please fix the errors before continuing");
+      return false;
+    }
+    return true;
   };
 
   const steps = [
@@ -292,10 +319,14 @@ const EditAd = () => {
             </div>
             <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
               <h2 className="text-lg font-semibold">Location</h2>
-              <LocationSelector onLocationChange={(county, town) => {
-                const loc = town ? `${county}, ${town}` : county;
-                setBaseFormData(p => ({ ...p, location: loc }));
-              }} />
+              <LocationSelector
+                defaultCountyName={defaultCountyName}
+                defaultTownName={defaultTownName}
+                onLocationChange={(county, town) => {
+                  const loc = town ? `${county}, ${town}` : county;
+                  setBaseFormData(p => ({ ...p, location: loc }));
+                }}
+              />
             </div>
           </div>
         );
@@ -415,7 +446,9 @@ const EditAd = () => {
             )}
             <div className="ml-auto">
               {currentStep < steps.length - 1 ? (
-                <Button type="button" onClick={() => setCurrentStep(p => p + 1)}>
+                <Button type="button" onClick={() => {
+                  if (validateStep(currentStep)) setCurrentStep(p => p + 1);
+                }}>
                   Next <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
               ) : (
