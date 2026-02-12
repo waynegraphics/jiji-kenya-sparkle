@@ -259,6 +259,14 @@ const Header = ({ onSearch }: HeaderProps) => {
                 )}
 
                 <Button
+                  variant="ghost"
+                  className="text-primary hover:bg-primary/10 font-medium hidden xl:inline-flex"
+                  onClick={() => navigate("/pricing")}
+                >
+                  Pricing
+                </Button>
+
+                <Button
                   className="bg-secondary hover:bg-jiji-orange-hover text-secondary-foreground font-semibold"
                   onClick={() => user ? navigate("/post-ad") : openAuthModal("register")}
                 >

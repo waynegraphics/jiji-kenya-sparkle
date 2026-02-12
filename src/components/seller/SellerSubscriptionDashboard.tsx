@@ -1,26 +1,16 @@
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  useSellerSubscription, 
-  useSellerAddons,
-  useSubscriptionPackages,
-  useAddons,
-  useAddonTiers
-} from "@/hooks/useSubscriptions";
+import { useSellerSubscription, useSubscriptionPackages } from "@/hooks/useSubscriptions";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Package, 
-  Zap, 
-  Star, 
-  TrendingUp, 
-  BarChart3, 
-  ShoppingCart,
-  Clock,
-  CheckCircle2,
-  AlertCircle
+import { Separator } from "@/components/ui/separator";
+import {
+  Package, Zap, Crown, TrendingUp, BarChart3, ShoppingCart,
+  Clock, CheckCircle2, AlertCircle, Megaphone, ArrowRight
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -28,21 +18,53 @@ import { format } from "date-fns";
 const SellerSubscriptionDashboard = () => {
   const { user } = useAuth();
   const { data: subscription, isLoading: subLoading } = useSellerSubscription(user?.id);
-  const { data: sellerAddons, isLoading: addonsLoading } = useSellerAddons(user?.id);
   const { data: packages } = useSubscriptionPackages(true);
-  const { data: availableAddons } = useAddons(true);
-  const { data: allTiers } = useAddonTiers(undefined, true);
 
-  const isLoading = subLoading || addonsLoading;
+  const { data: bumpBalance } = useQuery({
+    queryKey: ["bump-balance", user?.id],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { data } = await supabase.from("profiles").select("bump_wallet_balance").eq("user_id", user.id).single();
+      return data?.bump_wallet_balance || 0;
+    },
+    enabled: !!user,
+  });
 
-  if (isLoading) {
+  const { data: tiers = [] } = useQuery({
+    queryKey: ["listing-tiers-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("listing_tiers").select("*").eq("is_active", true).order("display_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: bumpPackages = [] } = useQuery({
+    queryKey: ["bump-packages-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("bump_packages").select("*").eq("is_active", true).order("display_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: promotions = [] } = useQuery({
+    queryKey: ["promotion-types-active"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("promotion_types").select("*").eq("is_active", true).order("display_order");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const fmt = (p: number) => new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", minimumFractionDigits: 0 }).format(p);
+
+  if (subLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-48 w-full" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
-          <Skeleton className="h-32" />
+          <Skeleton className="h-32" /><Skeleton className="h-32" /><Skeleton className="h-32" />
         </div>
       </div>
     );
@@ -54,32 +76,6 @@ const SellerSubscriptionDashboard = () => {
   const adsRemaining = Math.max(0, maxAds - adsUsed);
   const adsPercentage = maxAds > 0 ? (adsUsed / maxAds) * 100 : 0;
 
-  // Group seller addons by type
-  const addonsByType = sellerAddons?.reduce((acc, sa) => {
-    const type = sa.addon?.type || 'unknown';
-    if (!acc[type]) acc[type] = [];
-    acc[type].push(sa);
-    return acc;
-  }, {} as Record<string, typeof sellerAddons>);
-
-  const getAddonIcon = (type: string) => {
-    switch (type) {
-      case 'bumping': return <Zap className="h-5 w-5" />;
-      case 'featured': return <Star className="h-5 w-5" />;
-      case 'promotion': return <TrendingUp className="h-5 w-5" />;
-      default: return <Package className="h-5 w-5" />;
-    }
-  };
-
-  const getAddonColor = (type: string) => {
-    switch (type) {
-      case 'bumping': return 'bg-yellow-100 text-yellow-800';
-      case 'featured': return 'bg-purple-100 text-purple-800';
-      case 'promotion': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Current Subscription */}
@@ -87,235 +83,152 @@ const SellerSubscriptionDashboard = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Current Subscription
-              </CardTitle>
-              <CardDescription>
-                Your active subscription plan and usage
-              </CardDescription>
+              <CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" />Current Subscription</CardTitle>
+              <CardDescription>Your active plan and usage</CardDescription>
             </div>
-            {!subscription && (
-              <Link to="/pricing">
-                <Button>
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Get Started
-                </Button>
-              </Link>
-            )}
+            <Link to="/pricing"><Button variant="outline" size="sm">View All Plans <ArrowRight className="h-3 w-3 ml-1" /></Button></Link>
           </div>
         </CardHeader>
         <CardContent>
           {subscription ? (
             <div className="space-y-6">
-              {/* Package Info */}
-              <div 
-                className="rounded-lg p-4 border"
-                style={{ 
-                  backgroundColor: pkg?.bg_color || '#f8fafc',
-                  color: pkg?.text_color || '#1a1a1a'
-                }}
-              >
+              <div className="rounded-lg p-4 border" style={{ backgroundColor: pkg?.bg_color || '#f8fafc', color: pkg?.text_color || '#1a1a1a' }}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xl font-bold">{pkg?.name}</h3>
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3" />
-                    Active
-                  </Badge>
+                  <Badge variant="secondary" className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3" />Active</Badge>
                 </div>
                 <p className="text-sm opacity-80 mb-4">{pkg?.description}</p>
-                
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="opacity-60">Price</p>
-                    <p className="font-semibold">{pkg?.currency} {pkg?.price?.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="opacity-60">Duration</p>
-                    <p className="font-semibold">{pkg?.duration_days} days</p>
-                  </div>
-                  <div>
-                    <p className="opacity-60">Analytics</p>
-                    <p className="font-semibold">{pkg?.analytics_access ? 'Included' : 'Not included'}</p>
-                  </div>
-                  <div>
-                    <p className="opacity-60">Expires</p>
-                    <p className="font-semibold flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {subscription.expires_at 
-                        ? format(new Date(subscription.expires_at), 'MMM dd, yyyy')
-                        : 'N/A'}
-                    </p>
-                  </div>
+                  <div><p className="opacity-60">Price</p><p className="font-semibold">{fmt(pkg?.price || 0)}</p></div>
+                  <div><p className="opacity-60">Duration</p><p className="font-semibold">{pkg?.duration_days} days</p></div>
+                  <div><p className="opacity-60">Analytics</p><p className="font-semibold">{pkg?.analytics_access ? 'Included' : 'Basic'}</p></div>
+                  <div><p className="opacity-60">Expires</p><p className="font-semibold flex items-center gap-1"><Clock className="h-3 w-3" />{subscription.expires_at ? format(new Date(subscription.expires_at), 'MMM dd, yyyy') : 'N/A'}</p></div>
                 </div>
               </div>
-
-              {/* Ads Usage */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium">Ads Usage</span>
-                  <span className="text-sm text-muted-foreground">
-                    {adsUsed} / {maxAds} ads used
-                  </span>
+                  <span className="text-sm text-muted-foreground">{adsUsed} / {maxAds} ads used</span>
                 </div>
                 <Progress value={adsPercentage} className="h-2" />
-                <p className="text-xs text-muted-foreground mt-1">
-                  {adsRemaining} ads remaining in your plan
-                </p>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="flex gap-2">
-                <Link to="/pricing">
-                  <Button variant="outline" size="sm">
-                    Upgrade Plan
-                  </Button>
-                </Link>
-                {pkg?.analytics_access && (
-                  <Button variant="outline" size="sm">
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    View Analytics
-                  </Button>
-                )}
+                <p className="text-xs text-muted-foreground mt-1">{adsRemaining} ads remaining</p>
               </div>
             </div>
           ) : (
             <div className="text-center py-8">
               <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Active Subscription</h3>
-              <p className="text-muted-foreground mb-4">
-                Subscribe to a plan to start posting ads and grow your business.
-              </p>
-              <Link to="/pricing">
-                <Button>View Plans</Button>
-              </Link>
+              <p className="text-muted-foreground mb-4">Subscribe to a plan to start posting ads.</p>
+              <Link to="/pricing"><Button>View Plans</Button></Link>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Purchased Add-ons */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-3 rounded-lg bg-blue-500/10"><Zap className="h-5 w-5 text-blue-600" /></div>
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                Your Add-ons
-              </CardTitle>
-              <CardDescription>
-                Purchased add-ons and remaining credits
-              </CardDescription>
+              <p className="text-2xl font-bold">{bumpBalance || 0}</p>
+              <p className="text-sm text-muted-foreground">Bump Credits</p>
             </div>
-            <Link to="/pricing">
-              <Button variant="outline" size="sm">
-                Buy More
-              </Button>
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {sellerAddons && sellerAddons.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {['bumping', 'featured', 'promotion'].map((type) => {
-                const typeAddons = addonsByType?.[type] || [];
-                const totalPurchased = typeAddons.reduce((sum, a) => sum + a.quantity_purchased, 0);
-                const totalUsed = typeAddons.reduce((sum, a) => sum + a.quantity_used, 0);
-                const remaining = totalPurchased - totalUsed;
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-3 rounded-lg bg-yellow-500/10"><Crown className="h-5 w-5 text-yellow-600" /></div>
+            <div>
+              <p className="text-2xl font-bold">{tiers.filter(t => t.price > 0).length}</p>
+              <p className="text-sm text-muted-foreground">Ad Tiers Available</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="p-3 rounded-lg bg-orange-500/10"><Megaphone className="h-5 w-5 text-orange-600" /></div>
+            <div>
+              <p className="text-2xl font-bold">{promotions.length}</p>
+              <p className="text-sm text-muted-foreground">Promotion Slots</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-                return (
-                  <div
-                    key={type}
-                    className="rounded-lg border p-4"
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className={`p-2 rounded-full ${getAddonColor(type)}`}>
-                        {getAddonIcon(type)}
-                      </div>
-                      <div>
-                        <h4 className="font-semibold capitalize">{type}</h4>
-                        <p className="text-xs text-muted-foreground">
-                          {remaining} remaining
-                        </p>
-                      </div>
-                    </div>
-                    <Progress 
-                      value={totalPurchased > 0 ? (totalUsed / totalPurchased) * 100 : 0} 
-                      className="h-2 mb-2"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {totalUsed} of {totalPurchased} used
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <p className="text-muted-foreground mb-4">
-                No add-ons purchased yet. Boost your listings with add-ons!
-              </p>
-              <Link to="/pricing">
-                <Button variant="outline">Browse Add-ons</Button>
-              </Link>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <Separator />
 
-      {/* Available Add-ons Preview */}
-      {availableAddons && availableAddons.length > 0 && (
+      {/* Available Tiers */}
+      {tiers.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
-              Available Add-ons
-            </CardTitle>
-            <CardDescription>
-              Enhance your listings with these add-ons
-            </CardDescription>
+            <CardTitle className="flex items-center gap-2"><Crown className="h-5 w-5 text-yellow-500" />Ad Tiers</CardTitle>
+            <CardDescription>Boost individual ads with premium ranking</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {availableAddons.slice(0, 3).map((addon) => {
-                const tiers = allTiers?.filter(t => t.addon_id === addon.id) || [];
-                const lowestPrice = tiers.length > 0 
-                  ? Math.min(...tiers.map(t => t.price))
-                  : 0;
-
-                return (
-                  <div
-                    key={addon.id}
-                    className="rounded-lg border p-4 hover:shadow-md transition-shadow"
-                    style={{
-                      backgroundColor: addon.bg_color || '#f8fafc',
-                      color: addon.text_color || '#1a1a1a'
-                    }}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className={`p-2 rounded-full ${getAddonColor(addon.type)}`}>
-                        {getAddonIcon(addon.type)}
-                      </div>
-                      <h4 className="font-semibold">{addon.name}</h4>
-                    </div>
-                    <p className="text-sm opacity-80 mb-3">{addon.description}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold">
-                        From KES {lowestPrice.toLocaleString()}
-                      </span>
-                      <Link to="/pricing">
-                        <Button size="sm" variant="secondary">
-                          Buy Now
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {tiers.map(t => (
+                <div key={t.id} className="rounded-lg border-2 p-4 text-center" style={{ borderColor: t.badge_color }}>
+                  <Crown className="h-5 w-5 mx-auto mb-1" style={{ color: t.badge_color }} />
+                  <h4 className="font-bold">{t.name}</h4>
+                  <p className="text-lg font-extrabold mt-1">{t.price === 0 ? "Free" : fmt(t.price)}</p>
+                  <p className="text-xs text-muted-foreground">Weight: {t.priority_weight}{t.included_featured_days > 0 ? ` • ${t.included_featured_days}d featured` : ""}</p>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Bump Packages */}
+      {bumpPackages.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-blue-500" />Bump Packages</CardTitle>
+            <CardDescription>Purchase credits to push ads to the top</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-3 gap-3">
+              {bumpPackages.map(bp => (
+                <div key={bp.id} className="rounded-lg border p-4 text-center hover:shadow-md transition-shadow">
+                  <Zap className="h-5 w-5 mx-auto mb-1 text-blue-500" />
+                  <h4 className="font-bold">{bp.name}</h4>
+                  <p className="text-lg font-extrabold">{fmt(bp.price)}</p>
+                  <p className="text-xs text-muted-foreground">{bp.credits} bumps</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Promotions */}
+      {promotions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-orange-500" />Ad Promotions</CardTitle>
+            <CardDescription>Premium placements for maximum visibility</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {promotions.map(p => (
+                <div key={p.id} className="rounded-lg border p-4 flex items-center gap-3">
+                  <TrendingUp className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm">{p.name}</h4>
+                    <p className="text-xs text-muted-foreground">{p.duration_days} days • Max {p.max_ads} ads</p>
+                  </div>
+                  <span className="font-bold text-sm">{fmt(p.price)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="text-center">
+        <Link to="/pricing"><Button variant="outline">View Full Pricing Details <ArrowRight className="h-4 w-4 ml-2" /></Button></Link>
+      </div>
     </div>
   );
 };
