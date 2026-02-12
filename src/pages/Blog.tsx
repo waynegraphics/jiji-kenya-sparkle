@@ -1,19 +1,12 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PageHero from "@/components/PageHero";
 import { Link } from "react-router-dom";
-import { Calendar, User, ArrowRight, BookOpen, Search, Home, ChevronRight } from "lucide-react";
+import { Calendar, User, ArrowRight, BookOpen, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 
 interface BlogPost {
   id: string;
@@ -108,47 +101,13 @@ const Blog = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Modern Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/30 via-primary/20 to-primary/10 border-b overflow-hidden">
-        <div className="absolute inset-0 opacity-5" style={{
-          backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
-          backgroundSize: '40px 40px'
-        }}></div>
-        <div className="container mx-auto px-4 py-16 md:py-24 relative">
-          {/* Breadcrumb */}
-          <Breadcrumb className="mb-6">
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/" className="flex items-center gap-1">
-                    <Home className="h-4 w-4" />
-                    Home
-                  </Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4" />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Blog</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-primary/20 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6 backdrop-blur-sm">
-              <BookOpen className="h-5 w-5" />
-              Latest News & Tips
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              Blog
-            </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-              Stay updated with the latest tips, guides, and news from APA Bazaar
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        title="Blog"
+        subtitle="Stay updated with the latest tips, guides, and news from APA Bazaar"
+        badge="Latest News & Tips"
+        badgeIcon={BookOpen}
+        breadcrumbLabel="Blog"
+      />
 
       <main className="container mx-auto py-8 px-4">
         <div className="max-w-6xl mx-auto">

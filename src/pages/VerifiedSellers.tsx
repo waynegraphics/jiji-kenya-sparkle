@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PageHero from "@/components/PageHero";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -86,18 +87,15 @@ const VerifiedSellers = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="container mx-auto py-8 px-4">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-4">
-            <Building2 className="h-4 w-4" />
-            Verified Businesses
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">Business Directory</h1>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            These businesses have been identity-verified by our team. Shop with confidence knowing you're dealing with trusted businesses.
-          </p>
-        </div>
+      <PageHero
+        title="Business Directory"
+        subtitle="These businesses have been identity-verified by our team. Shop with confidence knowing you're dealing with trusted businesses."
+        badge="Verified Businesses"
+        badgeIcon={Building2}
+        breadcrumbLabel="Verified Sellers"
+      />
 
+      <main className="container mx-auto py-8 px-4">
         <div className="max-w-md mx-auto mb-8">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

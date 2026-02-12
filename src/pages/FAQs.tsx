@@ -2,21 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PageHero from "@/components/PageHero";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { HelpCircle, ChevronRight, Home } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const FAQs = () => {
@@ -375,47 +368,13 @@ const FAQs = () => {
     <div className="min-h-screen bg-background">
       <Header />
       
-      {/* Modern Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/20 via-primary/10 to-secondary/10 border-b overflow-hidden">
-        <div className="absolute inset-0 opacity-5" style={{
-          backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
-          backgroundSize: '40px 40px'
-        }}></div>
-        <div className="container mx-auto px-4 py-16 md:py-24 relative">
-          {/* Breadcrumb */}
-          <Breadcrumb className="mb-6">
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to="/" className="flex items-center gap-1">
-                    <Home className="h-4 w-4" />
-                    Home
-                  </Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <ChevronRight className="h-4 w-4" />
-              </BreadcrumbSeparator>
-              <BreadcrumbItem>
-                <BreadcrumbPage>FAQs</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-primary/20 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6 backdrop-blur-sm">
-              <HelpCircle className="h-5 w-5" />
-              Help Center
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Frequently Asked Questions
-            </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-              Find answers to common questions about using APA Bazaar. Everything you need to know about buying, selling, and getting the most out of our platform.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        title="Frequently Asked Questions"
+        subtitle="Find answers to common questions about using APA Bazaar. Everything you need to know about buying, selling, and getting the most out of our platform."
+        badge="Help Center"
+        badgeIcon={HelpCircle}
+        breadcrumbLabel="FAQs"
+      />
 
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8 max-w-7xl mx-auto">
