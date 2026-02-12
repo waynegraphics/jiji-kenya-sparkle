@@ -76,30 +76,14 @@ const SellerVerificationForm = () => {
     );
   }
 
-  if (verification?.status === "rejected") {
-    return (
-      <Card className="border-destructive/20 bg-destructive/5">
-        <CardContent className="pt-6">
-          <div className="text-center mb-4">
-            <XCircle className="h-12 w-12 text-destructive mx-auto mb-3" />
-            <h3 className="text-lg font-semibold">Verification Rejected</h3>
-            {verification.admin_notes && (
-              <p className="text-muted-foreground mt-2">Reason: {verification.admin_notes}</p>
-            )}
-          </div>
-          <p className="text-center text-sm text-muted-foreground">Please re-upload your documents to try again.</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  // For rejected status, we show the rejection reason AND the upload form below (no early return)
 
   const uploadFile = async (file: File, folder: string): Promise<string> => {
     const ext = file.name.split(".").pop();
     const path = `${user!.id}/${folder}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("verifications").upload(path, file);
+    const { error } = await supabase.storage.from("verifications").upload(path, file, { upsert: true });
     if (error) throw error;
-    const { data } = supabase.storage.from("verifications").getPublicUrl(path);
-    return data.publicUrl;
+    return path; // Store the path, not public URL, so admin can generate signed URLs
   };
 
   const handleSubmit = async () => {
@@ -204,12 +188,29 @@ const SellerVerificationForm = () => {
           <div>
             <CardTitle>Seller Verification</CardTitle>
             <CardDescription>
-              Upload your ID and passport photo to get verified. This protects our community against spam and fraud.
-              Your documents are stored securely and will only be used for verification purposes.
+              {verification?.status === "rejected"
+                ? "Your previous submission was rejected. Please re-upload your documents."
+                : "Upload your ID and passport photo to get verified. This protects our community against spam and fraud."}
             </CardDescription>
           </div>
         </div>
       </CardHeader>
+      {verification?.status === "rejected" && (
+        <CardContent className="pt-0 pb-4">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+            <div className="flex items-start gap-2">
+              <XCircle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+              <div>
+                <p className="font-medium text-destructive">Verification Rejected</p>
+                {verification.admin_notes && (
+                  <p className="text-sm text-muted-foreground mt-1">Reason: {verification.admin_notes}</p>
+                )}
+                <p className="text-sm text-muted-foreground mt-1">Please re-upload your documents below to try again.</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      )}
       <CardContent className="space-y-4">
         {renderUploadArea("National ID - Front Side", idFront, idFrontPreview, idFrontRef, setIdFront, setIdFrontPreview)}
         {renderUploadArea("National ID - Back Side", idBack, idBackPreview, idBackRef, setIdBack, setIdBackPreview)}
