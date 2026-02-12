@@ -74,7 +74,7 @@ const SavedAds = () => {
       .in("id", ids);
 
     if (filterCategory !== "all") {
-      query = query.eq("category", filterCategory);
+      query = query.eq("category", filterCategory as any);
     }
 
     // Apply sorting
