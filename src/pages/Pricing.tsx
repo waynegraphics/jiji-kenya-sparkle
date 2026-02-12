@@ -214,6 +214,20 @@ const Pricing = () => {
                         <li className="flex items-center gap-2"><BarChart3 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />Higher search ranking</li>
                       </ul>
                     </CardContent>
+                    {tier.price > 0 && (
+                      <CardFooter>
+                        <Button
+                          className="w-full"
+                          onClick={() => {
+                            if (!user) { navigate("/", { state: { openAuth: true } }); return; }
+                            navigate(`/checkout/tier/${tier.id}`);
+                          }}
+                          style={{ backgroundColor: isGold ? "#D4AF37" : isSilver ? "#888" : isBronze ? "#CD7F32" : tier.badge_color, color: "#fff" }}
+                        >
+                          Buy {tier.name} <ArrowRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </CardFooter>
+                    )}
                   </Card>
                 );
               })}
@@ -253,9 +267,9 @@ const Pricing = () => {
                   <CardFooter>
                     <Button className="w-full" variant="outline" onClick={() => {
                       if (!user) { navigate("/", { state: { openAuth: true } }); return; }
-                      navigate("/seller-dashboard/billing");
+                      navigate(`/checkout/bump/${bp.id}`);
                     }}>
-                      Purchase
+                      Purchase <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </CardFooter>
                 </Card>
@@ -300,6 +314,14 @@ const Pricing = () => {
                       <p className="text-3xl font-extrabold mb-1">{fmt(promo.price)}</p>
                       <p className="text-sm text-muted-foreground">{promo.duration_days} days • Max {promo.max_ads} ads/slot</p>
                     </CardContent>
+                    <CardFooter>
+                      <Button className="w-full" variant="outline" onClick={() => {
+                        if (!user) { navigate("/", { state: { openAuth: true } }); return; }
+                        navigate(`/checkout/promotion/${promo.id}`);
+                      }}>
+                        Get Promotion <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </CardFooter>
                   </Card>
                 );
               })}

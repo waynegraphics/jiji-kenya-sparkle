@@ -15,7 +15,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { 
   Search, Filter, MoreVertical, Shield, ShieldOff, Eye, Mail,
-  Ban, CheckCircle, AlertTriangle, FileText, MessageSquare, Package, UserCog
+  Ban, CheckCircle, AlertTriangle, FileText, MessageSquare, Package, UserCog,
+  Crown, Zap, Megaphone
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -45,22 +46,26 @@ const AdminUsers = () => {
   const [selectedPackageId, setSelectedPackageId] = useState("");
   const [changeRoleUser, setChangeRoleUser] = useState<UserProfile | null>(null);
   const [newAccountType, setNewAccountType] = useState("");
+  // New assignment states
+  const [assignTierUser, setAssignTierUser] = useState<UserProfile | null>(null);
+  const [selectedTierId, setSelectedTierId] = useState("");
+  const [assignBumpUser, setAssignBumpUser] = useState<UserProfile | null>(null);
+  const [selectedBumpId, setSelectedBumpId] = useState("");
+  const [assignPromoUser, setAssignPromoUser] = useState<UserProfile | null>(null);
+  const [selectedPromoId, setSelectedPromoId] = useState("");
+
   const queryClient = useQueryClient();
 
   // Fetch users
   const { data: users, isLoading } = useQuery({
     queryKey: ["admin-users"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return data as UserProfile[];
     }
   });
 
-  // Fetch user emails via admin function
   const { data: userEmails } = useQuery({
     queryKey: ["admin-user-emails"],
     queryFn: async () => {
@@ -72,137 +77,120 @@ const AdminUsers = () => {
     }
   });
 
-  // Fetch user roles
   const { data: userRoles } = useQuery({
     queryKey: ["admin-user-roles"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
+      const { data, error } = await supabase.from("user_roles").select("user_id, role");
       if (error) throw error;
       return data;
     }
   });
 
-  // Fetch user listings counts
   const { data: userListingsCounts } = useQuery({
     queryKey: ["admin-user-listings-counts"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("base_listings")
-        .select("user_id");
+      const { data, error } = await supabase.from("base_listings").select("user_id");
       if (error) throw error;
       const counts: Record<string, number> = {};
-      data?.forEach(listing => {
-        counts[listing.user_id] = (counts[listing.user_id] || 0) + 1;
-      });
+      data?.forEach(listing => { counts[listing.user_id] = (counts[listing.user_id] || 0) + 1; });
       return counts;
     }
   });
 
-  // Fetch user subscriptions
   const { data: userSubscriptions } = useQuery({
     queryKey: ["admin-user-subscriptions"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("seller_subscriptions")
-        .select("user_id, status, subscription_packages(name)")
-        .eq("status", "active");
+      const { data, error } = await supabase.from("seller_subscriptions").select("user_id, status, subscription_packages(name)").eq("status", "active");
       if (error) throw error;
       return data;
     }
   });
 
-  // Fetch available packages for assignment
+  // Fetch available items for assignment
   const { data: packages } = useQuery({
     queryKey: ["admin-available-packages"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("subscription_packages")
-        .select("*")
-        .eq("is_active", true)
-        .order("display_order");
+      const { data, error } = await supabase.from("subscription_packages").select("*").eq("is_active", true).order("display_order");
       if (error) throw error;
       return data;
     }
   });
 
-  // Assign package mutation
+  const { data: listingTiers } = useQuery({
+    queryKey: ["admin-listing-tiers"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("listing_tiers").select("*").eq("is_active", true).order("display_order");
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: bumpPackages } = useQuery({
+    queryKey: ["admin-bump-packages"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("bump_packages").select("*").eq("is_active", true).order("display_order");
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: promotionTypes } = useQuery({
+    queryKey: ["admin-promotion-types"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("promotion_types").select("*").eq("is_active", true).order("display_order");
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Assign subscription package
   const assignPackage = useMutation({
     mutationFn: async ({ userId, packageId }: { userId: string; packageId: string }) => {
       const pkg = packages?.find(p => p.id === packageId);
       if (!pkg) throw new Error("Package not found");
-
-      await supabase
-        .from("seller_subscriptions")
-        .update({ status: "cancelled" as any })
-        .eq("user_id", userId)
-        .eq("status", "active");
-
+      await supabase.from("seller_subscriptions").update({ status: "cancelled" as any }).eq("user_id", userId).eq("status", "active");
       const now = new Date();
       const expiresAt = new Date(now.getTime() + pkg.duration_days * 24 * 60 * 60 * 1000);
-      
-      const { error } = await supabase
-        .from("seller_subscriptions")
-        .insert({
-          user_id: userId,
-          package_id: packageId,
-          status: "active" as any,
-          payment_status: "completed" as any,
-          starts_at: now.toISOString(),
-          expires_at: expiresAt.toISOString(),
-          ads_used: 0,
-          payment_reference: "admin_assigned",
-        });
+      const { error } = await supabase.from("seller_subscriptions").insert({
+        user_id: userId, package_id: packageId, status: "active" as any, payment_status: "completed" as any,
+        starts_at: now.toISOString(), expires_at: expiresAt.toISOString(), ads_used: 0, payment_reference: "admin_assigned",
+      });
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-user-subscriptions"] });
-      toast.success("Package assigned successfully");
-      setAssignPackageUser(null);
-      setSelectedPackageId("");
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-user-subscriptions"] }); toast.success("Package assigned successfully"); setAssignPackageUser(null); setSelectedPackageId(""); },
+    onError: (err: Error) => toast.error("Failed: " + err.message),
+  });
+
+  // Assign bump credits
+  const assignBumps = useMutation({
+    mutationFn: async ({ userId, bumpId }: { userId: string; bumpId: string }) => {
+      const bp = bumpPackages?.find(b => b.id === bumpId);
+      if (!bp) throw new Error("Bump package not found");
+      const { error } = await supabase.rpc("add_bump_credits", { p_user_id: userId, p_credits: bp.credits, p_package_id: bumpId });
+      if (error) throw error;
     },
-    onError: (err: Error) => {
-      toast.error("Failed to assign package: " + err.message);
-    }
+    onSuccess: () => { toast.success("Bump credits assigned"); setAssignBumpUser(null); setSelectedBumpId(""); },
+    onError: (err: Error) => toast.error("Failed: " + err.message),
   });
 
   // Toggle verification
   const toggleVerification = useMutation({
     mutationFn: async ({ userId, isVerified }: { userId: string; isVerified: boolean }) => {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ is_verified: !isVerified })
-        .eq("user_id", userId);
+      const { error } = await supabase.from("profiles").update({ is_verified: !isVerified }).eq("user_id", userId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      toast.success("User verification status updated");
-    },
-    onError: () => {
-      toast.error("Failed to update verification status");
-    }
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Verification status updated"); },
+    onError: () => toast.error("Failed to update verification status"),
   });
 
-  // Change account type mutation
+  // Change account type
   const changeAccountType = useMutation({
     mutationFn: async ({ userId, accountType }: { userId: string; accountType: string }) => {
-      const { error } = await supabase.rpc("admin_set_account_type", {
-        target_user_id: userId,
-        new_account_type: accountType,
-      });
+      const { error } = await supabase.rpc("admin_set_account_type", { target_user_id: userId, new_account_type: accountType });
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
-      toast.success("Account type updated successfully");
-      setChangeRoleUser(null);
-      setNewAccountType("");
-    },
-    onError: (err: Error) => {
-      toast.error("Failed to change account type: " + err.message);
-    }
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-users"] }); toast.success("Account type updated"); setChangeRoleUser(null); setNewAccountType(""); },
+    onError: (err: Error) => toast.error("Failed: " + err.message),
   });
 
   const getUserSubscription = (userId: string) => {
@@ -221,6 +209,8 @@ const AdminUsers = () => {
     return matchesSearch && user.account_type === roleFilter;
   });
 
+  const fmt = (p: number) => new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", minimumFractionDigits: 0 }).format(p);
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -236,9 +226,7 @@ const AdminUsers = () => {
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">User Management</h2>
-          <p className="text-muted-foreground">
-            Manage all platform users ({users?.length || 0} total)
-          </p>
+          <p className="text-muted-foreground">Manage all platform users ({users?.length || 0} total)</p>
         </div>
       </div>
 
@@ -248,12 +236,7 @@ const AdminUsers = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email, location, or phone..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
+              <Input placeholder="Search by name, email, location, or phone..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
             </div>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-[180px]">
@@ -301,15 +284,11 @@ const AdminUsers = () => {
                           {user.display_name}
                           {user.is_verified && <CheckCircle className="h-4 w-4 text-primary" />}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {user.location || "No location"}
-                        </div>
+                        <div className="text-sm text-muted-foreground">{user.location || "No location"}</div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{userEmails?.[user.user_id] || "—"}</span>
-                  </TableCell>
+                  <TableCell><span className="text-sm">{userEmails?.[user.user_id] || "—"}</span></TableCell>
                   <TableCell>
                     <Badge variant={user.account_type === "business" ? "default" : user.account_type === "seller" ? "outline" : "secondary"}>
                       {user.account_type === "business" ? "Business" : user.account_type === "seller" ? "Seller" : "Customer"}
@@ -330,7 +309,7 @@ const AdminUsers = () => {
                   </TableCell>
                   <TableCell>
                     {user.is_verified ? (
-                      <Badge className="bg-green-500/20 text-green-700">Verified</Badge>
+                      <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Verified</Badge>
                     ) : (
                       <Badge variant="secondary">Unverified</Badge>
                     )}
@@ -341,56 +320,45 @@ const AdminUsers = () => {
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
+                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setSelectedUser(user)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
+                          <Eye className="h-4 w-4 mr-2" />View Details
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => { setChangeRoleUser(user); setNewAccountType(user.account_type || "customer"); }}>
-                          <UserCog className="h-4 w-4 mr-2" />
-                          Change Account Type
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setAssignPackageUser(user)}>
-                          <Package className="h-4 w-4 mr-2" />
-                          Assign Package
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Mail className="h-4 w-4 mr-2" />
-                          Send Message
+                          <UserCog className="h-4 w-4 mr-2" />Change Account Type
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => toggleVerification.mutate({ 
-                            userId: user.user_id, 
-                            isVerified: user.is_verified || false 
-                          })}
-                        >
-                          {user.is_verified ? (
-                            <>
-                              <ShieldOff className="h-4 w-4 mr-2" />
-                              Remove Verification
-                            </>
-                          ) : (
-                            <>
-                              <Shield className="h-4 w-4 mr-2" />
-                              Verify User
-                            </>
-                          )}
+                        <DropdownMenuLabel className="text-xs text-muted-foreground">Assign Packages</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => setAssignPackageUser(user)}>
+                          <Package className="h-4 w-4 mr-2" />Assign Subscription
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setAssignTierUser(user)}>
+                          <Crown className="h-4 w-4 mr-2" />Assign Ad Tier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setAssignBumpUser(user)}>
+                          <Zap className="h-4 w-4 mr-2" />Assign Bump Credits
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setAssignPromoUser(user)}>
+                          <Megaphone className="h-4 w-4 mr-2" />Assign Promotion
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                          <Mail className="h-4 w-4 mr-2" />Send Message
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => toggleVerification.mutate({ userId: user.user_id, isVerified: user.is_verified || false })}>
+                          {user.is_verified ? (<><ShieldOff className="h-4 w-4 mr-2" />Remove Verification</>) : (<><Shield className="h-4 w-4 mr-2" />Verify User</>)}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem className="text-yellow-600">
-                          <AlertTriangle className="h-4 w-4 mr-2" />
-                          Issue Warning
+                          <AlertTriangle className="h-4 w-4 mr-2" />Issue Warning
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive">
-                          <Ban className="h-4 w-4 mr-2" />
-                          Suspend User
+                          <Ban className="h-4 w-4 mr-2" />Suspend User
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -409,9 +377,7 @@ const AdminUsers = () => {
             <DialogTitle>Change Account Type</DialogTitle>
             <DialogDescription>
               Change the account type for <strong>{changeRoleUser?.display_name}</strong>
-              {userEmails?.[changeRoleUser?.user_id || ""] && (
-                <> ({userEmails[changeRoleUser!.user_id]})</>
-              )}
+              {userEmails?.[changeRoleUser?.user_id || ""] && (<> ({userEmails[changeRoleUser!.user_id]})</>)}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -424,9 +390,7 @@ const AdminUsers = () => {
             <div className="space-y-2">
               <Label>New Account Type</Label>
               <Select value={newAccountType} onValueChange={setNewAccountType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select account type..." />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Select account type..." /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="customer">Customer</SelectItem>
                   <SelectItem value="seller">Seller</SelectItem>
@@ -435,13 +399,8 @@ const AdminUsers = () => {
               </Select>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => { setChangeRoleUser(null); setNewAccountType(""); }}>
-                Cancel
-              </Button>
-              <Button
-                disabled={!newAccountType || newAccountType === changeRoleUser?.account_type || changeAccountType.isPending}
-                onClick={() => changeRoleUser && changeAccountType.mutate({ userId: changeRoleUser.user_id, accountType: newAccountType })}
-              >
+              <Button variant="outline" onClick={() => { setChangeRoleUser(null); setNewAccountType(""); }}>Cancel</Button>
+              <Button disabled={!newAccountType || newAccountType === changeRoleUser?.account_type || changeAccountType.isPending} onClick={() => changeRoleUser && changeAccountType.mutate({ userId: changeRoleUser.user_id, accountType: newAccountType })}>
                 {changeAccountType.isPending ? "Updating..." : "Update Account Type"}
               </Button>
             </div>
@@ -449,40 +408,166 @@ const AdminUsers = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Package Dialog */}
+      {/* Assign Subscription Package Dialog */}
       <Dialog open={!!assignPackageUser} onOpenChange={() => { setAssignPackageUser(null); setSelectedPackageId(""); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Assign Package</DialogTitle>
-            <DialogDescription>
-              Manually assign a subscription package to {assignPackageUser?.display_name}. This will replace any active subscription.
-            </DialogDescription>
+            <DialogTitle className="flex items-center gap-2"><Package className="h-5 w-5" />Assign Subscription</DialogTitle>
+            <DialogDescription>Manually assign a subscription package to {assignPackageUser?.display_name}. This replaces any active subscription.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Select Package</Label>
               <Select value={selectedPackageId} onValueChange={setSelectedPackageId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a package..." />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Choose a package..." /></SelectTrigger>
                 <SelectContent>
                   {packages?.map((pkg) => (
-                    <SelectItem key={pkg.id} value={pkg.id}>
-                      {pkg.name} — KES {pkg.price.toLocaleString()} / {pkg.duration_days} days ({pkg.max_ads} ads)
+                    <SelectItem key={pkg.id} value={pkg.id}>{pkg.name} — {fmt(pkg.price)} / {pkg.duration_days} days ({pkg.max_ads} ads)</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setAssignPackageUser(null); setSelectedPackageId(""); }}>Cancel</Button>
+              <Button disabled={!selectedPackageId || assignPackage.isPending} onClick={() => assignPackageUser && assignPackage.mutate({ userId: assignPackageUser.user_id, packageId: selectedPackageId })}>
+                {assignPackage.isPending ? "Assigning..." : "Assign Package"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Ad Tier Dialog */}
+      <Dialog open={!!assignTierUser} onOpenChange={() => { setAssignTierUser(null); setSelectedTierId(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Crown className="h-5 w-5 text-yellow-600" />Assign Ad Tier</DialogTitle>
+            <DialogDescription>
+              Assign an ad tier to {assignTierUser?.display_name}. Note: Ad tiers are typically applied per-listing. This will create a tier purchase record the user can apply to any of their active listings.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Tier</Label>
+              <Select value={selectedTierId} onValueChange={setSelectedTierId}>
+                <SelectTrigger><SelectValue placeholder="Choose a tier..." /></SelectTrigger>
+                <SelectContent>
+                  {listingTiers?.map((tier) => (
+                    <SelectItem key={tier.id} value={tier.id}>
+                      {tier.name} — {fmt(tier.price)} per ad (Priority: {tier.priority_weight})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => { setAssignPackageUser(null); setSelectedPackageId(""); }}>
-                Cancel
+              <Button variant="outline" onClick={() => { setAssignTierUser(null); setSelectedTierId(""); }}>Cancel</Button>
+              <Button disabled={!selectedTierId} onClick={async () => {
+                if (!assignTierUser || !selectedTierId) return;
+                try {
+                  const tier = listingTiers?.find(t => t.id === selectedTierId);
+                  const { error } = await supabase.from("listing_tier_purchases").insert({
+                    user_id: assignTierUser.user_id,
+                    tier_id: selectedTierId,
+                    listing_id: "00000000-0000-0000-0000-000000000000", // placeholder - user will apply to specific listing
+                    status: "active",
+                    payment_status: "completed",
+                    payment_reference: "admin_assigned",
+                    expires_at: tier?.included_featured_days ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null,
+                  });
+                  if (error) throw error;
+                  toast.success(`${tier?.name} tier assigned to ${assignTierUser.display_name}`);
+                  setAssignTierUser(null);
+                  setSelectedTierId("");
+                } catch (err: any) {
+                  toast.error("Failed: " + err.message);
+                }
+              }}>
+                Assign Tier
               </Button>
-              <Button 
-                disabled={!selectedPackageId || assignPackage.isPending}
-                onClick={() => assignPackageUser && assignPackage.mutate({ userId: assignPackageUser.user_id, packageId: selectedPackageId })}
-              >
-                {assignPackage.isPending ? "Assigning..." : "Assign Package"}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Bump Credits Dialog */}
+      <Dialog open={!!assignBumpUser} onOpenChange={() => { setAssignBumpUser(null); setSelectedBumpId(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Zap className="h-5 w-5 text-blue-600" />Assign Bump Credits</DialogTitle>
+            <DialogDescription>Add bump credits to {assignBumpUser?.display_name}'s wallet. Credits can be used to push ads to the top.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Bump Package</Label>
+              <Select value={selectedBumpId} onValueChange={setSelectedBumpId}>
+                <SelectTrigger><SelectValue placeholder="Choose a bump package..." /></SelectTrigger>
+                <SelectContent>
+                  {bumpPackages?.map((bp) => (
+                    <SelectItem key={bp.id} value={bp.id}>{bp.name} — {bp.credits} credits ({fmt(bp.price)})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setAssignBumpUser(null); setSelectedBumpId(""); }}>Cancel</Button>
+              <Button disabled={!selectedBumpId || assignBumps.isPending} onClick={() => assignBumpUser && assignBumps.mutate({ userId: assignBumpUser.user_id, bumpId: selectedBumpId })}>
+                {assignBumps.isPending ? "Assigning..." : "Assign Credits"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Promotion Dialog */}
+      <Dialog open={!!assignPromoUser} onOpenChange={() => { setAssignPromoUser(null); setSelectedPromoId(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-orange-600" />Assign Promotion</DialogTitle>
+            <DialogDescription>
+              Assign a promotion slot to {assignPromoUser?.display_name}. The user's ads will appear in the selected placement.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Promotion Type</Label>
+              <Select value={selectedPromoId} onValueChange={setSelectedPromoId}>
+                <SelectTrigger><SelectValue placeholder="Choose a promotion..." /></SelectTrigger>
+                <SelectContent>
+                  {promotionTypes?.map((promo) => (
+                    <SelectItem key={promo.id} value={promo.id}>{promo.name} — {promo.placement} • {promo.duration_days} days ({fmt(promo.price)})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setAssignPromoUser(null); setSelectedPromoId(""); }}>Cancel</Button>
+              <Button disabled={!selectedPromoId} onClick={async () => {
+                if (!assignPromoUser || !selectedPromoId) return;
+                try {
+                  const promo = promotionTypes?.find(p => p.id === selectedPromoId);
+                  if (!promo) throw new Error("Promotion not found");
+                  const expiresAt = new Date(Date.now() + promo.duration_days * 24 * 60 * 60 * 1000);
+                  // Note: listing_id is required. Admin can assign a placeholder or specific listing.
+                  // For now, we create a record that the user can link to a listing.
+                  const { error } = await supabase.from("listing_promotions").insert({
+                    user_id: assignPromoUser.user_id,
+                    promotion_type_id: selectedPromoId,
+                    listing_id: "00000000-0000-0000-0000-000000000000", // placeholder
+                    status: "active",
+                    payment_status: "completed",
+                    payment_reference: "admin_assigned",
+                    expires_at: expiresAt.toISOString(),
+                  });
+                  if (error) throw error;
+                  toast.success(`${promo.name} promotion assigned to ${assignPromoUser.display_name}`);
+                  setAssignPromoUser(null);
+                  setSelectedPromoId("");
+                } catch (err: any) {
+                  toast.error("Failed: " + err.message);
+                }
+              }}>
+                Assign Promotion
               </Button>
             </div>
           </div>
@@ -506,7 +591,7 @@ const AdminUsers = () => {
                 <div>
                   <h3 className="text-xl font-semibold flex items-center gap-2">
                     {selectedUser.display_name}
-                    {selectedUser.is_verified && <Badge className="bg-green-500/20 text-green-700">Verified</Badge>}
+                    {selectedUser.is_verified && <Badge className="bg-green-100 text-green-700">Verified</Badge>}
                   </h3>
                   <p className="text-sm text-muted-foreground">{userEmails?.[selectedUser.user_id] || "No email"}</p>
                   <p className="text-sm text-muted-foreground">{selectedUser.location}</p>
@@ -527,9 +612,7 @@ const AdminUsers = () => {
                 </div>
                 <div className="p-4 rounded-lg bg-muted">
                   <div className="text-sm text-muted-foreground">Rating</div>
-                  <div className="font-medium">
-                    {selectedUser.rating || 0} ({selectedUser.total_reviews || 0} reviews)
-                  </div>
+                  <div className="font-medium">{selectedUser.rating || 0} ({selectedUser.total_reviews || 0} reviews)</div>
                 </div>
                 <div className="p-4 rounded-lg bg-muted">
                   <div className="text-sm text-muted-foreground">Total Listings</div>
@@ -537,19 +620,21 @@ const AdminUsers = () => {
                 </div>
                 <div className="p-4 rounded-lg bg-muted">
                   <div className="text-sm text-muted-foreground">Member Since</div>
-                  <div className="font-medium">
-                    {format(new Date(selectedUser.created_at), "MMMM dd, yyyy")}
-                  </div>
+                  <div className="font-medium">{format(new Date(selectedUser.created_at), "MMMM dd, yyyy")}</div>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => { setSelectedUser(null); setChangeRoleUser(selectedUser); setNewAccountType(selectedUser.account_type || "customer"); }}>
-                  <UserCog className="h-4 w-4 mr-2" />
-                  Change Role
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" onClick={() => { setSelectedUser(null); setChangeRoleUser(selectedUser); setNewAccountType(selectedUser.account_type || "customer"); }}>
+                  <UserCog className="h-4 w-4 mr-2" />Change Role
                 </Button>
-                <Button variant="outline" className="flex-1" onClick={() => { setSelectedUser(null); setAssignPackageUser(selectedUser); }}>
-                  <Package className="h-4 w-4 mr-2" />
-                  Assign Package
+                <Button variant="outline" onClick={() => { setSelectedUser(null); setAssignPackageUser(selectedUser); }}>
+                  <Package className="h-4 w-4 mr-2" />Assign Subscription
+                </Button>
+                <Button variant="outline" onClick={() => { setSelectedUser(null); setAssignTierUser(selectedUser); }}>
+                  <Crown className="h-4 w-4 mr-2" />Assign Ad Tier
+                </Button>
+                <Button variant="outline" onClick={() => { setSelectedUser(null); setAssignBumpUser(selectedUser); }}>
+                  <Zap className="h-4 w-4 mr-2" />Assign Bumps
                 </Button>
               </div>
             </div>
