@@ -93,20 +93,10 @@ const Header = ({ onSearch }: HeaderProps) => {
   return (
     <>
       <header className="sticky top-0 z-50 w-full bg-card/80 backdrop-blur-lg border-b border-border/50 shadow-sm">
-        <div className="container mx-auto px-3 md:px-4">
+        <div className="container mx-auto px-3 md:px-4 relative">
           <div className="flex items-center justify-between py-3 gap-2 md:gap-4">
-            {/* Logo */}
-            <div
-              className="flex items-center gap-2 cursor-pointer flex-shrink-0 group"
-              onClick={() => navigate("/")}
-            >
-              <div className="relative">
-                <img src={logo} alt="APA Bazaar Market" className="h-8 sm:h-10 md:h-12 w-auto transition-transform group-hover:scale-105" />
-              </div>
-            </div>
-
-            {/* Navigation Links - Desktop */}
-            <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
+            {/* Navigation Links - Desktop (LEFT) */}
+            <nav className="hidden lg:flex items-center gap-1 flex-shrink-0">
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary hover:bg-primary/10 font-medium rounded-lg transition-all" onClick={() => navigate("/")}>
                 <Home className="h-4 w-4 mr-2" />Home
               </Button>
@@ -126,6 +116,16 @@ const Header = ({ onSearch }: HeaderProps) => {
                 <Users className="h-4 w-4 mr-2" />Sellers
               </Button>
             </nav>
+
+            {/* Logo - CENTER (absolute on desktop, normal on mobile) */}
+            <div
+              className="flex items-center gap-2 cursor-pointer flex-shrink-0 group lg:absolute lg:left-1/2 lg:-translate-x-1/2"
+              onClick={() => navigate("/")}
+            >
+              <div className="relative">
+                <img src={logo} alt="APA Bazaar Market" className="h-8 sm:h-10 md:h-12 w-auto transition-transform group-hover:scale-105" />
+              </div>
+            </div>
 
             {/* Action Buttons */}
             <div className="flex items-center gap-1 md:gap-2">
