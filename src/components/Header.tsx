@@ -95,8 +95,41 @@ const Header = ({ onSearch }: HeaderProps) => {
       <header className="sticky top-0 z-50 w-full bg-card/80 backdrop-blur-lg border-b border-border/50 shadow-sm">
         <div className="container mx-auto px-3 md:px-4 relative">
           <div className="flex items-center justify-between py-3 gap-2 md:gap-4">
-            {/* Navigation Links - Desktop (LEFT) */}
-            <nav className="hidden lg:flex items-center gap-1 flex-shrink-0">
+            {/* Mobile/Tablet: Hamburger on LEFT */}
+            <div className="flex items-center gap-1 lg:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-primary hover:bg-primary/10 rounded-lg h-9 w-9 relative"
+                onClick={() => setIsMenuOpen(true)}
+              >
+                <Menu className="h-5 w-5" />
+                {user && totalBadge > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] px-1 text-[10px] font-bold bg-destructive text-destructive-foreground rounded-full flex items-center justify-center">
+                    {totalBadge > 99 ? "99+" : totalBadge}
+                  </span>
+                )}
+              </Button>
+            </div>
+
+            {/* Desktop: Logo on LEFT */}
+            <div
+              className="cursor-pointer flex-shrink-0 group hidden lg:flex items-center gap-2"
+              onClick={() => navigate("/")}
+            >
+              <img src={logo} alt="APA Bazaar Market" className="h-12 w-auto transition-transform group-hover:scale-105" />
+            </div>
+
+            {/* Mobile/Tablet: Logo CENTERED via absolute positioning */}
+            <div
+              className="absolute left-1/2 -translate-x-1/2 cursor-pointer flex-shrink-0 group lg:hidden"
+              onClick={() => navigate("/")}
+            >
+              <img src={logo} alt="APA Bazaar Market" className="h-8 sm:h-10 w-auto transition-transform group-hover:scale-105" />
+            </div>
+
+            {/* Desktop: Navigation Links CENTER */}
+            <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
               <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary hover:bg-primary/10 font-medium rounded-lg transition-all" onClick={() => navigate("/")}>
                 <Home className="h-4 w-4 mr-2" />Home
               </Button>
@@ -116,16 +149,6 @@ const Header = ({ onSearch }: HeaderProps) => {
                 <Users className="h-4 w-4 mr-2" />Sellers
               </Button>
             </nav>
-
-            {/* Logo - CENTER (absolute on desktop, normal on mobile) */}
-            <div
-              className="flex items-center gap-2 cursor-pointer flex-shrink-0 group lg:absolute lg:left-1/2 lg:-translate-x-1/2"
-              onClick={() => navigate("/")}
-            >
-              <div className="relative">
-                <img src={logo} alt="APA Bazaar Market" className="h-8 sm:h-10 md:h-12 w-auto transition-transform group-hover:scale-105" />
-              </div>
-            </div>
 
             {/* Action Buttons */}
             <div className="flex items-center gap-1 md:gap-2">
@@ -148,20 +171,6 @@ const Header = ({ onSearch }: HeaderProps) => {
                 SELL
               </Button>
 
-              {/* Mobile hamburger */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-primary hover:bg-primary/10 lg:hidden rounded-lg h-9 w-9 relative"
-                onClick={() => setIsMenuOpen(true)}
-              >
-                <Menu className="h-5 w-5" />
-                {user && totalBadge > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] px-1 text-[10px] font-bold bg-destructive text-destructive-foreground rounded-full flex items-center justify-center">
-                    {totalBadge > 99 ? "99+" : totalBadge}
-                  </span>
-                )}
-              </Button>
 
               {/* Desktop Actions */}
               <div className="hidden lg:flex items-center gap-2">
