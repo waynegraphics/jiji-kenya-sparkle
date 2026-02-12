@@ -381,11 +381,16 @@ const AdminVerifications = () => {
                 </div>
               </div>
 
-              {/* Admin Notes */}
+              {/* Admin Notes / Rejection Reason */}
               <div className="space-y-2">
-                <Label>Admin Notes</Label>
+                <Label>
+                  {selectedVerification.status === "pending" ? "Rejection Reason / Admin Notes" : "Admin Notes"}
+                  {selectedVerification.status === "pending" && (
+                    <span className="text-xs text-muted-foreground ml-1">(required if rejecting)</span>
+                  )}
+                </Label>
                 <Textarea
-                  placeholder="Add notes about this verification (visible only to admin)..."
+                  placeholder="Enter reason for rejection or notes (this will be visible to the user if rejected)..."
                   value={adminNotes}
                   onChange={(e) => setAdminNotes(e.target.value)}
                   rows={3}
@@ -403,15 +408,19 @@ const AdminVerifications = () => {
                 {selectedVerification.status !== "rejected" && (
                   <Button
                     variant="destructive"
-                    disabled={updateVerification.isPending}
-                    onClick={() =>
+                    disabled={updateVerification.isPending || !adminNotes.trim()}
+                    onClick={() => {
+                      if (!adminNotes.trim()) {
+                        toast.error("Please provide a reason for rejection");
+                        return;
+                      }
                       updateVerification.mutate({
                         id: selectedVerification.id,
                         userId: selectedVerification.user_id,
                         status: "rejected",
                         notes: adminNotes,
-                      })
-                    }
+                      });
+                    }}
                   >
                     {updateVerification.isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
