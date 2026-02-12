@@ -121,16 +121,8 @@ const CategoryPage = () => {
     }
   };
 
-  // Generate clean SEO slug for listing
-  const getListingUrl = (listing: any) => {
-    const slug = listing.title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .substring(0, 60);
-    return `/listing/${slug}-${listing.id.substring(0, 8)}`;
-  };
+  // Use listing UUID for URL (matches router :id param)
+  const getListingUrl = (listing: any) => `/listing/${listing.id}`;
 
   if (categoryLoading) {
     return (

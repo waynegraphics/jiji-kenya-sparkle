@@ -772,7 +772,7 @@ export type Database = {
             foreignKeyName: "favorites_listing_id_fkey"
             columns: ["listing_id"]
             isOneToOne: false
-            referencedRelation: "listings"
+            referencedRelation: "base_listings"
             referencedColumns: ["id"]
           },
         ]
@@ -2466,6 +2466,11 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_ads_used: { Args: { p_user_id: string }; Returns: undefined }
+      increment_listing_views: {
+        Args: { p_listing_id: string }
+        Returns: undefined
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }

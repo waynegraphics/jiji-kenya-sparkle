@@ -157,12 +157,9 @@ const ProductDetail = () => {
         setIsFavorite(!!favData);
       }
 
-      // Increment views
+      // Increment views atomically
       if (baseData) {
-        await supabase
-          .from("base_listings")
-          .update({ views: (baseData.views || 0) + 1 })
-          .eq("id", id);
+        await supabase.rpc("increment_listing_views", { p_listing_id: id });
       }
 
       setLoading(false);
