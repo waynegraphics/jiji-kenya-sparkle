@@ -398,9 +398,14 @@ export type Database = {
           main_category_id: string
           previous_data: Json | null
           price: number
+          promotion_expires_at: string | null
+          promotion_type_id: string | null
           rejection_note: string | null
           status: string | null
           sub_category_id: string | null
+          tier_expires_at: string | null
+          tier_id: string | null
+          tier_priority: number
           title: string
           updated_at: string | null
           user_id: string
@@ -425,9 +430,14 @@ export type Database = {
           main_category_id: string
           previous_data?: Json | null
           price?: number
+          promotion_expires_at?: string | null
+          promotion_type_id?: string | null
           rejection_note?: string | null
           status?: string | null
           sub_category_id?: string | null
+          tier_expires_at?: string | null
+          tier_id?: string | null
+          tier_priority?: number
           title: string
           updated_at?: string | null
           user_id: string
@@ -452,9 +462,14 @@ export type Database = {
           main_category_id?: string
           previous_data?: Json | null
           price?: number
+          promotion_expires_at?: string | null
+          promotion_type_id?: string | null
           rejection_note?: string | null
           status?: string | null
           sub_category_id?: string | null
+          tier_expires_at?: string | null
+          tier_id?: string | null
+          tier_priority?: number
           title?: string
           updated_at?: string | null
           user_id?: string
@@ -469,10 +484,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "base_listings_promotion_type_id_fkey"
+            columns: ["promotion_type_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_types"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "base_listings_sub_category_id_fkey"
             columns: ["sub_category_id"]
             isOneToOne: false
             referencedRelation: "sub_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "base_listings_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "listing_tiers"
             referencedColumns: ["id"]
           },
         ]
@@ -517,6 +546,87 @@ export type Database = {
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bump_packages: {
+        Row: {
+          created_at: string
+          credits: number
+          currency: string
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credits?: number
+          currency?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          currency?: string
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bump_transactions: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          listing_id: string | null
+          package_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits: number
+          id?: string
+          listing_id?: string | null
+          package_id?: string | null
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          listing_id?: string | null
+          package_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bump_transactions_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bump_transactions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "bump_packages"
             referencedColumns: ["id"]
           },
         ]
@@ -776,6 +886,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      featured_durations: {
+        Row: {
+          created_at: string
+          currency: string
+          display_order: number
+          duration_days: number
+          id: string
+          is_active: boolean
+          price: number
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          display_order?: number
+          duration_days: number
+          id?: string
+          is_active?: boolean
+          price?: number
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          display_order?: number
+          duration_days?: number
+          id?: string
+          is_active?: boolean
+          price?: number
+        }
+        Relationships: []
+      }
+      featured_settings: {
+        Row: {
+          badge_label: string | null
+          border_accent: string | null
+          created_at: string
+          default_duration_days: number
+          eligible_tier_ids: string[] | null
+          highlight_bg: string | null
+          id: string
+          is_enabled: boolean
+          ribbon_text: string | null
+          updated_at: string
+        }
+        Insert: {
+          badge_label?: string | null
+          border_accent?: string | null
+          created_at?: string
+          default_duration_days?: number
+          eligible_tier_ids?: string[] | null
+          highlight_bg?: string | null
+          id?: string
+          is_enabled?: boolean
+          ribbon_text?: string | null
+          updated_at?: string
+        }
+        Update: {
+          badge_label?: string | null
+          border_accent?: string | null
+          created_at?: string
+          default_duration_days?: number
+          eligible_tier_ids?: string[] | null
+          highlight_bg?: string | null
+          id?: string
+          is_enabled?: boolean
+          ribbon_text?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       follows: {
         Row: {
@@ -1062,6 +1241,168 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      listing_promotions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          listing_id: string
+          payment_reference: string | null
+          payment_status: string
+          promotion_type_id: string
+          purchased_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          listing_id: string
+          payment_reference?: string | null
+          payment_status?: string
+          promotion_type_id: string
+          purchased_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          listing_id?: string
+          payment_reference?: string | null
+          payment_status?: string
+          promotion_type_id?: string
+          purchased_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_promotions_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listing_promotions_promotion_type_id_fkey"
+            columns: ["promotion_type_id"]
+            isOneToOne: false
+            referencedRelation: "promotion_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_tier_purchases: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          listing_id: string
+          payment_reference: string | null
+          payment_status: string
+          purchased_at: string
+          status: string
+          tier_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          listing_id: string
+          payment_reference?: string | null
+          payment_status?: string
+          purchased_at?: string
+          status?: string
+          tier_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          listing_id?: string
+          payment_reference?: string | null
+          payment_status?: string
+          purchased_at?: string
+          status?: string
+          tier_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_tier_purchases_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listing_tier_purchases_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "listing_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_tiers: {
+        Row: {
+          badge_color: string | null
+          badge_label: string | null
+          border_style: string | null
+          created_at: string
+          currency: string
+          display_order: number
+          id: string
+          included_featured_days: number | null
+          is_active: boolean
+          name: string
+          price: number
+          priority_weight: number
+          ribbon_text: string | null
+          shadow_intensity: string | null
+          updated_at: string
+        }
+        Insert: {
+          badge_color?: string | null
+          badge_label?: string | null
+          border_style?: string | null
+          created_at?: string
+          currency?: string
+          display_order?: number
+          id?: string
+          included_featured_days?: number | null
+          is_active?: boolean
+          name: string
+          price?: number
+          priority_weight?: number
+          ribbon_text?: string | null
+          shadow_intensity?: string | null
+          updated_at?: string
+        }
+        Update: {
+          badge_color?: string | null
+          badge_label?: string | null
+          border_style?: string | null
+          created_at?: string
+          currency?: string
+          display_order?: number
+          id?: string
+          included_featured_days?: number | null
+          is_active?: boolean
+          name?: string
+          price?: number
+          priority_weight?: number
+          ribbon_text?: string | null
+          shadow_intensity?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       listings: {
         Row: {
@@ -1532,6 +1873,7 @@ export type Database = {
           account_type: string
           avatar_url: string | null
           bio: string | null
+          bump_wallet_balance: number
           business_name: string | null
           created_at: string
           display_name: string
@@ -1549,6 +1891,7 @@ export type Database = {
           account_type?: string
           avatar_url?: string | null
           bio?: string | null
+          bump_wallet_balance?: number
           business_name?: string | null
           created_at?: string
           display_name: string
@@ -1566,6 +1909,7 @@ export type Database = {
           account_type?: string
           avatar_url?: string | null
           bio?: string | null
+          bump_wallet_balance?: number
           business_name?: string | null
           created_at?: string
           display_name?: string
@@ -1578,6 +1922,48 @@ export type Database = {
           updated_at?: string
           user_id?: string
           whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
+      promotion_types: {
+        Row: {
+          created_at: string
+          currency: string
+          display_order: number
+          duration_days: number
+          id: string
+          is_active: boolean
+          max_ads: number
+          name: string
+          placement: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          display_order?: number
+          duration_days?: number
+          id?: string
+          is_active?: boolean
+          max_ads?: number
+          name: string
+          placement?: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          display_order?: number
+          duration_days?: number
+          id?: string
+          is_active?: boolean
+          max_ads?: number
+          name?: string
+          placement?: string
+          price?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2012,6 +2398,7 @@ export type Database = {
           name: string
           price: number
           text_color: string | null
+          unlimited_postings: boolean
           updated_at: string
         }
         Insert: {
@@ -2032,6 +2419,7 @@ export type Database = {
           name: string
           price?: number
           text_color?: string | null
+          unlimited_postings?: boolean
           updated_at?: string
         }
         Update: {
@@ -2052,6 +2440,7 @@ export type Database = {
           name?: string
           price?: number
           text_color?: string | null
+          unlimited_postings?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -2449,9 +2838,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_bump_credits: {
+        Args: { p_credits: number; p_package_id?: string; p_user_id: string }
+        Returns: undefined
+      }
       admin_set_account_type: {
         Args: { new_account_type: string; target_user_id: string }
         Returns: undefined
+      }
+      bump_listing: {
+        Args: { p_listing_id: string; p_user_id: string }
+        Returns: boolean
       }
       get_user_emails: {
         Args: never

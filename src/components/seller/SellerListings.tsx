@@ -3,43 +3,29 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSellerAddons } from "@/hooks/useSubscriptions";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { 
   Loader2, Plus, Pencil, Trash2, Eye, MapPin, Clock,
   MoreVertical, Zap, Star, TrendingUp, Package,
   LayoutGrid, List, Search, Filter, AlertTriangle,
-  CheckCircle, XCircle, FileText
+  CheckCircle, XCircle, FileText, Crown, Wallet
 } from "lucide-react";
 import Pagination from "@/components/Pagination";
 
@@ -58,7 +44,11 @@ interface BaseListing {
   updated_at: string;
   images: string[];
   rejection_note: string | null;
+  tier_id: string | null;
+  tier_priority: number;
+  bumped_at: string | null;
   main_categories?: { name: string; slug: string } | null;
+  listing_tiers?: { name: string; badge_label: string | null; badge_color: string } | null;
 }
 
 const SellerListings = () => {
@@ -91,7 +81,7 @@ const SellerListings = () => {
     try {
       const { data, error } = await supabase
         .from("base_listings")
-        .select(`*, main_categories(name, slug)`)
+        .select(`*, main_categories(name, slug), listing_tiers(name, badge_label, badge_color)`)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -102,6 +92,34 @@ const SellerListings = () => {
       toast.error("Failed to load listings");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Fetch bump wallet balance
+  const { data: profile } = useQuery({
+    queryKey: ["profile-bump-balance", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase.from("profiles").select("bump_wallet_balance").eq("user_id", user.id).single();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const handleBump = async (listingId: string) => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase.rpc("bump_listing", { p_user_id: user.id, p_listing_id: listingId });
+      if (error) throw error;
+      if (data === false) {
+        toast.error("No bump credits remaining. Purchase more bumps!");
+        return;
+      }
+      toast.success("Ad bumped to the top!");
+      queryClient.invalidateQueries({ queryKey: ["profile-bump-balance"] });
+      fetchListings();
+    } catch (error) {
+      toast.error("Failed to bump ad");
     }
   };
 
@@ -187,9 +205,16 @@ const SellerListings = () => {
           <h2 className="text-2xl font-bold">My Listings</h2>
           <p className="text-muted-foreground">Manage and boost your ads</p>
         </div>
-        <Button onClick={() => navigate("/post-ad")}>
-          <Plus className="h-4 w-4 mr-2" /> Post New Ad
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* Bump Wallet */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
+            <Wallet className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium">{profile?.bump_wallet_balance || 0} bumps</span>
+          </div>
+          <Button onClick={() => navigate("/post-ad")}>
+            <Plus className="h-4 w-4 mr-2" /> Post New Ad
+          </Button>
+        </div>
       </div>
 
       {/* Statistics */}
@@ -303,6 +328,11 @@ const SellerListings = () => {
                   </button>
                 )}
                 <div className="flex gap-1 mt-2">
+                  {listing.status === "active" && (
+                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={(e) => { e.stopPropagation(); handleBump(listing.id); }}>
+                      <Zap className="h-3 w-3" />
+                    </Button>
+                  )}
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => navigate(`/edit-ad/${listing.id}`)}>
                     <Pencil className="h-3 w-3" />
                   </Button>
@@ -362,6 +392,11 @@ const SellerListings = () => {
                     <Button variant="outline" size="sm" onClick={() => navigate(`/edit-ad/${listing.id}`)}>
                       <Pencil className="h-4 w-4 mr-1" /> Edit
                     </Button>
+                    {listing.status === "active" && (
+                      <Button variant="outline" size="sm" onClick={() => handleBump(listing.id)}>
+                        <Zap className="h-4 w-4 mr-1" /> Bump
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={() => { setListingToDelete(listing); setDeleteDialogOpen(true); }}>
                       {deletingId === listing.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}

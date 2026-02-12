@@ -13,7 +13,7 @@ import {
 import { 
   LayoutDashboard, Users, FileText, FolderTree, Package, Puzzle,
   MessageSquare, LifeBuoy, Flag, Settings, Shield, ShieldCheck,
-  UsersRound, Link2, Activity, ListChecks
+  UsersRound, Link2, Activity, ListChecks, Crown, Zap, TrendingUp, Star
 } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 
@@ -40,6 +40,10 @@ const AdminSidebar = () => {
     { title: "Categories", url: `${basePath}/categories`, icon: FolderTree, permission: null },
     { title: "Packages", url: `${basePath}/packages`, icon: Package, permission: null },
     { title: "Add-ons", url: `${basePath}/addons`, icon: Puzzle, permission: null },
+    { title: "Ad Tiers", url: `${basePath}/tiers`, icon: Crown, permission: null },
+    { title: "Bump Packages", url: `${basePath}/bump-packages`, icon: Zap, permission: null },
+    { title: "Promotions", url: `${basePath}/promotions`, icon: TrendingUp, permission: null },
+    { title: "Featured Settings", url: `${basePath}/featured`, icon: Star, permission: null },
     { title: "Support", url: `${basePath}/support`, icon: LifeBuoy, permission: "view_support" },
     { title: "Reports", url: `${basePath}/reports`, icon: Flag, permission: "view_reports" },
     { title: "Messaging", url: `${basePath}/messaging`, icon: MessageSquare, permission: null },
