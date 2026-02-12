@@ -158,41 +158,65 @@ const Pricing = () => {
             <p className="text-center text-muted-foreground py-8">No tiers available yet.</p>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {tiers.sort((a, b) => a.display_order - b.display_order).map((tier) => (
-                <Card
-                  key={tier.id}
-                  className="relative overflow-hidden transition-all hover:shadow-lg"
-                  style={{ borderColor: tier.badge_color, borderWidth: tier.price > 0 ? 2 : 1, boxShadow: tier.shadow_intensity !== "none" ? tier.shadow_intensity : undefined }}
-                >
-                  {tier.ribbon_text && (
-                    <div className="absolute top-0 left-0 right-0 text-center text-xs font-bold py-1 text-white" style={{ backgroundColor: tier.badge_color }}>
-                      {tier.ribbon_text}
-                    </div>
-                  )}
-                  <CardHeader className={tier.ribbon_text ? "pt-8" : ""}>
-                    <div className="flex items-center gap-2">
-                      <Crown className="h-5 w-5" style={{ color: tier.badge_color }} />
-                      <CardTitle className="text-lg">{tier.name}</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mb-4">
-                      <span className="text-3xl font-extrabold">{tier.price === 0 ? "Free" : fmt(tier.price)}</span>
-                      {tier.price > 0 && <span className="text-sm opacity-60 ml-1">/ per ad</span>}
-                    </div>
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-center gap-2"><Check className="h-4 w-4 flex-shrink-0" style={{ color: tier.badge_color }} />Priority weight: {tier.priority_weight}</li>
-                      {tier.included_featured_days > 0 && (
-                        <li className="flex items-center gap-2"><Star className="h-4 w-4 flex-shrink-0 text-yellow-500" />{tier.included_featured_days} Featured days included</li>
-                      )}
-                      {tier.badge_label && (
-                        <li className="flex items-center gap-2"><Shield className="h-4 w-4 flex-shrink-0" style={{ color: tier.badge_color }} />{tier.badge_label} badge on listing</li>
-                      )}
-                      <li className="flex items-center gap-2"><BarChart3 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />Higher search ranking</li>
-                    </ul>
-                  </CardContent>
-                </Card>
-              ))}
+              {tiers.sort((a, b) => a.display_order - b.display_order).map((tier) => {
+                const name = tier.name.toLowerCase();
+                const isGold = name.includes("gold");
+                const isSilver = name.includes("silver");
+                const isBronze = name.includes("bronze");
+                const tierCardStyle: React.CSSProperties = {};
+                let tierCardClass = "relative overflow-hidden transition-all hover:shadow-lg";
+
+                if (isGold) {
+                  tierCardStyle.border = "2px solid #D4AF37";
+                  tierCardStyle.background = "linear-gradient(135deg, #FFF8E1 0%, #FFFDF5 50%, #ffffff 100%)";
+                  tierCardStyle.boxShadow = "0 0 30px rgba(212,175,55,0.2)";
+                  tierCardClass += " scale-[1.02]";
+                } else if (isSilver) {
+                  tierCardStyle.border = "2px solid #B0B0B0";
+                  tierCardStyle.background = "linear-gradient(135deg, #F5F5F8 0%, #FAFAFA 50%, #ffffff 100%)";
+                  tierCardStyle.boxShadow = "0 0 20px rgba(160,160,160,0.15)";
+                } else if (isBronze) {
+                  tierCardStyle.border = "2px solid #CD7F32";
+                  tierCardStyle.background = "linear-gradient(135deg, #FFF5EB 0%, #FFFBF5 50%, #ffffff 100%)";
+                  tierCardStyle.boxShadow = "0 0 16px rgba(205,127,50,0.15)";
+                } else {
+                  tierCardStyle.borderColor = tier.badge_color;
+                  tierCardStyle.borderWidth = tier.price > 0 ? 2 : 1;
+                }
+
+                return (
+                  <Card key={tier.id} className={tierCardClass} style={tierCardStyle}>
+                    {tier.ribbon_text && (
+                      <div className="absolute top-0 left-0 right-0 text-center text-xs font-bold py-1.5 text-white"
+                        style={{ backgroundColor: isGold ? "#D4AF37" : isSilver ? "#888" : isBronze ? "#CD7F32" : tier.badge_color }}>
+                        {isGold ? "👑 " : ""}{tier.ribbon_text}
+                      </div>
+                    )}
+                    <CardHeader className={tier.ribbon_text ? "pt-10" : ""}>
+                      <div className="flex items-center gap-2">
+                        <Crown className="h-5 w-5" style={{ color: isGold ? "#D4AF37" : isSilver ? "#888" : isBronze ? "#CD7F32" : tier.badge_color }} />
+                        <CardTitle className="text-lg">{tier.name}</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="mb-4">
+                        <span className="text-3xl font-extrabold">{tier.price === 0 ? "Free" : fmt(tier.price)}</span>
+                        {tier.price > 0 && <span className="text-sm opacity-60 ml-1">/ per ad</span>}
+                      </div>
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex items-center gap-2"><Check className="h-4 w-4 flex-shrink-0" style={{ color: tier.badge_color }} />Priority weight: {tier.priority_weight}</li>
+                        {tier.included_featured_days > 0 && (
+                          <li className="flex items-center gap-2"><Star className="h-4 w-4 flex-shrink-0 text-yellow-500" />{tier.included_featured_days} Featured days included</li>
+                        )}
+                        {tier.badge_label && (
+                          <li className="flex items-center gap-2"><Shield className="h-4 w-4 flex-shrink-0" style={{ color: tier.badge_color }} />{tier.badge_label} badge on listing</li>
+                        )}
+                        <li className="flex items-center gap-2"><BarChart3 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />Higher search ranking</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </section>

@@ -54,10 +54,28 @@ const ProductCard = ({
   };
 
   const hasTier = tier && tier.badge_label && tier.name !== "Free";
+  const tierName = tier?.name?.toLowerCase() || "";
+  const isGold = tierName.includes("gold");
+  const isSilver = tierName.includes("silver");
+  const isBronze = tierName.includes("bronze");
+
   const cardStyle: React.CSSProperties = {};
   if (hasTier) {
-    if (tier.border_style && tier.border_style !== "none") cardStyle.border = tier.border_style;
-    if (tier.shadow_intensity && tier.shadow_intensity !== "none") cardStyle.boxShadow = tier.shadow_intensity;
+    if (isGold) {
+      cardStyle.border = "2px solid #D4AF37";
+      cardStyle.boxShadow = "0 0 20px rgba(212,175,55,0.25), 0 4px 12px rgba(212,175,55,0.15)";
+      cardStyle.background = "linear-gradient(135deg, rgba(255,248,225,0.5) 0%, rgba(255,255,255,1) 40%)";
+    } else if (isSilver) {
+      cardStyle.border = "2px solid #A0A0A0";
+      cardStyle.boxShadow = "0 0 16px rgba(160,160,160,0.2), 0 4px 10px rgba(160,160,160,0.1)";
+      cardStyle.background = "linear-gradient(135deg, rgba(240,240,245,0.6) 0%, rgba(255,255,255,1) 40%)";
+    } else if (isBronze) {
+      cardStyle.border = "2px solid #CD7F32";
+      cardStyle.boxShadow = "0 0 12px rgba(205,127,50,0.2), 0 4px 8px rgba(205,127,50,0.1)";
+    } else {
+      if (tier.border_style && tier.border_style !== "none") cardStyle.border = tier.border_style;
+      if (tier.shadow_intensity && tier.shadow_intensity !== "none") cardStyle.boxShadow = tier.shadow_intensity;
+    }
   }
 
   return (

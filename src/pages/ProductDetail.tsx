@@ -32,6 +32,33 @@ interface SellerProfile {
   account_type: string; business_name: string | null;
 }
 
+const SidebarPromotionSlot = ({ promos }: { promos: any[] }) => {
+  const navigate = useNavigate();
+  if (promos.length === 0) return null;
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", minimumFractionDigits: 0 }).format(price);
+  return (
+    <div className="bg-card rounded-xl p-4 shadow-card border border-primary/20">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-[10px] font-bold bg-orange-500 text-white px-2 py-0.5 rounded">SPONSORED</span>
+        <span className="text-xs text-muted-foreground">Promoted listings</span>
+      </div>
+      <div className="space-y-3">
+        {promos.map((ad) => (
+          <div key={ad.id} className="flex gap-3 cursor-pointer group" onClick={() => navigate(`/listing/${ad.id}`)}>
+            <img src={ad.images?.[0] || "/placeholder.svg"} alt={ad.title}
+              className="w-16 h-16 rounded-lg object-cover flex-shrink-0 group-hover:opacity-80 transition-opacity" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">{ad.title}</p>
+              <p className="text-sm font-bold text-primary">{formatPrice(ad.price)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -44,6 +71,8 @@ const ProductDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [showPhone, setShowPhone] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [sidebarPromos, setSidebarPromos] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -88,6 +117,26 @@ const ProductDetail = () => {
       if (baseData) {
         await supabase.rpc("increment_listing_views", { p_listing_id: id });
       }
+
+      // Fetch sidebar promoted listings
+      const { data: sidebarData } = await supabase
+        .from("base_listings")
+        .select("id, title, price, images, location, created_at, promotion_type_id")
+        .eq("status", "active")
+        .not("promotion_type_id", "is", null)
+        .neq("id", id)
+        .limit(3);
+      
+      if (sidebarData && sidebarData.length > 0) {
+        // Filter to only sidebar promotions
+        const { data: promoTypes } = await supabase
+          .from("promotion_types")
+          .select("id")
+          .eq("placement", "sidebar");
+        const sidebarTypeIds = new Set((promoTypes || []).map(p => p.id));
+        setSidebarPromos(sidebarData.filter(l => sidebarTypeIds.has(l.promotion_type_id)));
+      }
+
       setLoading(false);
     };
     fetchListing();
@@ -139,10 +188,6 @@ const ProductDetail = () => {
   const memberSince = seller?.created_at
     ? new Date(seller.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })
     : "N/A";
-
-  const yearsSince = seller?.created_at
-    ? Math.max(1, Math.floor((Date.now() - new Date(seller.created_at).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
-    : 0;
 
   if (loading) {
     return (
@@ -265,98 +310,101 @@ const ProductDetail = () => {
           {/* ─── Right: Modern Sidebar ─── */}
           <div className="space-y-4">
             {/* Price Card */}
-            <div className="bg-card rounded-xl p-5 shadow-card border">
-              <p className="text-2xl font-extrabold text-foreground mb-4">{formatPrice(listing.price)}</p>
-
-              {seller?.phone && (
-                <Button
-                  className="w-full bg-primary hover:bg-primary/90 font-semibold h-11 mb-3"
-                  onClick={() => {
-                    if (!user) { setIsAuthModalOpen(true); return; }
-                    if (showPhone) { window.location.href = `tel:${seller.phone}`; }
-                    else setShowPhone(true);
-                  }}
-                >
-                  <Phone className="h-4 w-4 mr-2" />
-                  {showPhone ? seller.phone : "Show contact"}
-                </Button>
-              )}
-
-              <Button
-                variant="outline"
-                className="w-full h-11 font-semibold"
-                onClick={() => {
-                  if (!user) { setIsAuthModalOpen(true); return; }
-                  if (user.id === listing.user_id) { toast.info("You can't message yourself"); return; }
-                  navigate(`/messages?user=${listing.user_id}&listing=${listing.id}`);
-                }}
-              >
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Start chat
-              </Button>
+            <div className="bg-card rounded-xl p-5 shadow-card border border-border/50">
+              <p className="text-3xl font-extrabold text-foreground">{formatPrice(listing.price)}</p>
+              {listing.is_negotiable && <span className="text-sm text-muted-foreground">Negotiable</span>}
             </div>
 
-            {/* Seller Card */}
-            <div className="bg-card rounded-xl p-5 shadow-card border">
-              <div
-                className="flex items-center gap-3 cursor-pointer group"
-                onClick={() => navigate(`/seller/${listing.user_id}`)}
-              >
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold overflow-hidden flex-shrink-0 border-2 border-border">
+            {/* Seller Card — includes contact actions */}
+            <div className="bg-card rounded-xl p-5 shadow-card border border-border/50">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-lg font-bold overflow-hidden flex-shrink-0 ring-2 ring-primary/20">
                   {seller?.avatar_url ? (
                     <img src={seller.avatar_url} alt={getSellerDisplayName()} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-primary">{getSellerDisplayName().charAt(0).toUpperCase()}</span>
+                    <span className="text-primary text-xl">{getSellerDisplayName().charAt(0).toUpperCase()}</span>
                   )}
                 </div>
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">{getSellerDisplayName()}</h3>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-                    {yearsSince > 0 && <span>📅 {yearsSince}+ year{yearsSince > 1 ? "s" : ""} on site</span>}
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-foreground truncate">{getSellerDisplayName()}</h3>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                     {seller?.is_verified && (
-                      <span className="flex items-center gap-0.5 text-primary font-medium">
-                        <Shield className="h-3 w-3" /> Verified ID
+                      <span className="flex items-center gap-1 text-primary font-medium">
+                        <Shield className="h-3 w-3" /> Verified
                       </span>
                     )}
+                    <span>Member since {memberSince}</span>
                   </div>
                 </div>
               </div>
 
               {seller?.rating !== undefined && seller.rating > 0 && (
-                <div className="flex items-center gap-1 mt-3 p-2.5 rounded-lg border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => navigate(`/seller/${listing.user_id}`)}
-                >
+                <div className="flex items-center gap-2 mb-4 p-2.5 rounded-lg bg-muted/40 border">
                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="font-semibold text-sm">{seller.total_reviews} Feedback</span>
-                  <span className="text-xs text-muted-foreground ml-auto flex items-center gap-1">
-                    view all <ExternalLink className="h-3 w-3" />
-                  </span>
+                  <span className="font-medium text-sm">{seller.rating}/5</span>
+                  <span className="text-xs text-muted-foreground">({seller.total_reviews} review{seller.total_reviews !== 1 ? "s" : ""})</span>
                 </div>
               )}
 
-              {seller?.whatsapp_number && (
+              <div className="space-y-2.5">
+                {seller?.phone && (
+                  <Button
+                    className="w-full font-semibold h-11"
+                    onClick={() => {
+                      if (!user) { setIsAuthModalOpen(true); return; }
+                      if (showPhone) { window.location.href = `tel:${seller.phone}`; }
+                      else setShowPhone(true);
+                    }}
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    {showPhone ? seller.phone : "Show contact"}
+                  </Button>
+                )}
+
                 <Button
                   variant="outline"
-                  className="w-full mt-3 border-green-500 text-green-600 hover:bg-green-50 h-10"
+                  className="w-full h-11 font-semibold"
                   onClick={() => {
                     if (!user) { setIsAuthModalOpen(true); return; }
-                    window.open(`https://wa.me/${seller.whatsapp_number!.replace(/\D/g, "")}?text=Hi, I'm interested in your listing: ${listing.title}`, "_blank");
+                    if (user.id === listing.user_id) { toast.info("You can't message yourself"); return; }
+                    navigate(`/messages?user=${listing.user_id}&listing=${listing.id}`);
                   }}
                 >
-                  <MessageCircle className="h-4 w-4 mr-2" /> WhatsApp
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  Start chat
                 </Button>
-              )}
 
-              <div className="flex gap-2 mt-3">
-                <Button variant="ghost" size="sm" className="flex-1 text-xs text-muted-foreground"
-                  onClick={() => { if (user?.id === listing.user_id) { toast.info("This is your listing"); return; } }}>
-                  <Flag className="h-3 w-3 mr-1" /> Mark unavailable
-                </Button>
+                {seller?.whatsapp_number && (
+                  <Button
+                    variant="outline"
+                    className="w-full border-green-500/50 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20 h-11"
+                    onClick={() => {
+                      if (!user) { setIsAuthModalOpen(true); return; }
+                      window.open(`https://wa.me/${seller.whatsapp_number!.replace(/\D/g, "")}?text=Hi, I'm interested in your listing: ${listing.title}`, "_blank");
+                    }}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" /> WhatsApp
+                  </Button>
+                )}
               </div>
+
+              <Separator className="my-4" />
+
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-sm text-muted-foreground hover:text-primary"
+                onClick={() => navigate(`/seller/${listing.user_id}`)}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View seller profile
+              </Button>
             </div>
 
+            {/* Sidebar Promotion Slot */}
+            <SidebarPromotionSlot promos={sidebarPromos} />
+
             {/* Safety Tips */}
-            <div className="bg-card rounded-xl p-5 shadow-card border">
+            <div className="bg-card rounded-xl p-5 shadow-card border border-border/50">
               <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
                 <Shield className="h-4 w-4 text-primary" /> Safety tips
               </h4>
@@ -378,7 +426,19 @@ const ProductDetail = () => {
               Post Ad Like This
             </Button>
 
-            <ReportAdDialog listingId={listing.id} onAuthRequired={() => setIsAuthModalOpen(true)} />
+            {/* Report Ad — proper button */}
+            <Button
+              variant="ghost"
+              className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              onClick={() => {
+                if (!user) { setIsAuthModalOpen(true); return; }
+                setReportOpen(true);
+              }}
+            >
+              <Flag className="h-4 w-4 mr-2" />
+              Report this ad
+            </Button>
+            <ReportAdDialog listingId={listing.id} onAuthRequired={() => setIsAuthModalOpen(true)} open={reportOpen} onOpenChange={setReportOpen} />
           </div>
         </div>
 
