@@ -133,26 +133,9 @@ export const useIncrementAdsUsed = () => {
     // Don't increment for admin bypass
     if (limits?.isAdminBypass) return;
 
-    const { data: sub, error: fetchError } = await supabase
-      .from("seller_subscriptions")
-      .select("id, ads_used")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .eq("payment_status", "completed")
-      .single();
-
-    if (fetchError || !sub) {
-      console.error("Error fetching subscription:", fetchError);
-      return;
-    }
-
-    const { error: updateError } = await supabase
-      .from("seller_subscriptions")
-      .update({ ads_used: sub.ads_used + 1 })
-      .eq("id", sub.id);
-
-    if (updateError) {
-      console.error("Error incrementing ads used:", updateError);
+    const { error } = await supabase.rpc("increment_ads_used", { p_user_id: user.id });
+    if (error) {
+      console.error("Error incrementing ads used:", error);
     }
   };
 

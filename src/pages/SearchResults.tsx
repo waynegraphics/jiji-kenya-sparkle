@@ -77,7 +77,7 @@ const SearchResults = () => {
       .select("*", { count: "exact", head: true })
       .eq("status", "active");
 
-    if (query) countQuery = countQuery.ilike("title", `%${query}%`);
+    if (query) countQuery = countQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%`);
     if (categoryId) countQuery = countQuery.eq("main_category_id", categoryId);
     if (location) countQuery = countQuery.ilike("location", `%${location}%`);
 
@@ -90,7 +90,7 @@ const SearchResults = () => {
       .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id")
       .eq("status", "active");
 
-    if (query) queryBuilder = queryBuilder.ilike("title", `%${query}%`);
+    if (query) queryBuilder = queryBuilder.or(`title.ilike.%${query}%,description.ilike.%${query}%`);
     if (categoryId) queryBuilder = queryBuilder.eq("main_category_id", categoryId);
     if (location) queryBuilder = queryBuilder.ilike("location", `%${location}%`);
 
