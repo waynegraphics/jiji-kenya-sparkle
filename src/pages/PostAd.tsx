@@ -60,7 +60,7 @@ const PostAd = () => {
         .eq("key", "seller_registration_fee")
         .maybeSingle();
       
-      const feeAmount = feeData ? parseInt(feeData.value) : 250;
+      const feeAmount = feeData ? parseInt(feeData.value) : 0;
       if (feeAmount === 0) {
         setRegistrationFeePaid(true);
         setFeeCheckLoading(false);

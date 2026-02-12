@@ -16,7 +16,7 @@ interface RegistrationFeeCheckoutProps {
 const RegistrationFeeCheckout = ({ onPaymentSuccess }: RegistrationFeeCheckoutProps) => {
   const { user, profile } = useAuth();
   const [phoneNumber, setPhoneNumber] = useState(profile?.phone || "");
-  const [fee, setFee] = useState(250);
+  const [fee, setFee] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "pending" | "success" | "failed">("idle");
@@ -29,7 +29,7 @@ const RegistrationFeeCheckout = ({ onPaymentSuccess }: RegistrationFeeCheckoutPr
         .select("value")
         .eq("key", "seller_registration_fee")
         .maybeSingle();
-      const feeValue = data ? parseInt(data.value) : 250;
+      const feeValue = data ? parseInt(data.value) : 0;
       setFee(feeValue);
       // If fee is 0, auto-approve
       if (feeValue === 0) {
