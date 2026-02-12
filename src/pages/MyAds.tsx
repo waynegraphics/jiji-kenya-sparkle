@@ -210,7 +210,7 @@ const MyAds = () => {
                             </Badge>
                           )}
                           {listing.is_featured && (
-                            <Badge className="bg-jiji-yellow text-foreground text-xs">
+                            <Badge className="bg-apa-yellow text-foreground text-xs">
                               Featured
                             </Badge>
                           )}

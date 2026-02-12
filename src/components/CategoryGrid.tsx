@@ -13,21 +13,21 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 const colorMap: Record<string, string> = {
-  vehicles: "bg-jiji-blue",
-  property: "bg-jiji-green",
-  "phones-tablets": "bg-jiji-orange",
-  fashion: "bg-jiji-purple",
-  services: "bg-jiji-teal",
-  jobs: "bg-jiji-yellow",
-  "furniture-appliances": "bg-jiji-red",
-  "animals-pets": "bg-jiji-green",
-  "babies-kids": "bg-jiji-purple",
-  "beauty-care": "bg-jiji-orange",
-  electronics: "bg-jiji-blue",
-  "commercial-equipment": "bg-jiji-teal",
-  "food-agriculture": "bg-jiji-green",
-  "leisure-activities": "bg-jiji-blue",
-  "repair-construction": "bg-jiji-yellow",
+  vehicles: "bg-apa-blue",
+  property: "bg-apa-green",
+  "phones-tablets": "bg-apa-orange",
+  fashion: "bg-apa-purple",
+  services: "bg-apa-teal",
+  jobs: "bg-apa-yellow",
+  "furniture-appliances": "bg-apa-red",
+  "animals-pets": "bg-apa-green",
+  "babies-kids": "bg-apa-purple",
+  "beauty-care": "bg-apa-orange",
+  electronics: "bg-apa-blue",
+  "commercial-equipment": "bg-apa-teal",
+  "food-agriculture": "bg-apa-green",
+  "leisure-activities": "bg-apa-blue",
+  "repair-construction": "bg-apa-yellow",
 };
 
 const CategoryGrid = () => {
@@ -61,7 +61,7 @@ const CategoryGrid = () => {
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
           {categories?.map((category) => {
             const IconComponent = iconMap[category.icon || ""] || Briefcase;
-            const colorClass = colorMap[category.slug] || "bg-jiji-blue";
+            const colorClass = colorMap[category.slug] || "bg-apa-blue";
             const adCount = counts?.[category.id] || 0;
 
             return (
