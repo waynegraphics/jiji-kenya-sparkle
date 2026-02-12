@@ -192,12 +192,11 @@ const ProductDetail = () => {
                 });
             }
           })
-          .catch(console.error);
+          .then(undefined, console.error);
 
         // Increment views in background (fire-and-forget, non-blocking)
         supabase.rpc("increment_listing_views", { p_listing_id: listingId })
-          .then(() => {})
-          .catch((err) => {
+          .then(undefined, (err: unknown) => {
             console.error("Error incrementing views:", err);
           });
 
@@ -232,17 +231,15 @@ const ProductDetail = () => {
         .eq("id", listingId)
         .single();
       if (data) {
-        // Transform make_id and model_id to display names
-        const transformed = { ...data };
-        if (data.make_id && data.make) {
-          transformed.make_name = data.make.name;
-          delete transformed.make_id; // Remove ID, keep name
+        const transformed: Record<string, any> = { ...(data as any) };
+        if (transformed.make_id && transformed.make) {
+          transformed.make_name = (transformed.make as any).name;
+          delete transformed.make_id;
         }
-        if (data.model_id && data.model) {
-          transformed.model_name = data.model.name;
-          delete transformed.model_id; // Remove ID, keep name
+        if (transformed.model_id && transformed.model) {
+          transformed.model_name = (transformed.model as any).name;
+          delete transformed.model_id;
         }
-        // Remove the joined objects
         delete transformed.make;
         delete transformed.model;
         setCategoryDetails(transformed);

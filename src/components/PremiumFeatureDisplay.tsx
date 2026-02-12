@@ -59,7 +59,7 @@ const getFeatureIcon = (key: string, value: any, categorySlug?: string): React.C
         if (facilities.some((f: string) => f.includes('hospital'))) return Hospital;
         if (facilities.some((f: string) => f.includes('mall') || f.includes('shopping'))) return ShoppingBag;
         if (facilities.some((f: string) => f.includes('restaurant'))) return UtensilsCrossed;
-        if (facilities.some((f: string) => f.includes('bank'))) return Bank;
+        if (facilities.some((f: string) => f.includes('bank'))) return Building;
         if (facilities.some((f: string) => f.includes('transport') || f.includes('bus'))) return Train;
         if (facilities.some((f: string) => f.includes('gym'))) return Dumbbell;
         if (facilities.some((f: string) => f.includes('beach'))) return Waves;
@@ -118,7 +118,7 @@ const getFeatureIcon = (key: string, value: any, categorySlug?: string): React.C
   if (keyLower.includes('weight')) return Gauge;
   if (keyLower.includes('warranty')) return Shield;
   if (keyLower.includes('delivery')) return Car;
-  if (keyLower.includes('payment')) return Bank;
+  if (keyLower.includes('payment')) return CreditCard;
 
   return null;
 };
@@ -176,7 +176,7 @@ export const PremiumFeatureDisplay = ({ categoryDetails, categorySlug, className
         label: formatFeatureLabel(key),
         value,
         icon: icon || CheckCircle2,
-        category: categorySlug === 'property' ? 'property' : categorySlug === 'vehicles' ? 'vehicle' : 'general'
+        category: (categorySlug === 'property' ? 'property' : categorySlug === 'vehicles' ? 'vehicle' : 'general') as 'property' | 'vehicle' | 'general'
       };
     })
     .filter(f => f); // Remove any null entries
