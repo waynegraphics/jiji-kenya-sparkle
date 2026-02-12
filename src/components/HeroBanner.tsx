@@ -20,7 +20,7 @@ const HeroBanner = () => {
   };
 
   return (
-    <section className="bg-gradient-to-br from-primary via-jiji-green-dark to-primary py-10 md:py-16">
+    <section className="bg-gradient-to-br from-primary via-apa-green-dark to-primary py-10 md:py-16">
       <div className="container mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-2xl md:text-4xl font-extrabold text-primary-foreground mb-3">

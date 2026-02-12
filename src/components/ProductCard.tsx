@@ -118,7 +118,7 @@ const ProductCard = ({
         <button onClick={handleFavoriteClick}
           className="absolute top-2 right-2 w-8 h-8 rounded-full bg-card/90 backdrop-blur-sm flex items-center justify-center hover:bg-card transition-colors"
           style={hasTier && tier.ribbon_text ? { top: '1.75rem' } : undefined}>
-          <Heart className={`h-4 w-4 transition-colors ${isFavorite ? "fill-jiji-red text-jiji-red" : "text-muted-foreground"}`} />
+          <Heart className={`h-4 w-4 transition-colors ${isFavorite ? "fill-apa-red text-apa-red" : "text-muted-foreground"}`} />
         </button>
       </div>
 

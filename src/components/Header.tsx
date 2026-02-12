@@ -267,7 +267,7 @@ const Header = ({ onSearch }: HeaderProps) => {
                 </Button>
 
                 <Button
-                  className="bg-secondary hover:bg-jiji-orange-hover text-secondary-foreground font-semibold"
+                  className="bg-secondary hover:bg-apa-orange-hover text-secondary-foreground font-semibold"
                   onClick={() => user ? navigate("/post-ad") : openAuthModal("register")}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -377,7 +377,7 @@ const Header = ({ onSearch }: HeaderProps) => {
                 )}
 
                 <Button
-                  className="bg-secondary hover:bg-jiji-orange-hover text-secondary-foreground font-semibold mt-2"
+                  className="bg-secondary hover:bg-apa-orange-hover text-secondary-foreground font-semibold mt-2"
                   onClick={() => {
                     if (user) navigate("/post-ad");
                     else openAuthModal("register");

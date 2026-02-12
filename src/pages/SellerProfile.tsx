@@ -157,7 +157,7 @@ const SellerProfile = () => {
                 </div>
                 {seller.rating > 0 && (
                   <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                    <Star className="h-4 w-4 fill-jiji-yellow text-jiji-yellow" />
+                    <Star className="h-4 w-4 fill-apa-yellow text-apa-yellow" />
                     {seller.rating.toFixed(1)} ({seller.total_reviews} reviews)
                   </div>
                 )}

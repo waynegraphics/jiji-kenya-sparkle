@@ -5,7 +5,7 @@ const AppDownload = () => {
   return (
     <section className="py-10 bg-card">
       <div className="container mx-auto">
-        <div className="bg-gradient-to-r from-primary to-jiji-green-dark rounded-2xl p-6 md:p-10 flex flex-col md:flex-row items-center gap-6">
+        <div className="bg-gradient-to-r from-primary to-apa-green-dark rounded-2xl p-6 md:p-10 flex flex-col md:flex-row items-center gap-6">
           {/* Icon */}
           <div className="w-20 h-20 md:w-28 md:h-28 bg-card rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
             <Smartphone className="h-10 w-10 md:h-14 md:w-14 text-primary" />
@@ -14,7 +14,7 @@ const AppDownload = () => {
           {/* Content */}
           <div className="flex-1 text-center md:text-left">
             <h2 className="text-xl md:text-2xl font-bold text-primary-foreground mb-2">
-              Download the Jiji App
+              Download the APA Bazaar App
             </h2>
             <p className="text-primary-foreground/80 text-sm md:text-base mb-3">
               Buy and sell faster on your phone! Get the best deals and post ads on the go.

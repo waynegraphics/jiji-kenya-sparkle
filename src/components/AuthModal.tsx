@@ -211,7 +211,7 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
 
           <Button
             type="submit"
-            className="w-full bg-primary hover:bg-jiji-green-dark"
+            className="w-full bg-primary hover:bg-apa-green-dark"
             disabled={isLoading}
           >
             {isLoading ? (

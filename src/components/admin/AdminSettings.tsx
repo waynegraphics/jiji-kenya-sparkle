@@ -167,7 +167,7 @@ const SocialAuthSettings = () => {
 
 // ── Contact & Email Settings ──
 const ContactEmailSettings = () => {
-  const supportEmail = usePlatformSetting("support_email", "support@jiji.co.ke");
+  const supportEmail = usePlatformSetting("support_email", "support@apabazaar.co.ke");
   const contactPhone = usePlatformSetting("contact_phone");
   const contactAddress = usePlatformSetting("contact_address");
   const smtpHost = usePlatformSetting("smtp_host");
@@ -175,7 +175,7 @@ const ContactEmailSettings = () => {
   const smtpUser = usePlatformSetting("smtp_user");
   const smtpPass = usePlatformSetting("smtp_password");
   const smtpFrom = usePlatformSetting("smtp_from_email");
-  const smtpFromName = usePlatformSetting("smtp_from_name", "Jiji Kenya");
+  const smtpFromName = usePlatformSetting("smtp_from_name", "APA Bazaar");
   const [saving, setSaving] = useState(false);
   const [showSmtpPass, setShowSmtpPass] = useState(false);
 
@@ -222,7 +222,7 @@ const ContactEmailSettings = () => {
               </div>
             </div>
             <div className="space-y-2"><Label>From Email</Label><Input value={smtpFrom.value} onChange={(e) => smtpFrom.setValue(e.target.value)} placeholder="noreply@example.com" /></div>
-            <div className="space-y-2"><Label>From Name</Label><Input value={smtpFromName.value} onChange={(e) => smtpFromName.setValue(e.target.value)} placeholder="Jiji Kenya" /></div>
+            <div className="space-y-2"><Label>From Name</Label><Input value={smtpFromName.value} onChange={(e) => smtpFromName.setValue(e.target.value)} placeholder="APA Bazaar" /></div>
           </div>
         </CardContent>
       </Card>
@@ -235,7 +235,7 @@ const ContactEmailSettings = () => {
 
 // ── Copyright / Legal Settings ──
 const CopyrightSettings = () => {
-  const copyrightText = usePlatformSetting("copyright_text", `© ${new Date().getFullYear()} Jiji Kenya. All rights reserved.`);
+  const copyrightText = usePlatformSetting("copyright_text", `© ${new Date().getFullYear()} APA Bazaar. All rights reserved.`);
   const termsUrl = usePlatformSetting("terms_url", "/terms");
   const privacyUrl = usePlatformSetting("privacy_url", "/privacy");
   const aboutText = usePlatformSetting("about_text");
@@ -314,7 +314,7 @@ const AdminAccountSettings = () => {
 
 // ── Main AdminSettings ──
 const AdminSettings = () => {
-  const [siteSettings, setSiteSettings] = useState({ siteName: "Jiji Kenya", siteUrl: "https://jiji-kenya-sparkle.lovable.app", supportEmail: "support@jiji.co.ke", currency: "KES" });
+  const [siteSettings, setSiteSettings] = useState({ siteName: "APA Bazaar", siteUrl: "https://apabazaar.co.ke", supportEmail: "support@apabazaar.co.ke", currency: "KES" });
   const [notificationSettings, setNotificationSettings] = useState({ emailNewUser: true, emailNewListing: false, emailNewOrder: true, emailSupportTicket: true });
   const [securitySettings, setSecuritySettings] = useState({ requireEmailVerification: true, enableTwoFactor: false, autoSuspendReportedUsers: false, maxLoginAttempts: 5 });
   const [mpesaSettings, setMpesaSettings] = useState({ id: "", consumer_key: "", consumer_secret: "", passkey: "", shortcode: "", callback_url: "", environment: "sandbox", is_enabled: false });

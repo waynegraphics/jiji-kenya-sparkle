@@ -132,7 +132,7 @@ const SellerReviews = ({ sellerId }: SellerReviewsProps) => {
           <Star
             className={`${size} ${
               star <= (hover || value)
-                ? "fill-jiji-yellow text-jiji-yellow"
+                 ? "fill-apa-yellow text-apa-yellow"
                 : "text-muted-foreground/30"
             }`}
           />
@@ -199,7 +199,7 @@ const SellerReviews = ({ sellerId }: SellerReviewsProps) => {
                           key={s}
                           className={`h-3 w-3 ${
                             s <= review.rating
-                              ? "fill-jiji-yellow text-jiji-yellow"
+                              ? "fill-apa-yellow text-apa-yellow"
                               : "text-muted-foreground/30"
                           }`}
                         />
