@@ -10,6 +10,7 @@ import { Send, ArrowLeft, Loader2, MessageCircle, Paperclip, Play, Pause, FileTe
 import { formatDistanceToNow } from "date-fns";
 import { EmojiPicker } from "@/components/EmojiPicker";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface Message {
   id: string;
@@ -54,6 +55,7 @@ interface Profile {
 
 const SellerMessages = () => {
   const { user } = useAuth();
+  const { notifications, markAsRead: markNotifAsRead } = useNotifications();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,6 +64,7 @@ const SellerMessages = () => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [messageFilter, setMessageFilter] = useState<"all" | "unread">("all");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [profiles, setProfiles] = useState<Map<string, Profile>>(new Map());
@@ -226,6 +229,13 @@ const SellerMessages = () => {
   useEffect(() => { if (user) fetchConversations(); }, [user]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  // Mark all message-type notifications as read when messages page opens
+  useEffect(() => {
+    if (!user || !notifications.length) return;
+    const unreadMessageNotifs = notifications.filter(n => n.type === 'message' && !n.is_read);
+    unreadMessageNotifs.forEach(n => markNotifAsRead(n.id));
+  }, [user, notifications]);
+
   useEffect(() => {
     if (!user) return;
     const channel = supabase.channel("seller-messages-changes").on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `receiver_id=eq.${user.id}` }, () => {
@@ -294,7 +304,28 @@ const SellerMessages = () => {
       <div className="bg-card rounded-xl shadow-card flex overflow-hidden border" style={{ height: "calc(100vh - 220px)", minHeight: "500px" }}>
         {/* Conversations List */}
         <div className={`w-full md:w-96 border-r flex flex-col ${selectedConversation ? "hidden md:flex" : "flex"}`}>
-          <div className="p-4 border-b"><h3 className="font-semibold text-lg">Chats</h3></div>
+          <div className="p-3 border-b space-y-2">
+            <h3 className="font-semibold text-lg">Chats</h3>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setMessageFilter("all")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${messageFilter === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setMessageFilter("unread")}
+                className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors flex items-center gap-1.5 ${messageFilter === "unread" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
+              >
+                Unread
+                {conversations.filter(c => c.unread_count > 0).length > 0 && (
+                  <span className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1 text-[10px] font-bold rounded-full ${messageFilter === "unread" ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"}`}>
+                    {conversations.filter(c => c.unread_count > 0).length}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
           <ScrollArea className="flex-1">
             {loading ? (
               <div className="p-4 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
@@ -304,7 +335,9 @@ const SellerMessages = () => {
                 <p className="font-medium">No messages yet</p>
               </div>
             ) : (
-              conversations.map((conv) => {
+              conversations
+                .filter(conv => messageFilter === "all" || conv.unread_count > 0)
+                .map((conv) => {
                 const listingImg = getListingImage(conv.listing_info);
                 return (
                   <button key={`${conv.other_user_id}-${conv.listing_id}`} onClick={() => selectConversation(conv)}

@@ -23,6 +23,13 @@ const SellerNotifications = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const navigate = useNavigate();
 
+  // Auto-mark all notifications as read when the page is opened
+  useEffect(() => {
+    if (unreadCount > 0) {
+      markAllAsRead();
+    }
+  }, []);
+
   const getIcon = (type: string) => {
     switch (type) {
       case 'message':
