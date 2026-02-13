@@ -1729,6 +1729,7 @@ export type Database = {
           id: string
           included_featured_days: number | null
           is_active: boolean
+          max_ads: number
           name: string
           price: number
           priority_weight: number
@@ -1746,6 +1747,7 @@ export type Database = {
           id?: string
           included_featured_days?: number | null
           is_active?: boolean
+          max_ads?: number
           name: string
           price?: number
           priority_weight?: number
@@ -1763,6 +1765,7 @@ export type Database = {
           id?: string
           included_featured_days?: number | null
           is_active?: boolean
+          max_ads?: number
           name?: string
           price?: number
           priority_weight?: number
