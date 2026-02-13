@@ -64,8 +64,8 @@ const SellerAIAssistant = ({
 
   return (
     <div className="fixed bottom-6 right-6 z-50 w-[90vw] max-w-sm">
-    <Card className="border-primary/20 bg-white shadow-2xl">
-      <CardHeader className="pb-3">
+    <Card className="border-primary/20 bg-white shadow-2xl max-h-[70vh] flex flex-col">
+      <CardHeader className="pb-3 shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
@@ -76,7 +76,7 @@ const SellerAIAssistant = ({
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 overflow-y-auto flex-1">
         <div className="grid grid-cols-2 gap-2">
           <Button
             type="button"

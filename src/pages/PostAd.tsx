@@ -567,7 +567,6 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
     switch (currentStep) {
       case 0: // Title & Description first
         return (
-          <>
           <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
             <h2 className="text-lg font-semibold">What are you listing?</h2>
             <div className="space-y-2">
@@ -587,18 +586,6 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
               <p className="text-xs text-muted-foreground">{baseFormData.description.length}/2000 characters</p>
             </div>
           </div>
-          <SellerAIAssistant
-            category={selectedMainCategory?.name || categorySlug || "General"}
-            title={baseFormData.title}
-            description={baseFormData.description}
-            price={baseFormData.price}
-            location={baseFormData.location}
-            categoryFields={categoryFormData}
-            onApplyTitle={(t) => setBaseFormData(prev => ({ ...prev, title: t }))}
-            onApplyDescription={(d) => setBaseFormData(prev => ({ ...prev, description: d }))}
-            onApplyPrice={(p) => setBaseFormData(prev => ({ ...prev, price: p }))}
-          />
-          </>
         );
 
       case 1: // Category & Location
@@ -823,8 +810,20 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 pb-20">
             {renderStepContent()}
+
+            <SellerAIAssistant
+              category={selectedMainCategory?.name || categorySlug || "General"}
+              title={baseFormData.title}
+              description={baseFormData.description}
+              price={baseFormData.price}
+              location={baseFormData.location}
+              categoryFields={categoryFormData}
+              onApplyTitle={(t) => setBaseFormData(prev => ({ ...prev, title: t }))}
+              onApplyDescription={(d) => setBaseFormData(prev => ({ ...prev, description: d }))}
+              onApplyPrice={(p) => setBaseFormData(prev => ({ ...prev, price: p }))}
+            />
 
             {/* Navigation Buttons */}
             <div className="flex justify-between gap-4">

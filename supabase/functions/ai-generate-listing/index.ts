@@ -44,37 +44,57 @@ serve(async (req) => {
     const model = settings?.model || "google/gemini-3-flash-preview";
     const temperature = settings?.temperature || 0.2;
 
-    const systemPrompt = `You are a listing optimization AI for a Kenyan classified ads marketplace.
-You help sellers create better listings that convert.
+    const systemPrompt = `You are a listing optimization AI for a Kenyan classified ads marketplace (like OLX/Jiji).
+You help sellers write better ad titles and descriptions so buyers can find and trust their listings.
 Currency: KES (Kenyan Shillings).
 You NEVER discuss topics outside of classified ads.
 You ONLY return structured JSON output.
 
 Available categories: Vehicles, Property, Jobs, Electronics, Phones & Tablets, Fashion, Furniture & Appliances, Animals & Pets, Babies & Kids, Beauty & Health, Sports & Leisure, Construction, Agriculture, Equipment, Services
 
+IMPORTANT CONTEXT - This is a CLASSIFIED ADS platform:
+- Sellers are posting ads to sell items or offer services. They are NOT building websites.
+- Seller contact details (phone, WhatsApp, location) are ALREADY in their profile - never suggest adding contact info in the ad.
+- NEVER mention WordPress, Shopify, React, hosting, domains, portfolios, or any web development tools.
+- NEVER suggest sharing samples via WhatsApp or adding links to portfolios - the platform handles messaging.
+- Tips must ONLY be about making the ad listing itself better: better photos, accurate descriptions, fair pricing, honest condition reporting.
+
+CATEGORY DETECTION from title:
+- If title mentions iPhone, Samsung, Pixel, phone brands → category is likely "Phones & Tablets"
+- If title mentions laptop, monitor, TV, computer → category is likely "Electronics"  
+- If title mentions car, Toyota, BMW, motorcycle → category is likely "Vehicles"
+- If title mentions apartment, house, plot, land → category is likely "Property"
+- If title mentions sofa, table, fridge, cooker → category is likely "Furniture & Appliances"
+- Use this intelligence to provide category-appropriate suggestions even if the user hasn't selected a category yet.
+
 Rules:
-- Titles should be 60-80 chars, keyword-rich, specific
+- Titles should be 60-80 chars, keyword-rich, specific (include brand, model, condition, key spec)
 - Descriptions should be detailed, honest, highlight key features, include condition/specs
 - Prices must be realistic for Kenya market in KES
-- SEO keywords should be relevant to the listing
+- SEO keywords should be search terms buyers would use on a classifieds site
 - Never invent unrealistic features
-- Grammar must be perfect`;
+- Grammar must be perfect
+- Tips should be practical classified-ad tips like: use clear photos, mention the exact condition, state if price is negotiable, include the specific model/year`;
 
     let userPrompt = "";
     
     if (action === "generate_title") {
-      userPrompt = `Generate an optimized ad title for a ${category} listing.
+      userPrompt = `Generate an optimized classified ad title for a ${category} listing.
 Current title: "${title || "none"}"
 Description: "${description || "none"}"
 Location: ${location || "Kenya"}
-Category details: ${JSON.stringify(categoryFields || {})}`;
+Category details: ${JSON.stringify(categoryFields || {})}
+
+Make the title specific with brand/model/condition when possible.`;
     } else if (action === "generate_description") {
-      userPrompt = `Generate an optimized, high-converting ad description for a ${category} listing.
+      userPrompt = `Generate an optimized, buyer-friendly classified ad description for a ${category} listing.
 Title: "${title || "none"}"
 Current description: "${description || "none"}"
 Price: KES ${price || "not set"}
 Location: ${location || "Kenya"}
-Category details: ${JSON.stringify(categoryFields || {})}`;
+Category details: ${JSON.stringify(categoryFields || {})}
+
+Focus on specs, condition, and what makes this item worth buying. Do NOT include seller contact info - that's already in their profile.`;
     } else if (action === "suggest_price") {
       userPrompt = `Suggest a competitive price range for this ${category} listing in Kenya.
 Title: "${title || "none"}"
@@ -82,12 +102,15 @@ Description: "${description || "none"}"
 Location: ${location || "Kenya"}
 Category details: ${JSON.stringify(categoryFields || {})}`;
     } else if (action === "full_optimize") {
-      userPrompt = `Fully optimize this ${category} listing. Provide improved title, description, suggested price, and SEO keywords.
+      userPrompt = `Fully optimize this classified ad listing. Provide improved title, description, suggested price, and SEO keywords.
 Current title: "${title || "none"}"
 Current description: "${description || "none"}"
 Current price: KES ${price || "not set"}
 Location: ${location || "Kenya"}
-Category details: ${JSON.stringify(categoryFields || {})}`;
+Category: ${category}
+Category details: ${JSON.stringify(categoryFields || {})}
+
+Remember: this is a classified ad, not a website. Tips should be about writing a better ad (clear photos, accurate specs, honest condition, competitive pricing). Never mention web development, hosting, portfolios, or contact sharing.`;
     } else {
       return new Response(JSON.stringify({ error: "Invalid action" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -102,8 +125,8 @@ Category details: ${JSON.stringify(categoryFields || {})}`;
         suggested_price: { type: "number", description: "Suggested price in KES" },
         price_min: { type: "number", description: "Minimum suggested price in KES" },
         price_max: { type: "number", description: "Maximum suggested price in KES" },
-        seo_keywords: { type: "array", items: { type: "string" }, description: "SEO keywords" },
-        tips: { type: "array", items: { type: "string" }, description: "Tips to improve the listing" },
+        seo_keywords: { type: "array", items: { type: "string" }, description: "Search terms buyers would use" },
+        tips: { type: "array", items: { type: "string" }, description: "Practical tips to improve the classified ad listing (about photos, description quality, pricing - NOT about web development or contact info)" },
       },
       required: ["title"],
       additionalProperties: false,
