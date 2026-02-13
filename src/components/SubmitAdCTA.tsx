@@ -48,7 +48,7 @@ const SubmitAdCTA = () => {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-white text-white hover:bg-white/10 font-bold rounded-full px-8"
+                  className="border-2 border-white text-white bg-transparent hover:bg-white hover:text-primary font-bold rounded-full px-8"
                   onClick={() => handleAuth("login")}
                 >
                   Start Selling
@@ -59,7 +59,7 @@ const SubmitAdCTA = () => {
               <img
                 src={ctaImage}
                 alt="Submit your ads"
-                className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 object-contain drop-shadow-2xl"
+                className="w-48 h-48 md:w-64 md:h-64 lg:w-80 lg:h-80 object-contain object-top drop-shadow-2xl"
               />
             </div>
           </div>
