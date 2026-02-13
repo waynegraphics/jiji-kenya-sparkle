@@ -78,7 +78,7 @@ const SellerDashboard = () => {
               <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm min-w-0">
                 <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors hidden sm:block"><Home className="h-4 w-4" /></Link>
                 <span className="text-muted-foreground hidden sm:inline">/</span>
-                <span className="font-medium truncate">{getPageTitle()}</span>
+                <span className="font-medium truncate hidden sm:inline">{getPageTitle()}</span>
               </nav>
             </div>
             <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
@@ -109,10 +109,10 @@ const SellerDashboard = () => {
               </Link>
 
               {showAdminSwitch && (
-                <Link to="/apa/dashboard" className="hidden sm:block">
-                  <Button variant="default" size="sm" className="gap-2 ml-1">
+                <Link to="/apa/dashboard">
+                  <Button variant="default" size="sm" className="gap-1 ml-1 px-2 sm:px-3">
                     <Shield className="h-4 w-4" />
-                    <span className="hidden md:inline">Back to Admin</span>
+                    <span className="hidden md:inline">Admin Panel</span>
                   </Button>
                 </Link>
               )}
@@ -128,8 +128,8 @@ const SellerDashboard = () => {
               </Button>
             </div>
           </header>
-          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto">
-            <div className="max-w-6xl mx-auto">
+          <main className="flex-1 p-2 sm:p-4 md:p-6 overflow-x-hidden overflow-y-auto">
+            <div className="max-w-6xl mx-auto w-full">
               <Routes>
                 <Route index element={<SellerOverview />} />
                 <Route path="subscription" element={<SellerSubscriptionDashboard />} />

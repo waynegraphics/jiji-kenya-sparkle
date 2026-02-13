@@ -1,4 +1,4 @@
-import { Shield, Truck, HeadphonesIcon, CheckCircle } from "lucide-react";
+import { Shield, Sparkles, HeadphonesIcon, CheckCircle } from "lucide-react";
 import AjaxSearch from "./AjaxSearch";
 import AISearchBar from "./AISearchBar";
 import LocationPopup from "./LocationPopup";
@@ -7,9 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const features = [
   { icon: Shield, title: "Safe & Secure", description: "Verified sellers" },
-  { icon: Truck, title: "Fast Delivery", description: "Across Kenya" },
+  { icon: Sparkles, title: "AI-Powered Search", description: "Smart results for you" },
   { icon: HeadphonesIcon, title: "24/7 Support", description: "Always here to help" },
-  { icon: CheckCircle, title: "Quality Assured", description: "Best products only" },
+  { icon: CheckCircle, title: "Trusted Platform", description: "Thousands of verified ads" },
 ];
 
 const HeroBanner = () => {
@@ -29,7 +29,7 @@ const HeroBanner = () => {
             Buy & Sell Anything in Kenya
           </h1>
           <p className="text-primary-foreground/80 text-sm md:text-lg max-w-2xl mx-auto">
-            Kenya's largest marketplace with over 2 million listings. Find great deals near you!
+            Kenya's most trusted marketplace with verified thousands of listings. Find great deals near you!
           </p>
         </div>
 

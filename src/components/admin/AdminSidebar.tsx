@@ -76,28 +76,26 @@ const AdminSidebar = () => {
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent>
         <div className={`p-3 border-b ${collapsed ? "px-2" : ""}`}>
-          <div className="flex items-center gap-2">
-            <Link to="/" className="flex-shrink-0">
-              {collapsed ? (
-                <img src={logo} alt="Apa Bazaar" className="h-8 w-8 object-contain" />
-              ) : (
-                <img src={logo} alt="Apa Bazaar" className="h-10 w-auto object-contain mb-2" />
-              )}
-            </Link>
-            {!collapsed && (
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
-                    <Shield className="h-3 w-3 text-primary-foreground" />
-                  </div>
-                  <h2 className="font-semibold text-sm">APA Admin</h2>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {isSuperAdmin ? "Super Admin" : teamMember?.designation ? teamMember.designation.charAt(0).toUpperCase() + teamMember.designation.slice(1) : "Admin"}
-                </p>
-              </div>
+          <Link to="/" className="flex-shrink-0">
+            {collapsed ? (
+              <img src={logo} alt="Apa Bazaar" className="h-8 w-8 object-contain" />
+            ) : (
+              <img src={logo} alt="Apa Bazaar" className="h-10 w-auto object-contain" />
             )}
-          </div>
+          </Link>
+          {!collapsed && (
+            <div className="mt-2">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded bg-primary flex items-center justify-center">
+                  <Shield className="h-3 w-3 text-primary-foreground" />
+                </div>
+                <h2 className="font-semibold text-sm">APA Admin</h2>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5 pl-7">
+                {isSuperAdmin ? "Super Admin" : teamMember?.designation ? teamMember.designation.charAt(0).toUpperCase() + teamMember.designation.slice(1) : "Admin"}
+              </p>
+            </div>
+          )}
         </div>
 
         <SidebarGroup>

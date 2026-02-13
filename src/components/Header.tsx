@@ -165,7 +165,7 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ onSearch }, ref) => {
               {/* Mobile SELL button */}
               <Button
                 className="lg:hidden relative bg-gradient-to-r from-secondary via-secondary to-secondary/90 text-secondary-foreground font-bold shadow-lg rounded-lg px-3 py-2 text-sm overflow-hidden group"
-                onClick={() => user ? navigate("/post-ad") : openAuthModal("register")}
+                onClick={() => user ? navigate("/seller-dashboard/post-ad") : openAuthModal("register")}
               >
                 <Plus className="h-4 w-4 mr-1" />
                 SELL
@@ -256,7 +256,7 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ onSearch }, ref) => {
                     {/* Messages Icon */}
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="relative bg-primary text-primary-foreground hover:bg-secondary hover:text-secondary-foreground rounded-lg transition-all group" onClick={() => navigate("/messages")}>
+                        <Button variant="ghost" size="icon" className="relative bg-primary text-primary-foreground hover:bg-secondary hover:text-secondary-foreground rounded-lg transition-all group" onClick={() => navigate("/seller-dashboard/messages")}>
                           <MessageCircle className="h-5 w-5 group-hover:scale-110 transition-all" />
                           {unreadCount > 0 && (
                             <span className="absolute -top-0.5 -right-0.5 h-5 min-w-[20px] px-1.5 text-[10px] font-bold bg-secondary text-secondary-foreground rounded-full flex items-center justify-center shadow-lg animate-pulse">
@@ -310,7 +310,7 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ onSearch }, ref) => {
                         <DropdownMenuItem onClick={() => navigate("/my-ads")} className="px-3 py-2.5 rounded-lg cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors">
                           <FileText className="h-4 w-4 mr-3" /><span>My Ads</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => navigate("/messages")} className="px-3 py-2.5 rounded-lg cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors justify-between">
+                         <DropdownMenuItem onClick={() => navigate("/seller-dashboard/messages")} className="px-3 py-2.5 rounded-lg cursor-pointer hover:bg-primary/10 hover:text-primary transition-colors justify-between">
                           <span className="flex items-center"><MessageCircle className="h-4 w-4 mr-3" />Messages</span>
                           {unreadCount > 0 && (
                             <Badge className="bg-secondary text-secondary-foreground text-[10px] h-5 min-w-[20px] px-1.5 font-semibold rounded-full">{unreadCount > 99 ? "99+" : unreadCount}</Badge>
@@ -335,7 +335,7 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ onSearch }, ref) => {
                     {/* Sell Button */}
                     <Button
                       className="relative bg-gradient-to-r from-secondary via-secondary to-secondary/90 text-secondary-foreground font-bold shadow-lg rounded-lg px-5 py-2.5 text-sm overflow-hidden group"
-                      onClick={() => navigate("/post-ad")}
+                      onClick={() => navigate("/seller-dashboard/post-ad")}
                     >
                       <Plus className="h-4 w-4 mr-1.5 group-hover:rotate-90 transition-transform duration-300" />
                       SELL
@@ -439,7 +439,7 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ onSearch }, ref) => {
                     </span>
                   )}
                 </button>
-                <button onClick={() => mobileNavigate("/messages")} className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-muted/50 transition-colors relative">
+                <button onClick={() => mobileNavigate("/seller-dashboard/messages")} className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-muted/50 transition-colors relative">
                   <MessageCircle className="h-5 w-5 text-muted-foreground" />
                   <span className="text-[10px] text-muted-foreground">Messages</span>
                   {unreadCount > 0 && (
@@ -533,7 +533,7 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ onSearch }, ref) => {
             <div className="p-4 border-t border-border mt-auto">
               <Button
                 className="w-full bg-gradient-to-r from-secondary to-secondary/90 text-secondary-foreground font-bold rounded-lg"
-                onClick={() => { setIsMenuOpen(false); user ? navigate("/post-ad") : openAuthModal("register"); }}
+                onClick={() => { setIsMenuOpen(false); user ? navigate("/seller-dashboard/post-ad") : openAuthModal("register"); }}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Post Free Ad
