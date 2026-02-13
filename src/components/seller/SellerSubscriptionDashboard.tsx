@@ -176,17 +176,19 @@ const SellerSubscriptionDashboard = () => {
           <CardContent>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {tiers.map(t => (
-                <button
+                <div
                   key={t.id}
-                  onClick={() => navigate(`/checkout/tier/${t.id}`)}
-                  className="rounded-lg border-2 p-4 text-center hover:shadow-md transition-all cursor-pointer"
+                  className="rounded-lg border-2 p-4 text-center hover:shadow-md transition-all"
                   style={{ borderColor: t.badge_color }}
                 >
                   <Crown className="h-5 w-5 mx-auto mb-1" style={{ color: t.badge_color }} />
                   <h4 className="font-bold">{t.name}</h4>
                   <p className="text-lg font-extrabold mt-1">{t.price === 0 ? "Free" : fmt(t.price)}</p>
-                  <p className="text-xs text-muted-foreground">Weight: {t.priority_weight}{t.included_featured_days > 0 ? ` • ${t.included_featured_days}d featured` : ""}</p>
-                </button>
+                  <p className="text-xs text-muted-foreground mb-3">Weight: {t.priority_weight}{t.included_featured_days > 0 ? ` • ${t.included_featured_days}d featured` : ""}</p>
+                  <Button size="sm" className="w-full" onClick={() => navigate(`/checkout/tier/${t.id}`)}>
+                    Purchase Tier
+                  </Button>
+                </div>
               ))}
             </div>
           </CardContent>
@@ -203,16 +205,18 @@ const SellerSubscriptionDashboard = () => {
           <CardContent>
             <div className="grid sm:grid-cols-3 gap-3">
               {bumpPackages.map(bp => (
-                <button
+                <div
                   key={bp.id}
-                  onClick={() => navigate(`/checkout/bump/${bp.id}`)}
-                  className="rounded-lg border p-4 text-center hover:shadow-md transition-all cursor-pointer"
+                  className="rounded-lg border p-4 text-center hover:shadow-md transition-all"
                 >
                   <Zap className="h-5 w-5 mx-auto mb-1 text-blue-500" />
                   <h4 className="font-bold">{bp.name}</h4>
                   <p className="text-lg font-extrabold">{fmt(bp.price)}</p>
-                  <p className="text-xs text-muted-foreground">{bp.credits} bumps</p>
-                </button>
+                  <p className="text-xs text-muted-foreground mb-3">{bp.credits} bumps</p>
+                  <Button size="sm" className="w-full" onClick={() => navigate(`/checkout/bump/${bp.id}`)}>
+                    Purchase Package
+                  </Button>
+                </div>
               ))}
             </div>
           </CardContent>
@@ -229,18 +233,22 @@ const SellerSubscriptionDashboard = () => {
           <CardContent>
             <div className="grid sm:grid-cols-2 gap-3">
               {promotions.map(p => (
-                <button
+                <div
                   key={p.id}
-                  onClick={() => navigate(`/checkout/promotion/${p.id}`)}
-                  className="rounded-lg border p-4 flex items-center gap-3 hover:shadow-md transition-all cursor-pointer text-left"
+                  className="rounded-lg border p-4 flex items-center gap-3 hover:shadow-md transition-all"
                 >
                   <TrendingUp className="h-5 w-5 text-orange-500 flex-shrink-0" />
                   <div className="flex-1">
                     <h4 className="font-semibold text-sm">{p.name}</h4>
                     <p className="text-xs text-muted-foreground">{p.duration_days} days • Max {p.max_ads} ads</p>
                   </div>
-                  <span className="font-bold text-sm">{fmt(p.price)}</span>
-                </button>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm">{fmt(p.price)}</span>
+                    <Button size="sm" onClick={() => navigate(`/checkout/promotion/${p.id}`)}>
+                      Purchase
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           </CardContent>
