@@ -17,6 +17,7 @@ import { formatDistanceToNow } from "date-fns";
 const iconMap: Record<string, React.ElementType> = {
   listing: FileText,
   verification: ShieldCheck,
+  verification_update: ShieldCheck,
   support: MessageSquare,
   report: Flag,
   career: Briefcase,
@@ -54,8 +55,9 @@ const AdminNotificationCenter = () => {
   const getLink = (n: any) => {
     switch (n.type) {
       case 'listing': return "/apa/dashboard/listings";
-      case 'verification': return "/apa/dashboard/verifications";
-      case 'support': return n.related_type === 'contact' ? `/apa/dashboard/support?tab=contacts&contactId=${n.related_id}` : "/apa/dashboard/support";
+      case 'verification':
+      case 'verification_update': return "/apa/dashboard/verifications";
+      case 'support': return n.related_type === 'contact' ? `/apa/dashboard/support?tab=contacts&contactId=${n.related_id}` : n.related_type === 'ticket' ? "/apa/dashboard/support" : "/apa/dashboard/support";
       case 'report': return "/apa/dashboard/reports";
       case 'message': return "/messages";
       case 'follower': return "/apa/dashboard/users";

@@ -44,6 +44,7 @@ const SellerNotifications = () => {
       case 'report':
         return <Flag className="h-5 w-5 text-destructive" />;
       case 'verification':
+      case 'verification_update':
         return <ShieldCheck className="h-5 w-5 text-green-600" />;
       default:
         return <Bell className="h-5 w-5" />;
@@ -60,6 +61,10 @@ const SellerNotifications = () => {
       navigate(`/listing/${notification.related_id}`);
     } else if (notification.related_type === 'follower') {
       navigate('/seller-dashboard/followers');
+    } else if (notification.related_type === 'verification' || notification.type === 'verification_update') {
+      navigate('/seller-dashboard/settings');
+    } else if (notification.related_type === 'subscription') {
+      navigate('/seller-dashboard/subscription');
     }
   };
 

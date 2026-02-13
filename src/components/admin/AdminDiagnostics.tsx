@@ -87,7 +87,7 @@ const AdminDiagnostics = () => {
           return error ? { status: "fail", message: `Connection failed: ${error.message}`, details: JSON.stringify(error) } : { status: "pass", message: "Connected successfully" };
         }},
         { id: "db-tables", cat: "Database", name: "Core Tables Exist", fn: async () => {
-          const tables = ["profiles","base_listings","main_categories","sub_categories","seller_subscriptions","subscription_packages","payment_transactions","team_members","platform_settings","notifications","messages","reports","reviews","favorites","follows"];
+          const tables = ["profiles","base_listings","main_categories","sub_categories","seller_subscriptions","subscription_packages","payment_transactions","team_members","platform_settings","notifications","messages","reports","reviews","favorites","follows","seller_verifications","support_tickets","contact_submissions"];
           const missing: string[] = [];
           for (const t of tables) { const { error } = await supabase.from(t as any).select("id").limit(1); if (error?.message?.includes("does not exist")) missing.push(t); }
           return missing.length > 0 ? { status: "fail", message: `Missing: ${missing.join(", ")}`, details: `These tables need to be created: ${missing.join(", ")}` } : { status: "pass", message: `All ${tables.length} core tables verified` };
@@ -111,6 +111,19 @@ const AdminDiagnostics = () => {
         { id: "db-counties", cat: "Database", name: "Kenya Counties (47)", fn: async () => {
           const { count } = await supabase.from("kenya_counties").select("*", { count: "exact", head: true });
           return (count || 0) >= 47 ? { status: "pass", message: `${count} counties` } : { status: "warn", message: `Only ${count || 0}/47 counties` };
+        }},
+        { id: "db-verifications", cat: "Database", name: "Seller Verifications", fn: async () => {
+          const { count: total } = await supabase.from("seller_verifications").select("*", { count: "exact", head: true });
+          const { count: pending } = await supabase.from("seller_verifications").select("*", { count: "exact", head: true }).eq("status", "pending");
+          const { count: approved } = await supabase.from("seller_verifications").select("*", { count: "exact", head: true }).eq("status", "approved");
+          const msg = `${total || 0} total (${approved || 0} approved, ${pending || 0} pending)`;
+          return (pending || 0) > 0 ? { status: "warn", message: msg, details: "Pending verifications need admin review in Admin > Verifications" } : { status: "pass", message: msg };
+        }},
+        { id: "db-support-tickets", cat: "Database", name: "Support Tickets", fn: async () => {
+          const { count: open } = await supabase.from("support_tickets").select("*", { count: "exact", head: true }).in("status", ["open","in_progress"]);
+          const { count: contacts } = await supabase.from("contact_submissions").select("*", { count: "exact", head: true }).eq("status", "new");
+          const msg = `${open || 0} open tickets, ${contacts || 0} new contact messages`;
+          return ((open || 0) > 0 || (contacts || 0) > 0) ? { status: "warn", message: msg, details: "Review in Admin > Support" } : { status: "pass", message: msg };
         }},
       );
     }
@@ -171,11 +184,17 @@ const AdminDiagnostics = () => {
         }},
         { id: "notif-triggers-support", cat: "Notifications", name: "Support/Contact Trigger", fn: async () => {
           const { count } = await supabase.from("notifications").select("*", { count: "exact", head: true }).eq("type", "support").limit(1);
-          return (count || 0) > 0 ? { status: "pass", message: `Support notifications: ${count} found` } : { status: "warn", message: "No support notifications yet", details: "Trigger trg_notify_admin_contact fires when contact form is submitted. Try submitting a test contact." };
+          return (count || 0) > 0 ? { status: "pass", message: `Support notifications: ${count} found` } : { status: "warn", message: "No support notifications yet", details: "Triggers fire when contact form is submitted or support ticket is created. Try submitting a test contact or ticket." };
         }},
         { id: "notif-triggers-report", cat: "Notifications", name: "Report Trigger", fn: async () => {
           const { count } = await supabase.from("notifications").select("*", { count: "exact", head: true }).eq("type", "report").limit(1);
           return (count || 0) > 0 ? { status: "pass", message: `Report notifications: ${count} found` } : { status: "warn", message: "No report notifications yet", details: "Trigger trg_notify_admin_report fires when reports are filed." };
+        }},
+        { id: "notif-triggers-verification", cat: "Notifications", name: "Verification Trigger", fn: async () => {
+          const { count: trigCount } = await supabase.from("notifications").select("*", { count: "exact", head: true }).eq("type", "verification").limit(1);
+          const { count: updateCount } = await supabase.from("notifications").select("*", { count: "exact", head: true }).eq("type", "verification_update").limit(1);
+          const total = (trigCount || 0) + (updateCount || 0);
+          return total > 0 ? { status: "pass", message: `Verification notifications: ${total} found` } : { status: "warn", message: "No verification notifications yet", details: "Triggers fire on new verification submissions and admin approval/rejection" };
         }},
         { id: "notif-triggers-favorite", cat: "Notifications", name: "Favorite Trigger", fn: async () => {
           const { count } = await supabase.from("notifications").select("*", { count: "exact", head: true }).eq("type", "favorite").limit(1);
