@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Users, FileText, DollarSign, TrendingUp, UserPlus, FilePlus,
-  LifeBuoy, BarChart3, Eye, MessageSquare
+  LifeBuoy, BarChart3, Eye, MessageSquare, Package
 } from "lucide-react";
 import { format, subDays, startOfDay } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
@@ -15,6 +15,8 @@ interface Stats {
   activeListings: number;
   pendingListings: number;
   totalRevenue: number;
+  subscriptionRevenue: number;
+  activeSubscriptions: number;
   newUsersToday: number;
   newListingsToday: number;
   openTickets: number;
@@ -42,7 +44,7 @@ const AdminOverview = () => {
           ticketsResult,
           messagesResult,
           revenueResult,
-          // Fetch last 7 days of real data
+          subscriptionsResult,
           usersLast7,
           listingsLast7
         ] = await Promise.all([
@@ -53,7 +55,7 @@ const AdminOverview = () => {
           supabase.from("support_tickets").select("id, status", { count: "exact" }).in("status", ["open", "in_progress", "pending"]),
           supabase.from("messages").select("id", { count: "exact" }),
           supabase.from("payment_transactions").select("amount").eq("status", "completed"),
-          // Real growth data: users created in last 7 days
+          supabase.from("seller_subscriptions").select("id, status, payment_status").eq("status", "active").eq("payment_status", "completed"),
           supabase.from("profiles").select("created_at").gte("created_at", subDays(today, 7).toISOString()),
           supabase.from("base_listings").select("created_at").gte("created_at", subDays(today, 7).toISOString()),
         ]);
@@ -69,6 +71,8 @@ const AdminOverview = () => {
           activeListings,
           pendingListings,
           totalRevenue,
+          subscriptionRevenue: totalRevenue, // same source for now
+          activeSubscriptions: subscriptionsResult.data?.length || 0,
           newUsersToday: newUsersResult.count || 0,
           newListingsToday: newListingsResult.count || 0,
           openTickets: ticketsResult.count || 0,
@@ -208,6 +212,17 @@ const AdminOverview = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats?.openTickets}</div>
             <p className="text-xs text-muted-foreground">Requires attention</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.activeSubscriptions}</div>
+            <p className="text-xs text-muted-foreground">Paid & active plans</p>
           </CardContent>
         </Card>
 

@@ -15,7 +15,7 @@ import {
   LayoutDashboard, Users, FileText, FolderTree, Package, 
   MessageSquare, LifeBuoy, Flag, Settings, Shield, ShieldCheck,
   UsersRound, Link2, Activity, ListChecks, Crown, Zap, TrendingUp,
-  BookOpen, Briefcase, Brain, Mail
+  BookOpen, Briefcase, Brain, Mail, FormInput
 } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
@@ -42,6 +42,7 @@ const AdminSidebar = () => {
     { title: "User Management", url: `${basePath}/users`, icon: Users, permission: "view_users", countKey: null },
     { title: "Listings", url: `${basePath}/listings`, icon: FileText, permission: "view_listings", countKey: "listings" as const },
     { title: "Categories", url: `${basePath}/categories`, icon: FolderTree, permission: null, countKey: null },
+    { title: "Form Fields", url: `${basePath}/form-fields`, icon: FormInput, permission: null, countKey: null },
     { title: "Packages", url: `${basePath}/packages`, icon: Package, permission: null, countKey: null },
     { title: "Ad Tiers", url: `${basePath}/tiers`, icon: Crown, permission: null, countKey: null },
     { title: "Bump Packages", url: `${basePath}/bump-packages`, icon: Zap, permission: null, countKey: null },

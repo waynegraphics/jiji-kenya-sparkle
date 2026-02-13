@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -14,6 +15,7 @@ import { X, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
+import { useDynamicFormFields, type DynamicFormField } from "@/hooks/useDynamicFormFields";
 
 interface GenericFormFieldsProps {
   categorySlug: string;
@@ -399,6 +401,60 @@ const ConditionSelect = ({ value, onChange, required, error, conditionOptions }:
         </SelectContent>
       </Select>
       {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+};
+
+// Dynamic fields renderer for admin-defined custom fields
+const DynamicFieldsSection = ({ categorySlug, data, updateField }: { categorySlug: string; data: Record<string, unknown>; updateField: (f: string, v: unknown) => void }) => {
+  const { data: dynamicFields } = useDynamicFormFields(categorySlug);
+  if (!dynamicFields || dynamicFields.length === 0) return null;
+  return (
+    <div className="space-y-4 pt-4 border-t">
+      <Label className="text-sm font-semibold text-muted-foreground">Additional Details</Label>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {dynamicFields.map(f => {
+          const val = (data[`dyn_${f.field_name}`] as string) || "";
+          switch (f.field_type) {
+            case "select":
+              return (
+                <div key={f.id} className="space-y-2">
+                  <Label>{f.field_label}{f.is_required ? " *" : ""}</Label>
+                  <Select value={val} onValueChange={v => updateField(`dyn_${f.field_name}`, v)}>
+                    <SelectTrigger><SelectValue placeholder={f.placeholder || `Select ${f.field_label.toLowerCase()}`} /></SelectTrigger>
+                    <SelectContent>
+                      {f.options?.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {f.help_text && <p className="text-xs text-muted-foreground">{f.help_text}</p>}
+                </div>
+              );
+            case "checkbox":
+              return (
+                <div key={f.id} className="flex items-center gap-2 pt-6">
+                  <Checkbox checked={val === "true"} onCheckedChange={v => updateField(`dyn_${f.field_name}`, v ? "true" : "false")} />
+                  <Label>{f.field_label}</Label>
+                </div>
+              );
+            case "number":
+              return (
+                <div key={f.id} className="space-y-2">
+                  <Label>{f.field_label}{f.is_required ? " *" : ""}</Label>
+                  <Input type="number" value={val} onChange={e => updateField(`dyn_${f.field_name}`, e.target.value)} placeholder={f.placeholder || ""} />
+                  {f.help_text && <p className="text-xs text-muted-foreground">{f.help_text}</p>}
+                </div>
+              );
+            default:
+              return (
+                <div key={f.id} className="space-y-2">
+                  <Label>{f.field_label}{f.is_required ? " *" : ""}</Label>
+                  <Input value={val} onChange={e => updateField(`dyn_${f.field_name}`, e.target.value)} placeholder={f.placeholder || ""} />
+                  {f.help_text && <p className="text-xs text-muted-foreground">{f.help_text}</p>}
+                </div>
+              );
+          }
+        })}
+      </div>
     </div>
   );
 };
@@ -910,6 +966,7 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
             </div>
             <ConditionSelect value={data.condition as string || ""} onChange={(v) => updateField("condition", v)} />
           </div>
+          <DynamicFieldsSection categorySlug={categorySlug} data={data} updateField={updateField} />
         </div>
       );
   }

@@ -885,6 +885,57 @@ export type Database = {
         }
         Relationships: []
       }
+      category_form_fields: {
+        Row: {
+          category_slug: string
+          created_at: string | null
+          display_order: number | null
+          field_label: string
+          field_name: string
+          field_type: string
+          help_text: string | null
+          id: string
+          is_active: boolean | null
+          is_required: boolean | null
+          is_searchable: boolean | null
+          options: string[] | null
+          placeholder: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          category_slug: string
+          created_at?: string | null
+          display_order?: number | null
+          field_label: string
+          field_name: string
+          field_type?: string
+          help_text?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          is_searchable?: boolean | null
+          options?: string[] | null
+          placeholder?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          category_slug?: string
+          created_at?: string | null
+          display_order?: number | null
+          field_label?: string
+          field_name?: string
+          field_type?: string
+          help_text?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_required?: boolean | null
+          is_searchable?: boolean | null
+          options?: string[] | null
+          placeholder?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       communication_channels: {
         Row: {
           channel_type: string
@@ -1605,6 +1656,45 @@ export type Database = {
             foreignKeyName: "leisure_listings_id_fkey"
             columns: ["id"]
             isOneToOne: true
+            referencedRelation: "base_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listing_dynamic_fields: {
+        Row: {
+          created_at: string | null
+          field_id: string
+          field_value: string | null
+          id: string
+          listing_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          field_id: string
+          field_value?: string | null
+          id?: string
+          listing_id: string
+        }
+        Update: {
+          created_at?: string | null
+          field_id?: string
+          field_value?: string | null
+          id?: string
+          listing_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_dynamic_fields_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "category_form_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listing_dynamic_fields_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
             referencedRelation: "base_listings"
             referencedColumns: ["id"]
           },

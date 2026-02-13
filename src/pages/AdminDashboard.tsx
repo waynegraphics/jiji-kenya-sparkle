@@ -28,6 +28,7 @@ import AdminCareers from "@/components/admin/AdminCareers";
 import AdminAISettings from "@/components/admin/AdminAISettings";
 import AdminCommunications from "@/components/admin/AdminCommunications";
 import AdminNotificationCenter from "@/components/admin/AdminNotificationCenter";
+import AdminFormFields from "@/components/admin/AdminFormFields";
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -85,6 +86,7 @@ const AdminDashboard = () => {
     const path = location.pathname;
     if (path.includes('/users')) return 'User Management';
     if (path.includes('/listings')) return 'Listings Management';
+    if (path.includes('/form-fields')) return 'Dynamic Form Fields';
     if (path.includes('/categories')) return 'Categories';
     if (path.includes('/packages')) return 'Subscription Packages';
     if (path.includes('/tiers')) return 'Ad Tiers';
@@ -161,6 +163,7 @@ const AdminDashboard = () => {
                 {hasPermission("view_users") && <Route path="users" element={<AdminUsers />} />}
                 {hasPermission("view_listings") && <Route path="listings" element={<AdminListings />} />}
                 <Route path="categories" element={<AdminCategories />} />
+                <Route path="form-fields" element={<AdminFormFields />} />
                 <Route path="packages" element={<AdminPackages />} />
                 <Route path="tiers" element={<AdminTiers />} />
                 <Route path="bump-packages" element={<AdminBumpPackages />} />
