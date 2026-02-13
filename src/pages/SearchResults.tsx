@@ -78,20 +78,27 @@ const SearchResults = () => {
       if (cat) categoryId = cat.id;
     }
 
-    // Build search keyword - combine query with make/model/brand for better matching
-    const searchTerms = [query, make, model, brand].filter(Boolean).join(" ").trim();
+    // Build individual search terms for better filtering
+    const keywordTerms = [query, make, model, brand].filter(Boolean);
+
+    const applyFilters = (q: any) => {
+      // Apply each keyword term separately with AND logic
+      keywordTerms.forEach(term => {
+        q = q.or(`title.ilike.%${term}%,description.ilike.%${term}%`);
+      });
+      if (categoryId) q = q.eq("main_category_id", categoryId);
+      if (location) q = q.ilike("location", `%${location}%`);
+      if (minPrice) q = q.gte("price", parseInt(minPrice));
+      if (maxPrice) q = q.lte("price", parseInt(maxPrice));
+      return q;
+    };
 
     // Count query
     let countQuery = supabase
       .from("base_listings")
       .select("*", { count: "exact", head: true })
       .eq("status", "active");
-
-    if (searchTerms) countQuery = countQuery.or(`title.ilike.%${searchTerms}%,description.ilike.%${searchTerms}%`);
-    if (categoryId) countQuery = countQuery.eq("main_category_id", categoryId);
-    if (location) countQuery = countQuery.ilike("location", `%${location}%`);
-    if (minPrice) countQuery = countQuery.gte("price", parseInt(minPrice));
-    if (maxPrice) countQuery = countQuery.lte("price", parseInt(maxPrice));
+    countQuery = applyFilters(countQuery);
 
     const { count } = await countQuery;
     setTotalCount(count || 0);
@@ -101,12 +108,7 @@ const SearchResults = () => {
       .from("base_listings")
       .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id, main_category:main_categories(slug)")
       .eq("status", "active");
-
-    if (searchTerms) queryBuilder = queryBuilder.or(`title.ilike.%${searchTerms}%,description.ilike.%${searchTerms}%`);
-    if (categoryId) queryBuilder = queryBuilder.eq("main_category_id", categoryId);
-    if (location) queryBuilder = queryBuilder.ilike("location", `%${location}%`);
-    if (minPrice) queryBuilder = queryBuilder.gte("price", parseInt(minPrice));
-    if (maxPrice) queryBuilder = queryBuilder.lte("price", parseInt(maxPrice));
+    queryBuilder = applyFilters(queryBuilder);
 
     switch (sort) {
       case "oldest": queryBuilder = queryBuilder.order("created_at", { ascending: true }); break;
