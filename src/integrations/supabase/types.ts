@@ -3218,6 +3218,17 @@ export type Database = {
         Args: { p_listing_id: string; p_user_id: string }
         Returns: boolean
       }
+      create_notification: {
+        Args: {
+          p_message: string
+          p_related_id?: string
+          p_related_type?: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       get_user_emails: {
         Args: never
         Returns: {
