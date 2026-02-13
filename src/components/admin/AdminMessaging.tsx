@@ -92,6 +92,10 @@ const AdminMessaging = () => {
     }
   });
 
+  const getUserName = (userId: string) => {
+    return profiles?.find(p => p.user_id === userId)?.display_name || "Unknown";
+  };
+
   // Group messages into conversations
   const conversations: ConversationGroup[] = (() => {
     if (!allMessages) return [];
@@ -184,10 +188,6 @@ const AdminMessaging = () => {
       toast.success("Announcement deleted");
     }
   });
-
-  const getUserName = (userId: string) => {
-    return profiles?.find(p => p.user_id === userId)?.display_name || "Unknown";
-  };
 
   if (isLoading) return <Skeleton className="h-[600px]" />;
 
