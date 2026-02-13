@@ -342,6 +342,90 @@ export type Database = {
           },
         ]
       }
+      ai_settings: {
+        Row: {
+          claude_api_key: string | null
+          created_at: string
+          enable_price_suggestion: boolean
+          enable_seller_assistant: boolean
+          enable_seo_optimization: boolean
+          enable_smart_search: boolean
+          id: string
+          model: string
+          openai_api_key: string | null
+          provider: string
+          temperature: number
+          updated_at: string
+        }
+        Insert: {
+          claude_api_key?: string | null
+          created_at?: string
+          enable_price_suggestion?: boolean
+          enable_seller_assistant?: boolean
+          enable_seo_optimization?: boolean
+          enable_smart_search?: boolean
+          id?: string
+          model?: string
+          openai_api_key?: string | null
+          provider?: string
+          temperature?: number
+          updated_at?: string
+        }
+        Update: {
+          claude_api_key?: string | null
+          created_at?: string
+          enable_price_suggestion?: boolean
+          enable_seller_assistant?: boolean
+          enable_seo_optimization?: boolean
+          enable_smart_search?: boolean
+          id?: string
+          model?: string
+          openai_api_key?: string | null
+          provider?: string
+          temperature?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_usage_logs: {
+        Row: {
+          action_type: string
+          created_at: string
+          error_message: string | null
+          id: string
+          model: string | null
+          prompt_summary: string | null
+          provider: string
+          success: boolean
+          tokens_used: number | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          model?: string | null
+          prompt_summary?: string | null
+          provider?: string
+          success?: boolean
+          tokens_used?: number | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          model?: string | null
+          prompt_summary?: string | null
+          provider?: string
+          success?: boolean
+          tokens_used?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       announcements: {
         Row: {
           admin_id: string

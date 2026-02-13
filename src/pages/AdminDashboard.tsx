@@ -25,6 +25,7 @@ import AdminBumpPackages from "@/components/admin/AdminBumpPackages";
 import AdminPromotions from "@/components/admin/AdminPromotions";
 import AdminBlogs from "@/components/admin/AdminBlogs";
 import AdminCareers from "@/components/admin/AdminCareers";
+import AdminAISettings from "@/components/admin/AdminAISettings";
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -98,6 +99,7 @@ const AdminDashboard = () => {
     if (path.includes('/diagnostics')) return 'System Diagnostics';
     if (path.includes('/blog')) return 'Blog Management';
     if (path.includes('/careers')) return 'Careers Management';
+    if (path.includes('/ai-settings')) return 'AI Engine';
     return 'Overview';
   };
 
@@ -170,6 +172,7 @@ const AdminDashboard = () => {
                 <Route path="custom-values" element={<AdminCustomValues />} />
                 <Route path="blog" element={<AdminBlogs />} />
                 <Route path="careers" element={<AdminCareers />} />
+                <Route path="ai-settings" element={<AdminAISettings />} />
               </Routes>
             </div>
           </main>

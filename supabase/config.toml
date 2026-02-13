@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.mpesa-callback]
 verify_jwt = false
+
+[functions.ai-search]
+verify_jwt = false
+
+[functions.ai-generate-listing]
+verify_jwt = false
+
+[functions.ai-price-suggestion]
+verify_jwt = false
