@@ -151,7 +151,7 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ onSearch }, ref) => {
             </nav>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-1 md:gap-2">
+            <div className="flex items-center gap-2 md:gap-2">
               {/* Mobile search toggle */}
               <Button
                 variant="ghost"
@@ -344,7 +344,7 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ onSearch }, ref) => {
                   </>
                 ) : (
                   <>
-                    <Button variant="outline" onClick={() => openAuthModal("login")} className="rounded-lg font-medium border-primary/30 hover:border-primary hover:bg-primary/5 text-foreground">
+                    <Button variant="outline" onClick={() => openAuthModal("login")} className="rounded-lg font-medium border-primary/30 hover:border-primary hover:bg-primary/5 hover:text-primary text-foreground">
                       Sign In
                     </Button>
                     <Button onClick={() => openAuthModal("register")} className="relative bg-gradient-to-r from-secondary via-secondary to-secondary/90 text-secondary-foreground font-bold shadow-lg rounded-lg px-5 py-2.5 text-sm overflow-hidden group">
