@@ -39,11 +39,11 @@ const BentoGallery = ({ images, title, isFeatured, isUrgent }: BentoGalleryProps
             <img
               src={displayImages[0]}
               alt={title}
-              className="w-full h-[400px] md:h-[480px] object-cover"
+              className="w-full h-[260px] md:h-[320px] lg:h-[480px] object-cover"
             />
           </button>
         ) : (
-          <div className="grid grid-cols-4 grid-rows-2 gap-1.5 h-[400px] md:h-[480px]">
+          <div className="grid grid-cols-4 grid-rows-2 gap-1.5 h-[260px] md:h-[320px] lg:h-[480px]">
             {/* Main large image */}
             <button
               onClick={() => openLightbox(0)}
