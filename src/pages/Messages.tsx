@@ -143,7 +143,7 @@ const Messages = () => {
     const conversationMap = new Map<string, any[]>();
     messagesData.forEach((msg) => {
       const otherId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
-      const key = `${otherId}-${msg.listing_id || "general"}`;
+      const key = `${otherId}||${msg.listing_id || "general"}`;
       if (!conversationMap.has(key)) conversationMap.set(key, []);
       conversationMap.get(key)?.push(msg);
     });
@@ -156,7 +156,7 @@ const Messages = () => {
 
     const convList: Conversation[] = [];
     conversationMap.forEach((msgs, key) => {
-      const [otherId, listingPart] = key.split("-");
+      const [otherId, listingPart] = key.split("||");
       const lid = listingPart === "general" ? null : listingPart;
       const lastMsg = msgs[0];
       const unreadCount = msgs.filter((m: any) => m.receiver_id === user.id && !m.is_read).length;
