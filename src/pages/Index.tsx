@@ -3,8 +3,10 @@ import HeroBanner from "@/components/HeroBanner";
 import CategoryGrid from "@/components/CategoryGrid";
 import FeaturedListings from "@/components/FeaturedListings";
 import SuperchargeSearch from "@/components/SuperchargeSearch";
+import SubmitAdCTA from "@/components/SubmitAdCTA";
 import Footer from "@/components/Footer";
 import FloatingAIButton from "@/components/FloatingAIButton";
+
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
@@ -14,6 +16,7 @@ const Index = () => {
         <CategoryGrid />
         <FeaturedListings />
         <SuperchargeSearch />
+        <SubmitAdCTA />
       </main>
       <Footer />
       <FloatingAIButton />
