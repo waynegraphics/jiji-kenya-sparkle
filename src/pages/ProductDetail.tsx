@@ -328,105 +328,43 @@ const ProductDetail = () => {
 
         <BentoGallery images={images} title={listing.title} isFeatured={listing.is_featured} isUrgent={listing.is_urgent} />
 
+        {/* ─── Action Bar ─── */}
         <div className="flex items-center justify-between mt-4 mb-6">
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {categoryName && <Badge variant="secondary">{categoryName}</Badge>}
             {categoryDetails?.condition && <Badge variant="outline">{categoryDetails.condition}</Badge>}
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button variant="ghost" size="sm" onClick={toggleFavorite}>
-              <Heart className={`h-4 w-4 mr-1 ${isFavorite ? "fill-destructive text-destructive" : ""}`} />
-              {isFavorite ? "Saved" : "Save"}
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={toggleFavorite}>
+              <Heart className={`h-4 w-4 ${isFavorite ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
             </Button>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
+              className="h-9 w-9 rounded-full"
               onClick={() => {
                 if (!listing) return;
                 const isInCompare = compareItems.some(i => i.id === listing.id);
-                if (isInCompare) {
-                  navigate("/compare");
-                  return;
-                }
+                if (isInCompare) { navigate("/compare"); return; }
                 const success = addItem({
-                  id: listing.id,
-                  title: listing.title,
-                  price: listing.price,
-                  location: listing.location,
-                  image: listing.images?.[0] || "/placeholder.svg",
-                  categoryId: listing.main_category_id,
-                  categorySlug,
+                  id: listing.id, title: listing.title, price: listing.price,
+                  location: listing.location, image: listing.images?.[0] || "/placeholder.svg",
+                  categoryId: listing.main_category_id, categorySlug,
                 });
-                if (success) {
-                  toast.success(`Added to compare (${compareItems.length + 1}/3)`);
-                } else if (compareItems.length >= 3) {
-                  toast.error("Maximum 3 items to compare");
-                } else {
-                  toast.error("Can only compare items from the same category");
-                }
+                if (success) toast.success(`Added to compare (${compareItems.length + 1}/3)`);
+                else if (compareItems.length >= 3) toast.error("Maximum 3 items to compare");
+                else toast.error("Can only compare items from the same category");
               }}
             >
-              <BarChart3 className="h-4 w-4 mr-1" />
-              {compareItems.some(i => i.id === listing.id) ? "View Compare" : "Compare"}
+              <BarChart3 className={`h-4 w-4 ${compareItems.some(i => i.id === listing.id) ? "text-primary" : "text-muted-foreground"}`} />
             </Button>
             <ShareMenu title={listing.title} />
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* ─── Left: Main Content ─── */}
-          <div className="lg:col-span-2 space-y-6">
-            <div className="bg-card rounded-xl p-6 shadow-card">
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{listing.title}</h1>
-              <p className="text-3xl font-bold text-primary mb-1">
-                {formatPrice(listing.price)}
-                {listing.is_negotiable && <span className="text-sm font-normal text-muted-foreground ml-2">Negotiable</span>}
-              </p>
-              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mt-4">
-                <div className="flex items-center gap-1"><MapPin className="h-4 w-4" />{listing.location}</div>
-                <div className="flex items-center gap-1"><Clock className="h-4 w-4" />{formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}</div>
-                <div className="flex items-center gap-1"><Eye className="h-4 w-4" />{listing.views} views</div>
-              </div>
-            </div>
-
-            <PremiumFeatureDisplay 
-              categoryDetails={categoryDetails} 
-              categorySlug={categorySlug}
-            />
-
-            <div className="bg-card rounded-xl p-6 shadow-card">
-              <h2 className="text-lg font-semibold mb-3">Description</h2>
-              <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                {listing.description || "No description provided."}
-              </p>
-            </div>
-
-            <div className="bg-muted/50 border border-border rounded-xl p-6">
-              <div className="flex items-start gap-3 mb-3">
-                <AlertTriangle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                <h3 className="font-semibold text-sm text-foreground">Disclaimer</h3>
-              </div>
-              <div className="text-xs text-muted-foreground space-y-2 leading-relaxed">
-                <p>
-                  This ad is offered by{" "}
-                  <Link to={`/seller/${listing.user_id}`} className="text-primary font-medium hover:underline">{getSellerDisplayName()}</Link>
-                  , not APA Bazaar Marketplace.
-                </p>
-                <p>All listings are posted and managed directly by individual users. APA Bazaar acts only as a marketplace.</p>
-                <p>Visit our <Link to="/safety-tips" className="text-primary font-medium hover:underline">Safety Tips</Link> page for more details.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* ─── Right: Modern Sidebar ─── */}
-          <div className="space-y-4">
-            {/* Price Card */}
-            <div className="bg-card rounded-xl p-5 shadow-card border border-border/50">
-              <p className="text-3xl font-extrabold text-foreground">{formatPrice(listing.price)}</p>
-              {listing.is_negotiable && <span className="text-sm text-muted-foreground">Negotiable</span>}
-            </div>
-
-            {/* Seller Card — includes contact actions */}
+        {/* ─── Seller Contact Card (rendered as a component for reuse) ─── */}
+        {(() => {
+          const sellerCard = (
             <div className="bg-card rounded-xl p-5 shadow-card border border-border/50">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-lg font-bold overflow-hidden flex-shrink-0 ring-2 ring-primary/20">
@@ -501,57 +439,120 @@ const ProductDetail = () => {
 
               <Separator className="my-4" />
 
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-sm text-muted-foreground hover:text-primary"
-                onClick={() => navigate(`/seller/${listing.user_id}`)}
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View seller profile
-              </Button>
+              {/* Modern View Profile & Report buttons */}
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 h-10 text-sm font-medium rounded-lg border-primary/30 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all"
+                  onClick={() => navigate(`/seller/${listing.user_id}`)}
+                >
+                  <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                  View Profile
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 h-10 text-sm font-medium rounded-lg border-destructive/30 text-destructive/70 hover:border-destructive hover:bg-destructive/5 hover:text-destructive transition-all"
+                  onClick={() => {
+                    if (!user) { setIsAuthModalOpen(true); return; }
+                    setReportOpen(true);
+                  }}
+                >
+                  <Flag className="h-3.5 w-3.5 mr-1.5" />
+                  Report Ad
+                </Button>
+              </div>
+              <ReportAdDialog listingId={listing.id} onAuthRequired={() => setIsAuthModalOpen(true)} open={reportOpen} onOpenChange={setReportOpen} />
             </div>
+          );
 
-            {/* Sidebar Promotion Slot */}
-            <SidebarPromotionSlot promos={sidebarPromos} categorySlug={categorySlug} />
+          return (
+            <div className="grid lg:grid-cols-3 gap-6">
+              {/* ─── Left: Main Content ─── */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="bg-card rounded-xl p-6 shadow-card">
+                  <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{listing.title}</h1>
+                  <p className="text-3xl font-bold text-primary mb-1">
+                    {formatPrice(listing.price)}
+                    {listing.is_negotiable && <span className="text-sm font-normal text-muted-foreground ml-2">Negotiable</span>}
+                  </p>
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mt-4">
+                    <div className="flex items-center gap-1"><MapPin className="h-4 w-4" />{listing.location}</div>
+                    <div className="flex items-center gap-1"><Clock className="h-4 w-4" />{formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}</div>
+                    <div className="flex items-center gap-1"><Eye className="h-4 w-4" />{listing.views} views</div>
+                  </div>
+                </div>
 
-            {/* Safety Tips */}
-            <div className="bg-card rounded-xl p-5 shadow-card border border-border/50">
-              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                <Shield className="h-4 w-4 text-primary" /> Safety tips
-              </h4>
-              <ul className="text-xs text-muted-foreground space-y-2">
-                <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Avoid paying in advance, even for delivery</li>
-                <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Meet with the seller at a safe public place</li>
-                <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Inspect the item and ensure it's exactly what you want</li>
-                <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Make sure that the packed item is the one you've inspected</li>
-                <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Only pay if you're satisfied</li>
-              </ul>
+                {/* Seller card on mobile — right after title */}
+                <div className="lg:hidden">
+                  {sellerCard}
+                </div>
+
+                <PremiumFeatureDisplay 
+                  categoryDetails={categoryDetails} 
+                  categorySlug={categorySlug}
+                />
+
+                <div className="bg-card rounded-xl p-6 shadow-card">
+                  <h2 className="text-lg font-semibold mb-3">Description</h2>
+                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {listing.description || "No description provided."}
+                  </p>
+                </div>
+
+                <div className="bg-muted/50 border border-border rounded-xl p-6">
+                  <div className="flex items-start gap-3 mb-3">
+                    <AlertTriangle className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <h3 className="font-semibold text-sm text-foreground">Disclaimer</h3>
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-2 leading-relaxed">
+                    <p>
+                      This ad is offered by{" "}
+                      <Link to={`/seller/${listing.user_id}`} className="text-primary font-medium hover:underline">{getSellerDisplayName()}</Link>
+                      , not APA Bazaar Marketplace.
+                    </p>
+                    <p>All listings are posted and managed directly by individual users. APA Bazaar acts only as a marketplace.</p>
+                    <p>Visit our <Link to="/safety-tips" className="text-primary font-medium hover:underline">Safety Tips</Link> page for more details.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── Right: Desktop Sidebar ─── */}
+              <div className="hidden lg:block space-y-4">
+                {/* Price Card */}
+                <div className="bg-card rounded-xl p-5 shadow-card border border-border/50">
+                  <p className="text-3xl font-extrabold text-foreground">{formatPrice(listing.price)}</p>
+                  {listing.is_negotiable && <span className="text-sm text-muted-foreground">Negotiable</span>}
+                </div>
+
+                {sellerCard}
+
+                <SidebarPromotionSlot promos={sidebarPromos} categorySlug={categorySlug} />
+
+                {/* Safety Tips */}
+                <div className="bg-card rounded-xl p-5 shadow-card border border-border/50">
+                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                    <Shield className="h-4 w-4 text-primary" /> Safety tips
+                  </h4>
+                  <ul className="text-xs text-muted-foreground space-y-2">
+                    <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Avoid paying in advance, even for delivery</li>
+                    <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Meet with the seller at a safe public place</li>
+                    <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Inspect the item and ensure it's exactly what you want</li>
+                    <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Make sure that the packed item is the one you've inspected</li>
+                    <li className="flex items-start gap-2"><span className="mt-0.5">•</span>Only pay if you're satisfied</li>
+                  </ul>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="w-full h-11"
+                  onClick={() => user ? navigate("/post-ad") : setIsAuthModalOpen(true)}
+                >
+                  Post Ad Like This
+                </Button>
+              </div>
             </div>
-
-            {/* Post Similar Ad CTA */}
-            <Button
-              variant="outline"
-              className="w-full h-11"
-              onClick={() => user ? navigate("/post-ad") : setIsAuthModalOpen(true)}
-            >
-              Post Ad Like This
-            </Button>
-
-            {/* Report Ad — proper button */}
-            <Button
-              variant="ghost"
-              className="w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-              onClick={() => {
-                if (!user) { setIsAuthModalOpen(true); return; }
-                setReportOpen(true);
-              }}
-            >
-              <Flag className="h-4 w-4 mr-2" />
-              Report this ad
-            </Button>
-            <ReportAdDialog listingId={listing.id} onAuthRequired={() => setIsAuthModalOpen(true)} open={reportOpen} onOpenChange={setReportOpen} />
-          </div>
-        </div>
+          );
+        })()}
 
         <SimilarAds categoryId={listing.main_category_id} currentId={listing.id} categorySlug={categorySlug} />
       </main>
