@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -26,7 +27,7 @@ const useFooterSettings = () => {
   });
 };
 
-const Footer = () => {
+const Footer = forwardRef<HTMLElement, object>((_, ref) => {
   const { data: settings } = useFooterSettings();
 
   const phone = settings?.contact_phone || "+254 700 000 000";
@@ -42,7 +43,7 @@ const Footer = () => {
   ].filter((s) => settings?.[s.key]);
 
   return (
-    <footer className="bg-card border-t border-border">
+    <footer ref={ref} className="bg-card border-t border-border">
       <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
 
@@ -141,6 +142,8 @@ const Footer = () => {
       </div>
     </footer>
   );
-};
+});
+
+Footer.displayName = "Footer";
 
 export default Footer;

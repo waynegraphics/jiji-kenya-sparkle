@@ -90,7 +90,6 @@ const ProductDetail = () => {
   const [reportOpen, setReportOpen] = useState(false);
   const [sidebarPromos, setSidebarPromos] = useState<any[]>([]);
   const { addItem, items: compareItems, canAdd } = useCompareStore();
-  const navigate2 = useNavigate();
 
   useEffect(() => {
     const fetchListing = async () => {

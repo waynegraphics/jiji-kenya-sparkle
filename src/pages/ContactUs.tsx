@@ -3,12 +3,31 @@ import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageHero from "@/components/PageHero";
-import { Mail, Phone, MapPin, Send, MessageSquare } from "lucide-react";
+import { Mail, Phone, MapPin, Send, MessageSquare, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+const useContactSettings = () => {
+  return useQuery({
+    queryKey: ["contact-settings"],
+    queryFn: async () => {
+      const keys = ["contact_email", "contact_phone", "contact_address", "support_email"];
+      const { data } = await supabase
+        .from("platform_settings")
+        .select("key, value")
+        .in("key", keys);
+      const map: Record<string, string> = {};
+      data?.forEach((row) => { map[row.key] = row.value; });
+      return map;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+};
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({
@@ -18,17 +37,36 @@ const ContactUs = () => {
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: settings } = useContactSettings();
+
+  const phone = settings?.contact_phone || "+254 700 000 000";
+  const email = settings?.contact_email || settings?.support_email || "support@apabazaar.co.ke";
+  const address = settings?.contact_address || "Nairobi, Kenya";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
-    setTimeout(() => {
+    try {
+      const { error } = await supabase
+        .from("contact_submissions" as any)
+        .insert({
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+        });
+
+      if (error) throw error;
+
       toast.success("Message sent! We'll get back to you within 24 hours.");
       setFormData({ name: "", email: "", subject: "", message: "" });
+    } catch (error) {
+      console.error("Error submitting contact form:", error);
+      toast.error("Failed to send message. Please try again.");
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -58,7 +96,7 @@ const ContactUs = () => {
                     <p className="text-sm text-muted-foreground">Call us during business hours</p>
                   </div>
                 </div>
-                <p className="text-primary font-medium">+254 700 000 000</p>
+                <a href={`tel:${phone}`} className="text-primary font-medium hover:underline">{phone}</a>
                 <p className="text-xs text-muted-foreground mt-1">Mon-Fri: 8:00 AM - 6:00 PM EAT</p>
               </div>
 
@@ -72,7 +110,7 @@ const ContactUs = () => {
                     <p className="text-sm text-muted-foreground">Send us an email anytime</p>
                   </div>
                 </div>
-                <p className="text-primary font-medium">support@apabazaar.co.ke</p>
+                <a href={`mailto:${email}`} className="text-primary font-medium hover:underline">{email}</a>
                 <p className="text-xs text-muted-foreground mt-1">We respond within 24 hours</p>
               </div>
 
@@ -86,7 +124,7 @@ const ContactUs = () => {
                     <p className="text-sm text-muted-foreground">Visit our office</p>
                   </div>
                 </div>
-                <p className="text-foreground">Nairobi, Kenya</p>
+                <p className="text-foreground">{address}</p>
                 <p className="text-xs text-muted-foreground mt-1">By appointment only</p>
               </div>
             </div>
@@ -142,7 +180,10 @@ const ContactUs = () => {
                 </div>
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? (
-                    "Sending..."
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
                   ) : (
                     <>
                       <Send className="h-4 w-4 mr-2" />
