@@ -26,11 +26,12 @@ import TeamLogin from "./pages/TeamLogin";
 import AffiliateDashboard from "./pages/AffiliateDashboard";
 import AffiliateApply from "./pages/AffiliateApply";
 import NotFound from "./pages/NotFound";
+import ComparePage from "./pages/ComparePage";
 import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
 import FAQs from "./pages/FAQs";
 import Sellers from "./pages/Sellers";
-import SavedAds from "./pages/SavedAds";
+// SavedAds removed - consolidated to /favorites
 import QuickLinks from "./pages/QuickLinks";
 import Disclaimer from "./pages/Disclaimer";
 import CopyrightInfringement from "./pages/CopyrightInfringement";
@@ -41,6 +42,7 @@ import Blog from "./pages/Blog";
 import Careers from "./pages/Careers";
 import DataProtection from "./pages/DataProtection";
 import ScrollToTop from "./components/ScrollToTop";
+import CompareBar from "./components/CompareBar";
 
 const queryClient = new QueryClient();
 function AffiliateTracker() {
@@ -67,6 +69,7 @@ const App = () => (
             <Route path="/profile" element={<ProfileSettings />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/favorites" element={<Favorites />} />
+            <Route path="/compare" element={<ComparePage />} />
             <Route path="/seller/:userId" element={<SellerProfile />} />
             
             {/* Team/Admin Portal */}
@@ -95,7 +98,7 @@ const App = () => (
             <Route path="/contact-us" element={<ContactUs />} />
             <Route path="/faqs" element={<FAQs />} />
             <Route path="/sellers" element={<Sellers />} />
-            <Route path="/saved-ads" element={<SavedAds />} />
+            <Route path="/saved-ads" element={<Navigate to="/favorites" replace />} />
             <Route path="/quick-links" element={<QuickLinks />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/careers" element={<Careers />} />
@@ -112,6 +115,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           <ScrollToTop />
+          <CompareBar />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

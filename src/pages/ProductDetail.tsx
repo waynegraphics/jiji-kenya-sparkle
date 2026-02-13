@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BentoGallery from "@/components/BentoGallery";
 import ReportAdDialog from "@/components/ReportAdDialog";
+import ShareMenu from "@/components/ShareMenu";
 import ProductCard from "@/components/ProductCard";
 import { PremiumFeatureDisplay } from "@/components/PremiumFeatureDisplay";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Heart, MapPin, Clock, Phone, MessageCircle, Share2, ChevronLeft,
-  Shield, Star, Eye, AlertTriangle, Flag, ExternalLink
+  Shield, Star, Eye, AlertTriangle, Flag, ExternalLink, BarChart3
 } from "lucide-react";
+import { useCompareStore } from "@/hooks/useCompareStore";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/AuthModal";
 import { toast } from "sonner";
@@ -87,6 +89,8 @@ const ProductDetail = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [sidebarPromos, setSidebarPromos] = useState<any[]>([]);
+  const { addItem, items: compareItems, canAdd } = useCompareStore();
+  const navigate2 = useNavigate();
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -330,14 +334,43 @@ const ProductDetail = () => {
             {categoryName && <Badge variant="secondary">{categoryName}</Badge>}
             {categoryDetails?.condition && <Badge variant="outline">{categoryDetails.condition}</Badge>}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button variant="ghost" size="sm" onClick={toggleFavorite}>
               <Heart className={`h-4 w-4 mr-1 ${isFavorite ? "fill-destructive text-destructive" : ""}`} />
               {isFavorite ? "Saved" : "Save"}
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-1" /> Share
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (!listing) return;
+                const isInCompare = compareItems.some(i => i.id === listing.id);
+                if (isInCompare) {
+                  navigate("/compare");
+                  return;
+                }
+                const success = addItem({
+                  id: listing.id,
+                  title: listing.title,
+                  price: listing.price,
+                  location: listing.location,
+                  image: listing.images?.[0] || "/placeholder.svg",
+                  categoryId: listing.main_category_id,
+                  categorySlug,
+                });
+                if (success) {
+                  toast.success(`Added to compare (${compareItems.length + 1}/3)`);
+                } else if (compareItems.length >= 3) {
+                  toast.error("Maximum 3 items to compare");
+                } else {
+                  toast.error("Can only compare items from the same category");
+                }
+              }}
+            >
+              <BarChart3 className="h-4 w-4 mr-1" />
+              {compareItems.some(i => i.id === listing.id) ? "View Compare" : "Compare"}
             </Button>
+            <ShareMenu title={listing.title} />
           </div>
         </div>
 
