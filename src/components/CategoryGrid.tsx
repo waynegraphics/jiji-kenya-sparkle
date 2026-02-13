@@ -13,6 +13,11 @@ import categoryFashion from "@/assets/category-fashion.png";
 import categoryServices from "@/assets/category-services.png";
 import categoryJobs from "@/assets/category-jobs.png";
 import categoryCommercial from "@/assets/category-commercial.png";
+import categoryAgriculture from "@/assets/category-agriculture.png";
+import categoryLeisure from "@/assets/category-leisure.png";
+import categoryPets from "@/assets/category-pets.png";
+import categoryBeauty from "@/assets/category-beauty.png";
+import categoryConstruction from "@/assets/category-construction.png";
 
 const imageMap: Record<string, string> = {
   vehicles: categoryVehicles,
@@ -25,6 +30,11 @@ const imageMap: Record<string, string> = {
   services: categoryServices,
   jobs: categoryJobs,
   "commercial-equipment": categoryCommercial,
+  "food-agriculture": categoryAgriculture,
+  "leisure-activities": categoryLeisure,
+  "animals-pets": categoryPets,
+  "beauty-care": categoryBeauty,
+  "repair-construction": categoryConstruction,
 };
 
 const CategoryGrid = () => {
