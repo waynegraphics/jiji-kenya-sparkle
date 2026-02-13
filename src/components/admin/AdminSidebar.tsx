@@ -15,9 +15,11 @@ import {
   LayoutDashboard, Users, FileText, FolderTree, Package, 
   MessageSquare, LifeBuoy, Flag, Settings, Shield, ShieldCheck,
   UsersRound, Link2, Activity, ListChecks, Crown, Zap, TrendingUp,
-  BookOpen, Briefcase, Brain
+  BookOpen, Briefcase, Brain, Mail
 } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useTeamMember";
+import { useAdminCounts } from "@/hooks/useAdminCounts";
+import { Badge } from "@/components/ui/badge";
 
 const AdminSidebar = () => {
   const { state } = useSidebar();
@@ -25,37 +27,38 @@ const AdminSidebar = () => {
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
   const { isSuperAdmin, teamMember } = useIsSuperAdmin();
+  const { data: counts } = useAdminCounts();
 
-  // Determine base path (supports both /admin and /apa/dashboard)
   const basePath = currentPath.startsWith("/apa/dashboard") ? "/apa/dashboard" : "/admin";
 
   const hasPermission = (permission: string): boolean => {
     if (isSuperAdmin) return true;
-    if (!teamMember) return true; // fallback for admin role users without team_member record
+    if (!teamMember) return true;
     return !!(teamMember.permissions as any)?.[permission];
   };
 
   const menuItems = [
-    { title: "Overview", url: basePath, icon: LayoutDashboard, permission: null },
-    { title: "User Management", url: `${basePath}/users`, icon: Users, permission: "view_users" },
-    { title: "Listings", url: `${basePath}/listings`, icon: FileText, permission: "view_listings" },
-    { title: "Categories", url: `${basePath}/categories`, icon: FolderTree, permission: null },
-    { title: "Packages", url: `${basePath}/packages`, icon: Package, permission: null },
-    { title: "Ad Tiers", url: `${basePath}/tiers`, icon: Crown, permission: null },
-    { title: "Bump Packages", url: `${basePath}/bump-packages`, icon: Zap, permission: null },
-    { title: "Promotions", url: `${basePath}/promotions`, icon: TrendingUp, permission: null },
-    { title: "Support", url: `${basePath}/support`, icon: LifeBuoy, permission: "view_support" },
-    { title: "Reports", url: `${basePath}/reports`, icon: Flag, permission: "view_reports" },
-    { title: "Messaging", url: `${basePath}/messaging`, icon: MessageSquare, permission: null },
-    { title: "Verifications", url: `${basePath}/verifications`, icon: ShieldCheck, permission: null },
-    { title: "Affiliates", url: `${basePath}/affiliates`, icon: Link2, permission: "view_affiliates" },
-    { title: "Team", url: `${basePath}/team`, icon: UsersRound, permission: "manage_team", superAdminOnly: true },
-    { title: "Diagnostics", url: `${basePath}/diagnostics`, icon: Activity, permission: "manage_settings" },
-    { title: "Custom Values", url: `${basePath}/custom-values`, icon: ListChecks, permission: "manage_settings" },
-    { title: "Blog", url: `${basePath}/blog`, icon: BookOpen, permission: null },
-    { title: "Careers", url: `${basePath}/careers`, icon: Briefcase, permission: null },
-    { title: "AI Engine", url: `${basePath}/ai-settings`, icon: Brain, permission: "manage_settings" },
-    { title: "Settings", url: `${basePath}/settings`, icon: Settings, permission: "manage_settings" },
+    { title: "Overview", url: basePath, icon: LayoutDashboard, permission: null, countKey: null },
+    { title: "User Management", url: `${basePath}/users`, icon: Users, permission: "view_users", countKey: null },
+    { title: "Listings", url: `${basePath}/listings`, icon: FileText, permission: "view_listings", countKey: "listings" as const },
+    { title: "Categories", url: `${basePath}/categories`, icon: FolderTree, permission: null, countKey: null },
+    { title: "Packages", url: `${basePath}/packages`, icon: Package, permission: null, countKey: null },
+    { title: "Ad Tiers", url: `${basePath}/tiers`, icon: Crown, permission: null, countKey: null },
+    { title: "Bump Packages", url: `${basePath}/bump-packages`, icon: Zap, permission: null, countKey: null },
+    { title: "Promotions", url: `${basePath}/promotions`, icon: TrendingUp, permission: null, countKey: null },
+    { title: "Support", url: `${basePath}/support`, icon: LifeBuoy, permission: "view_support", countKey: "support" as const },
+    { title: "Reports", url: `${basePath}/reports`, icon: Flag, permission: "view_reports", countKey: "reports" as const },
+    { title: "Messaging", url: `${basePath}/messaging`, icon: MessageSquare, permission: null, countKey: null },
+    { title: "Verifications", url: `${basePath}/verifications`, icon: ShieldCheck, permission: null, countKey: "verifications" as const },
+    { title: "Communications", url: `${basePath}/communications`, icon: Mail, permission: null, countKey: null },
+    { title: "Affiliates", url: `${basePath}/affiliates`, icon: Link2, permission: "view_affiliates", countKey: null },
+    { title: "Team", url: `${basePath}/team`, icon: UsersRound, permission: "manage_team", superAdminOnly: true, countKey: null },
+    { title: "Diagnostics", url: `${basePath}/diagnostics`, icon: Activity, permission: "manage_settings", countKey: null },
+    { title: "Custom Values", url: `${basePath}/custom-values`, icon: ListChecks, permission: "manage_settings", countKey: "customValues" as const },
+    { title: "Blog", url: `${basePath}/blog`, icon: BookOpen, permission: null, countKey: null },
+    { title: "Careers", url: `${basePath}/careers`, icon: Briefcase, permission: null, countKey: "careers" as const },
+    { title: "AI Engine", url: `${basePath}/ai-settings`, icon: Brain, permission: "manage_settings", countKey: null },
+    { title: "Settings", url: `${basePath}/settings`, icon: Settings, permission: "manage_settings", countKey: null },
   ];
 
   const isActive = (path: string) => {
@@ -64,7 +67,7 @@ const AdminSidebar = () => {
   };
 
   const visibleItems = menuItems.filter((item) => {
-    if (item.superAdminOnly && !isSuperAdmin) return false;
+    if ((item as any).superAdminOnly && !isSuperAdmin) return false;
     if (item.permission && !hasPermission(item.permission)) return false;
     return true;
   });
@@ -72,7 +75,6 @@ const AdminSidebar = () => {
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent>
-        {/* Logo & Admin Header */}
         <div className={`p-3 border-b ${collapsed ? "px-2" : ""}`}>
           <div className="flex items-center gap-2">
             <Link to="/" className="flex-shrink-0">
@@ -104,12 +106,25 @@ const AdminSidebar = () => {
             <SidebarMenu>
               {visibleItems.map((item) => {
                 const active = isActive(item.url);
+                const count = item.countKey && counts ? counts[item.countKey] : 0;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={active} tooltip={collapsed ? item.title : undefined}>
                       <Link to={item.url} className={`flex items-center gap-3 ${active ? "bg-primary/10 text-primary" : ""}`}>
                         <item.icon className="h-4 w-4 flex-shrink-0" />
-                        {!collapsed && <span>{item.title}</span>}
+                        {!collapsed && (
+                          <>
+                            <span className="flex-1">{item.title}</span>
+                            {count > 0 && (
+                              <Badge className="h-5 min-w-[20px] px-1.5 text-[10px] bg-destructive text-destructive-foreground rounded-full">
+                                {count}
+                              </Badge>
+                            )}
+                          </>
+                        )}
+                        {collapsed && count > 0 && (
+                          <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-destructive" />
+                        )}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

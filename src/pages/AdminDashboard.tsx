@@ -26,6 +26,8 @@ import AdminPromotions from "@/components/admin/AdminPromotions";
 import AdminBlogs from "@/components/admin/AdminBlogs";
 import AdminCareers from "@/components/admin/AdminCareers";
 import AdminAISettings from "@/components/admin/AdminAISettings";
+import AdminCommunications from "@/components/admin/AdminCommunications";
+import AdminNotificationCenter from "@/components/admin/AdminNotificationCenter";
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -100,6 +102,7 @@ const AdminDashboard = () => {
     if (path.includes('/blog')) return 'Blog Management';
     if (path.includes('/careers')) return 'Careers Management';
     if (path.includes('/ai-settings')) return 'AI Engine';
+    if (path.includes('/communications')) return 'Communications';
     return 'Overview';
   };
 
@@ -128,6 +131,7 @@ const AdminDashboard = () => {
             </div>
             
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <AdminNotificationCenter />
               {(isSuperAdmin || hasPermission("view_seller_dashboard")) && (
                 <Link to="/seller-dashboard" className="hidden sm:block">
                   <Button variant="ghost" size="sm">
@@ -173,6 +177,7 @@ const AdminDashboard = () => {
                 <Route path="blog" element={<AdminBlogs />} />
                 <Route path="careers" element={<AdminCareers />} />
                 <Route path="ai-settings" element={<AdminAISettings />} />
+                <Route path="communications" element={<AdminCommunications />} />
               </Routes>
             </div>
           </main>
