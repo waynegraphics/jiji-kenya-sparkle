@@ -1,33 +1,30 @@
 import { useNavigate } from "react-router-dom";
-import {
-  Car, Home, Smartphone, Shirt, Wrench, Briefcase, Sofa, Dog, Baby,
-  Bike, Music, HeartPulse, Wheat, HardHat, Gamepad2, LucideIcon, Laptop, Sparkles, Factory, Hammer, Tractor,
-} from "lucide-react";
 import { useMainCategories } from "@/hooks/useCategories";
 import { useCategoryCounts } from "@/hooks/useCategoryCounts";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const iconMap: Record<string, LucideIcon> = {
-  Car, Home, Smartphone, Shirt, Wrench, Briefcase, Sofa, Dog, Baby,
-  Bike, Music, HeartPulse, Wheat, HardHat, Gamepad2, Laptop, Sparkles, Factory, Hammer, Tractor,
-};
+import categoryVehicles from "@/assets/category-vehicles.png";
+import categoryProperty from "@/assets/category-property.png";
+import categoryElectronics from "@/assets/category-electronics.png";
+import categoryPhones from "@/assets/category-phones.png";
+import categoryFurniture from "@/assets/category-furniture.png";
+import categoryBabies from "@/assets/category-babies.png";
+import categoryFashion from "@/assets/category-fashion.png";
+import categoryServices from "@/assets/category-services.png";
+import categoryJobs from "@/assets/category-jobs.png";
+import categoryCommercial from "@/assets/category-commercial.png";
 
-const colorMap: Record<string, string> = {
-  vehicles: "bg-apa-blue",
-  property: "bg-apa-green",
-  "phones-tablets": "bg-apa-orange",
-  fashion: "bg-apa-purple",
-  services: "bg-apa-teal",
-  jobs: "bg-apa-yellow",
-  "furniture-appliances": "bg-apa-red",
-  "animals-pets": "bg-apa-green",
-  "babies-kids": "bg-apa-purple",
-  "beauty-care": "bg-apa-orange",
-  electronics: "bg-apa-blue",
-  "commercial-equipment": "bg-apa-teal",
-  "food-agriculture": "bg-apa-green",
-  "leisure-activities": "bg-apa-blue",
-  "repair-construction": "bg-apa-yellow",
+const imageMap: Record<string, string> = {
+  vehicles: categoryVehicles,
+  property: categoryProperty,
+  electronics: categoryElectronics,
+  "phones-tablets": categoryPhones,
+  "furniture-appliances": categoryFurniture,
+  "babies-kids": categoryBabies,
+  fashion: categoryFashion,
+  services: categoryServices,
+  jobs: categoryJobs,
+  "commercial-equipment": categoryCommercial,
 };
 
 const CategoryGrid = () => {
@@ -38,15 +35,11 @@ const CategoryGrid = () => {
   if (isLoading) {
     return (
       <section className="py-8">
-        <div className="container mx-auto">
+        <div className="container mx-auto px-4">
           <h2 className="text-xl md:text-2xl font-bold text-foreground mb-6">Browse Categories</h2>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="bg-card rounded-xl p-4 text-center">
-                <Skeleton className="w-12 h-12 rounded-full mx-auto mb-3" />
-                <Skeleton className="h-4 w-20 mx-auto mb-2" />
-                <Skeleton className="h-3 w-12 mx-auto" />
-              </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <Skeleton key={i} className="h-36 md:h-44 rounded-2xl" />
             ))}
           </div>
         </div>
@@ -56,31 +49,41 @@ const CategoryGrid = () => {
 
   return (
     <section className="py-8">
-      <div className="container mx-auto">
+      <div className="container mx-auto px-4">
         <h2 className="text-xl md:text-2xl font-bold text-foreground mb-6">Browse Categories</h2>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
           {categories?.map((category) => {
-            const IconComponent = iconMap[category.icon || ""] || Briefcase;
-            const colorClass = colorMap[category.slug] || "bg-apa-blue";
+            const categoryImage = imageMap[category.slug];
             const adCount = counts?.[category.id] || 0;
 
             return (
               <div
                 key={category.id}
                 onClick={() => navigate(`/category/${category.slug}`)}
-                className="group cursor-pointer bg-card rounded-xl p-4 text-center shadow-card hover:shadow-card-hover transition-all duration-200 hover:-translate-y-1"
+                className="group cursor-pointer relative rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                style={{
+                  background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))",
+                }}
               >
-                <div
-                  className={`${colorClass} w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform duration-200`}
-                >
-                  <IconComponent className="h-6 w-6 md:h-7 md:w-7 text-white" />
+                <div className="flex flex-col items-center justify-end h-36 md:h-44 p-3 pt-2">
+                  {categoryImage && (
+                    <div className="flex-1 flex items-center justify-center w-full">
+                      <img
+                        src={categoryImage}
+                        alt={category.name}
+                        className="max-h-20 md:max-h-24 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
+                  )}
+                  <div className="text-center mt-auto">
+                    <h3 className="text-sm md:text-base font-bold text-white drop-shadow-md leading-tight">
+                      {category.name}
+                    </h3>
+                    <p className="text-xs text-white/80 font-medium mt-0.5">
+                      {adCount} {adCount === 1 ? "Ad" : "Ads"}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xs md:text-sm font-semibold text-foreground line-clamp-2 leading-tight">
-                  {category.name}
-                </h3>
-                <p className="text-[10px] md:text-xs text-muted-foreground mt-1 font-medium">
-                  {adCount} {adCount === 1 ? "ad" : "ads"}
-                </p>
               </div>
             );
           })}
