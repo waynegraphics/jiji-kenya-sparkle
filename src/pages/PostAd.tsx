@@ -570,19 +570,17 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
           <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">What are you listing?</h2>
-              {selectedMainCategory && (
-                <SellerAIAssistant
-                  category={selectedMainCategory.name || categorySlug}
-                  title={baseFormData.title}
-                  description={baseFormData.description}
-                  price={baseFormData.price}
-                  location={baseFormData.location}
-                  categoryFields={categoryFormData}
-                  onApplyTitle={(t) => setBaseFormData(prev => ({ ...prev, title: t }))}
-                  onApplyDescription={(d) => setBaseFormData(prev => ({ ...prev, description: d }))}
-                  onApplyPrice={(p) => setBaseFormData(prev => ({ ...prev, price: p }))}
-                />
-              )}
+              <SellerAIAssistant
+                category={selectedMainCategory?.name || categorySlug || "General"}
+                title={baseFormData.title}
+                description={baseFormData.description}
+                price={baseFormData.price}
+                location={baseFormData.location}
+                categoryFields={categoryFormData}
+                onApplyTitle={(t) => setBaseFormData(prev => ({ ...prev, title: t }))}
+                onApplyDescription={(d) => setBaseFormData(prev => ({ ...prev, description: d }))}
+                onApplyPrice={(p) => setBaseFormData(prev => ({ ...prev, price: p }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
