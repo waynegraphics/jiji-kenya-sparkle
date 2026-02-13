@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { Home, ChevronRight, Sparkles } from "lucide-react";
 import {
@@ -17,9 +18,9 @@ interface PageHeroProps {
   breadcrumbLabel: string;
 }
 
-const PageHero = ({ title, subtitle, badge, badgeIcon: BadgeIcon, breadcrumbLabel }: PageHeroProps) => {
+const PageHero = forwardRef<HTMLElement, PageHeroProps>(({ title, subtitle, badge, badgeIcon: BadgeIcon, breadcrumbLabel }, ref) => {
   return (
-    <section className="relative overflow-hidden border-b border-border/50">
+    <section ref={ref} className="relative overflow-hidden border-b border-border/50">
       {/* Background layers */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/70" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--secondary)/0.3),transparent)]" />
@@ -75,6 +76,8 @@ const PageHero = ({ title, subtitle, badge, badgeIcon: BadgeIcon, breadcrumbLabe
       </div>
     </section>
   );
-};
+});
+
+PageHero.displayName = "PageHero";
 
 export default PageHero;
