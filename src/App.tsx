@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -5,47 +6,67 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAffiliateClickTracker } from "@/hooks/useAffiliateClickTracker";
-import Index from "./pages/Index";
-import ProductDetail from "./pages/ProductDetail";
-import SearchResults from "./pages/SearchResults";
-import PostAd from "./pages/PostAd";
-import MyAds from "./pages/MyAds";
-import EditAd from "./pages/EditAd";
-import ProfileSettings from "./pages/ProfileSettings";
-import Messages from "./pages/Messages";
-import Favorites from "./pages/Favorites";
-import SellerProfile from "./pages/SellerProfile";
-import AdminDashboard from "./pages/AdminDashboard";
-import SellerDashboard from "./pages/SellerDashboard";
-import Pricing from "./pages/Pricing";
-import Checkout from "./pages/Checkout";
-import CategoryPage from "./pages/CategoryPage";
-import VerifiedSellers from "./pages/VerifiedSellers";
-import SafetyTips from "./pages/SafetyTips";
-import TeamLogin from "./pages/TeamLogin";
-import AffiliateDashboard from "./pages/AffiliateDashboard";
-import AffiliateApply from "./pages/AffiliateApply";
-import NotFound from "./pages/NotFound";
-import ComparePage from "./pages/ComparePage";
-import AboutUs from "./pages/AboutUs";
-import BlogPost from "./pages/BlogPost";
-import ContactUs from "./pages/ContactUs";
-import FAQs from "./pages/FAQs";
-import Sellers from "./pages/Sellers";
-// SavedAds removed - consolidated to /favorites
-import QuickLinks from "./pages/QuickLinks";
-import Disclaimer from "./pages/Disclaimer";
-import CopyrightInfringement from "./pages/CopyrightInfringement";
-import BillingPolicy from "./pages/BillingPolicy";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsConditions from "./pages/TermsConditions";
-import Blog from "./pages/Blog";
-import Careers from "./pages/Careers";
-import DataProtection from "./pages/DataProtection";
+import { Loader2 } from "lucide-react";
 import ScrollToTop from "./components/ScrollToTop";
 import CompareBar from "./components/CompareBar";
 
-const queryClient = new QueryClient();
+// Critical path - load eagerly
+import Index from "./pages/Index";
+
+// Lazy load all other pages
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const SearchResults = lazy(() => import("./pages/SearchResults"));
+const PostAd = lazy(() => import("./pages/PostAd"));
+const MyAds = lazy(() => import("./pages/MyAds"));
+const EditAd = lazy(() => import("./pages/EditAd"));
+const ProfileSettings = lazy(() => import("./pages/ProfileSettings"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Favorites = lazy(() => import("./pages/Favorites"));
+const SellerProfile = lazy(() => import("./pages/SellerProfile"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const SellerDashboard = lazy(() => import("./pages/SellerDashboard"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const VerifiedSellers = lazy(() => import("./pages/VerifiedSellers"));
+const SafetyTips = lazy(() => import("./pages/SafetyTips"));
+const TeamLogin = lazy(() => import("./pages/TeamLogin"));
+const AffiliateDashboard = lazy(() => import("./pages/AffiliateDashboard"));
+const AffiliateApply = lazy(() => import("./pages/AffiliateApply"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const ComparePage = lazy(() => import("./pages/ComparePage"));
+const AboutUs = lazy(() => import("./pages/AboutUs"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
+const ContactUs = lazy(() => import("./pages/ContactUs"));
+const FAQs = lazy(() => import("./pages/FAQs"));
+const Sellers = lazy(() => import("./pages/Sellers"));
+const QuickLinks = lazy(() => import("./pages/QuickLinks"));
+const Disclaimer = lazy(() => import("./pages/Disclaimer"));
+const CopyrightInfringement = lazy(() => import("./pages/CopyrightInfringement"));
+const BillingPolicy = lazy(() => import("./pages/BillingPolicy"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsConditions = lazy(() => import("./pages/TermsConditions"));
+const Blog = lazy(() => import("./pages/Blog"));
+const Careers = lazy(() => import("./pages/Careers"));
+const DataProtection = lazy(() => import("./pages/DataProtection"));
+
+const PageLoader = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 2, // 2 minutes - reduce refetches
+      gcTime: 1000 * 60 * 10, // 10 minutes cache
+      refetchOnWindowFocus: false, // Don't refetch on tab switch
+      retry: 1, // Reduce retries for speed
+    },
+  },
+});
+
 function AffiliateTracker() {
   useAffiliateClickTracker();
   return null;
@@ -59,6 +80,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
           <AffiliateTracker />
+          <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/listing/:category/:slug" element={<ProductDetail />} />
@@ -116,6 +138,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
           <ScrollToTop />
           <CompareBar />
         </BrowserRouter>
