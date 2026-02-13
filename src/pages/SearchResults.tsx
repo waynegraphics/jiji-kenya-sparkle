@@ -51,6 +51,11 @@ const SearchResults = () => {
   const categorySlug = searchParams.get("category") || "all";
   const sort = searchParams.get("sort") || "newest";
   const location = searchParams.get("location") || "";
+  const minPrice = searchParams.get("minPrice") || "";
+  const maxPrice = searchParams.get("maxPrice") || "";
+  const make = searchParams.get("make") || "";
+  const model = searchParams.get("model") || "";
+  const brand = searchParams.get("brand") || "";
   const pageParam = searchParams.get("page");
   const currentPage = pageParam ? parseInt(pageParam, 10) : 1;
 
@@ -73,15 +78,20 @@ const SearchResults = () => {
       if (cat) categoryId = cat.id;
     }
 
+    // Build search keyword - combine query with make/model/brand for better matching
+    const searchTerms = [query, make, model, brand].filter(Boolean).join(" ").trim();
+
     // Count query
     let countQuery = supabase
       .from("base_listings")
       .select("*", { count: "exact", head: true })
       .eq("status", "active");
 
-    if (query) countQuery = countQuery.or(`title.ilike.%${query}%,description.ilike.%${query}%`);
+    if (searchTerms) countQuery = countQuery.or(`title.ilike.%${searchTerms}%,description.ilike.%${searchTerms}%`);
     if (categoryId) countQuery = countQuery.eq("main_category_id", categoryId);
     if (location) countQuery = countQuery.ilike("location", `%${location}%`);
+    if (minPrice) countQuery = countQuery.gte("price", parseInt(minPrice));
+    if (maxPrice) countQuery = countQuery.lte("price", parseInt(maxPrice));
 
     const { count } = await countQuery;
     setTotalCount(count || 0);
@@ -92,9 +102,11 @@ const SearchResults = () => {
       .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id, main_category:main_categories(slug)")
       .eq("status", "active");
 
-    if (query) queryBuilder = queryBuilder.or(`title.ilike.%${query}%,description.ilike.%${query}%`);
+    if (searchTerms) queryBuilder = queryBuilder.or(`title.ilike.%${searchTerms}%,description.ilike.%${searchTerms}%`);
     if (categoryId) queryBuilder = queryBuilder.eq("main_category_id", categoryId);
     if (location) queryBuilder = queryBuilder.ilike("location", `%${location}%`);
+    if (minPrice) queryBuilder = queryBuilder.gte("price", parseInt(minPrice));
+    if (maxPrice) queryBuilder = queryBuilder.lte("price", parseInt(maxPrice));
 
     switch (sort) {
       case "oldest": queryBuilder = queryBuilder.order("created_at", { ascending: true }); break;
@@ -118,7 +130,7 @@ const SearchResults = () => {
     if (data) setFavorites(new Set(data.map((f) => f.listing_id)));
   };
 
-  useEffect(() => { fetchListings(); }, [query, categorySlug, sort, location, currentPage, categories]);
+  useEffect(() => { fetchListings(); }, [query, categorySlug, sort, location, minPrice, maxPrice, make, model, brand, currentPage, categories]);
   useEffect(() => { fetchFavorites(); }, [user]);
 
   const handleSearch = (newQuery: string) => {
@@ -162,7 +174,7 @@ const SearchResults = () => {
   const formatPrice = (price: number) => `KSh ${price.toLocaleString()}`;
   const formatTime = (date: string) => formatDistanceToNow(new Date(date), { addSuffix: false });
 
-  const hasActiveFilters = query || (categorySlug && categorySlug !== "all") || location;
+  const hasActiveFilters = query || (categorySlug && categorySlug !== "all") || location || minPrice || maxPrice || make || model || brand;
   const selectedCategoryName = categories?.find(c => c.slug === categorySlug)?.name;
 
   return (
@@ -261,6 +273,47 @@ const SearchResults = () => {
                   <button onClick={() => {
                     const params = new URLSearchParams(searchParams);
                     params.delete("location");
+                    setSearchParams(params);
+                  }} className="ml-1 hover:text-destructive"><X className="h-3 w-3" /></button>
+                </Badge>
+              )}
+              {(minPrice || maxPrice) && (
+                <Badge variant="secondary" className="gap-1">
+                  💰 {minPrice ? `KSh ${parseInt(minPrice).toLocaleString()}` : "Any"} - {maxPrice ? `KSh ${parseInt(maxPrice).toLocaleString()}` : "Any"}
+                  <button onClick={() => {
+                    const params = new URLSearchParams(searchParams);
+                    params.delete("minPrice");
+                    params.delete("maxPrice");
+                    setSearchParams(params);
+                  }} className="ml-1 hover:text-destructive"><X className="h-3 w-3" /></button>
+                </Badge>
+              )}
+              {make && (
+                <Badge variant="secondary" className="gap-1">
+                  Make: {make}
+                  <button onClick={() => {
+                    const params = new URLSearchParams(searchParams);
+                    params.delete("make");
+                    setSearchParams(params);
+                  }} className="ml-1 hover:text-destructive"><X className="h-3 w-3" /></button>
+                </Badge>
+              )}
+              {model && (
+                <Badge variant="secondary" className="gap-1">
+                  Model: {model}
+                  <button onClick={() => {
+                    const params = new URLSearchParams(searchParams);
+                    params.delete("model");
+                    setSearchParams(params);
+                  }} className="ml-1 hover:text-destructive"><X className="h-3 w-3" /></button>
+                </Badge>
+              )}
+              {brand && (
+                <Badge variant="secondary" className="gap-1">
+                  Brand: {brand}
+                  <button onClick={() => {
+                    const params = new URLSearchParams(searchParams);
+                    params.delete("brand");
                     setSearchParams(params);
                   }} className="ml-1 hover:text-destructive"><X className="h-3 w-3" /></button>
                 </Badge>
