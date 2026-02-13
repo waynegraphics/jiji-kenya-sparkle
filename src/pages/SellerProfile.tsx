@@ -9,23 +9,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import {
-  MapPin,
-  Star,
-  Shield,
-  Calendar,
-  Package,
-  Phone,
-  MessageCircle,
+  MapPin, Star, Shield, Calendar, Package, Phone, MessageCircle,
+  UserPlus, UserMinus, Eye, EyeOff, ExternalLink
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthModal from "@/components/AuthModal";
 import { toast } from "sonner";
+import ShareMenu from "@/components/ShareMenu";
 
 interface SellerProfileData {
   display_name: string;
   phone: string | null;
+  whatsapp_number: string | null;
   location: string | null;
   avatar_url: string | null;
   bio: string | null;
@@ -34,6 +33,7 @@ interface SellerProfileData {
   is_verified: boolean;
   created_at: string;
   account_type: string;
+  business_name: string | null;
 }
 
 interface Listing {
@@ -45,6 +45,7 @@ interface Listing {
   is_featured: boolean;
   is_urgent: boolean;
   created_at: string;
+  main_categories?: { slug: string; name: string } | null;
 }
 
 const SellerProfile = () => {
@@ -58,42 +59,48 @@ const SellerProfile = () => {
   const [showPhone, setShowPhone] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
 
   useEffect(() => {
     const fetchSellerData = async () => {
       if (!userId) return;
 
-      const { data: profileData, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
+      const [profileResult, listingsResult, followerResult] = await Promise.allSettled([
+        supabase.from("profiles").select("*").eq("user_id", userId).single(),
+        supabase.from("base_listings")
+          .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_categories(slug, name)")
+          .eq("user_id", userId).eq("status", "active")
+          .order("created_at", { ascending: false }),
+        supabase.from("follows").select("id", { count: "exact" }).eq("following_id", userId),
+      ]);
 
-      if (error || !profileData) { navigate("/"); return; }
-      setSeller(profileData as SellerProfileData);
+      if (profileResult.status === "fulfilled" && profileResult.value.data) {
+        setSeller(profileResult.value.data as SellerProfileData);
+      } else {
+        navigate("/");
+        return;
+      }
 
-      // Fetch listings from both tables
-      const { data: listingsData } = await supabase
-        .from("listings")
-        .select("*")
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false });
-      if (listingsData) setListings(listingsData as Listing[]);
+      if (listingsResult.status === "fulfilled" && listingsResult.value.data) {
+        setListings(listingsResult.value.data as any);
+      }
+
+      if (followerResult.status === "fulfilled") {
+        setFollowerCount(followerResult.value.count || 0);
+      }
 
       if (user) {
-        const { data: favData } = await supabase
-          .from("favorites")
-          .select("listing_id")
-          .eq("user_id", user.id);
-        if (favData) setFavorites(new Set(favData.map((f) => f.listing_id)));
+        const [favResult, followResult] = await Promise.allSettled([
+          supabase.from("favorites").select("listing_id").eq("user_id", user.id),
+          supabase.from("follows").select("id").eq("follower_id", user.id).eq("following_id", userId).maybeSingle(),
+        ]);
 
-        const { data: followData } = await supabase
-          .from("follows")
-          .select("id")
-          .eq("follower_id", user.id)
-          .eq("following_id", userId)
-          .single();
-        setIsFollowing(!!followData);
+        if (favResult.status === "fulfilled" && favResult.value.data) {
+          setFavorites(new Set(favResult.value.data.map((f) => f.listing_id)));
+        }
+        if (followResult.status === "fulfilled" && followResult.value.data) {
+          setIsFollowing(true);
+        }
       }
 
       setLoading(false);
@@ -108,10 +115,12 @@ const SellerProfile = () => {
     if (isFollowing) {
       await supabase.from("follows").delete().eq("follower_id", user.id).eq("following_id", userId);
       setIsFollowing(false);
+      setFollowerCount(prev => Math.max(0, prev - 1));
       toast.success("Unfollowed");
     } else {
       await supabase.from("follows").insert({ follower_id: user.id, following_id: userId });
       setIsFollowing(true);
+      setFollowerCount(prev => prev + 1);
       toast.success("Following!");
     }
   };
@@ -119,14 +128,20 @@ const SellerProfile = () => {
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", minimumFractionDigits: 0 }).format(price);
 
+  const getDisplayName = () => {
+    if (!seller) return "";
+    return seller.account_type === "business" && seller.business_name ? seller.business_name : seller.display_name;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="container mx-auto py-6 px-4">
-          <div className="grid md:grid-cols-4 gap-6">
-            <Skeleton className="h-80 rounded-xl" />
-            <div className="md:col-span-3"><Skeleton className="h-8 w-48 mb-4" /></div>
+          <Skeleton className="h-48 rounded-xl mb-6" />
+          <div className="grid md:grid-cols-3 gap-6">
+            <Skeleton className="h-64 rounded-xl" />
+            <div className="md:col-span-2"><Skeleton className="h-8 w-48 mb-4" /></div>
           </div>
         </div>
       </div>
@@ -135,108 +150,176 @@ const SellerProfile = () => {
 
   if (!seller) return null;
 
+  const memberSince = new Date(seller.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto py-6 px-4">
-        <div className="grid md:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="md:col-span-1">
-            <div className="bg-card rounded-xl p-6 shadow-card sticky top-24">
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-24 h-24 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-3xl font-bold mb-3 overflow-hidden">
-                  {seller.avatar_url ? (
-                    <img src={seller.avatar_url} alt={seller.display_name} className="w-full h-full object-cover" />
-                  ) : (
-                    seller.display_name.charAt(0).toUpperCase()
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold">{seller.display_name}</h1>
-                  {seller.is_verified && <Shield className="h-5 w-5 text-primary" />}
-                </div>
-                {seller.rating > 0 && (
-                  <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
-                    <Star className="h-4 w-4 fill-apa-yellow text-apa-yellow" />
-                    {seller.rating.toFixed(1)} ({seller.total_reviews} reviews)
-                  </div>
+
+      {/* Hero Banner */}
+      <section className="relative bg-gradient-to-br from-primary/20 via-primary/10 to-background border-b">
+        <div className="container mx-auto px-4 pt-8 pb-16 md:pt-12 md:pb-20">
+          <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
+            {/* Avatar */}
+            <Avatar className="h-24 w-24 md:h-32 md:w-32 ring-4 ring-card shadow-xl">
+              <AvatarImage src={seller.avatar_url || ""} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-3xl md:text-4xl font-bold">
+                {getDisplayName().charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+
+            {/* Info */}
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">{getDisplayName()}</h1>
+                {seller.is_verified && (
+                  <Badge className="bg-primary/10 text-primary border-primary/20">
+                    <Shield className="h-3 w-3 mr-1" />Verified
+                  </Badge>
                 )}
               </div>
 
-              <div className="space-y-3 text-sm">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground mt-2">
                 {seller.location && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-4 w-4" /><span>{seller.location}</span>
-                  </div>
+                  <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{seller.location}</span>
                 )}
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span>Member since {new Date(seller.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Package className="h-4 w-4" /><span>{listings.length} listings</span>
-                </div>
+                <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />Member since {memberSince}</span>
+                <span className="flex items-center gap-1"><Package className="h-4 w-4" />{listings.length} listings</span>
+                <span className="flex items-center gap-1"><UserPlus className="h-4 w-4" />{followerCount} followers</span>
               </div>
 
-              {seller.bio && (
-                <div className="mt-4 pt-4 border-t">
-                  <h3 className="font-semibold text-sm mb-2">About</h3>
-                  <p className="text-sm text-muted-foreground">{seller.bio}</p>
+              {seller.rating > 0 && (
+                <div className="flex items-center justify-center md:justify-start gap-1 mt-2">
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <Star key={s} className={`h-4 w-4 ${s <= Math.round(seller.rating) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"}`} />
+                  ))}
+                  <span className="text-sm font-medium ml-1">{seller.rating.toFixed(1)}</span>
+                  <span className="text-xs text-muted-foreground">({seller.total_reviews} reviews)</span>
                 </div>
               )}
+            </div>
 
-              {/* Actions */}
-              <div className="mt-4 pt-4 border-t space-y-2">
-                {user && user.id !== userId && (
-                  <>
-                    <Button className="w-full" variant={isFollowing ? "outline" : "default"} onClick={toggleFollow}>
-                      {isFollowing ? "Unfollow" : "Follow"}
-                    </Button>
-                    <Button variant="outline" className="w-full" onClick={() => {
+            {/* Actions */}
+            <div className="flex flex-wrap items-center gap-2">
+              {user && user.id !== userId && (
+                <>
+                  <Button
+                    variant={isFollowing ? "outline" : "default"}
+                    onClick={toggleFollow}
+                    className="gap-2"
+                  >
+                    {isFollowing ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                    {isFollowing ? "Unfollow" : "Follow"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
                       if (!user) { setIsAuthModalOpen(true); return; }
                       navigate(`/messages?user=${userId}`);
-                    }}>
-                      <MessageCircle className="h-4 w-4 mr-2" />Message
-                    </Button>
-                  </>
-                )}
+                    }}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />Message
+                  </Button>
+                </>
+              )}
+              <ShareMenu title={getDisplayName()} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <main className="container mx-auto py-6 px-4">
+        <div className="grid lg:grid-cols-4 gap-6">
+          {/* Sidebar */}
+          <div className="lg:col-span-1 space-y-4">
+            {/* Contact Card */}
+            <div className="bg-card rounded-xl p-5 shadow-card border border-border/50">
+              <h3 className="font-semibold text-sm mb-3">Contact</h3>
+              <div className="space-y-2.5">
                 {seller.phone && (
-                  <Button variant="outline" className="w-full" onClick={() => {
-                    if (!user) { setIsAuthModalOpen(true); return; }
-                    setShowPhone(true);
-                  }}>
-                    <Phone className="h-4 w-4 mr-2" />
-                    {showPhone ? seller.phone : "Show Phone"}
+                  <Button
+                    className="w-full font-semibold h-10"
+                    onClick={() => {
+                      if (!user) { setIsAuthModalOpen(true); return; }
+                      if (showPhone) window.location.href = `tel:${seller.phone}`;
+                      else setShowPhone(true);
+                    }}
+                  >
+                    {showPhone ? <Phone className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
+                    {showPhone ? seller.phone : "Show Phone Number"}
+                  </Button>
+                )}
+
+                {seller.whatsapp_number && (
+                  <Button
+                    variant="outline"
+                    className="w-full border-green-500/50 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20 h-10"
+                    onClick={() => {
+                      window.open(
+                        `https://wa.me/${seller.whatsapp_number!.replace(/\D/g, "")}?text=Hi, I found you on APA Bazaar!`,
+                        "_blank"
+                      );
+                    }}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" /> WhatsApp
                   </Button>
                 )}
               </div>
+            </div>
 
-              {seller.is_verified && (
-                <div className="mt-4 pt-4 border-t">
-                  <Badge className="bg-primary/10 text-primary border-primary/20">
-                    <Shield className="h-3 w-3 mr-1" />Verified Seller
-                  </Badge>
+            {/* About */}
+            {seller.bio && (
+              <div className="bg-card rounded-xl p-5 shadow-card border border-border/50">
+                <h3 className="font-semibold text-sm mb-2">About</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{seller.bio}</p>
+              </div>
+            )}
+
+            {/* Stats */}
+            <div className="bg-card rounded-xl p-5 shadow-card border border-border/50">
+              <h3 className="font-semibold text-sm mb-3">Stats</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <p className="text-lg font-bold text-foreground">{listings.length}</p>
+                  <p className="text-xs text-muted-foreground">Listings</p>
                 </div>
-              )}
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <p className="text-lg font-bold text-foreground">{seller.total_reviews}</p>
+                  <p className="text-xs text-muted-foreground">Reviews</p>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <p className="text-lg font-bold text-foreground">{followerCount}</p>
+                  <p className="text-xs text-muted-foreground">Followers</p>
+                </div>
+                <div className="text-center p-3 bg-muted/50 rounded-lg">
+                  <p className="text-lg font-bold text-foreground">{seller.rating > 0 ? seller.rating.toFixed(1) : "N/A"}</p>
+                  <p className="text-xs text-muted-foreground">Rating</p>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="md:col-span-3">
+          <div className="lg:col-span-3">
             <Tabs defaultValue="listings">
-              <TabsList className="mb-6">
-                <TabsTrigger value="listings">Listings ({listings.length})</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews ({seller.total_reviews})</TabsTrigger>
+              <TabsList className="mb-6 w-full sm:w-auto">
+                <TabsTrigger value="listings" className="flex-1 sm:flex-none">
+                  Listings ({listings.length})
+                </TabsTrigger>
+                <TabsTrigger value="reviews" className="flex-1 sm:flex-none">
+                  Reviews ({seller.total_reviews})
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="listings">
                 {listings.length === 0 ? (
-                  <div className="bg-card rounded-xl p-8 text-center">
+                  <div className="bg-card rounded-xl p-12 text-center">
                     <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">No active listings.</p>
+                    <h3 className="text-lg font-semibold mb-1">No active listings</h3>
+                    <p className="text-muted-foreground text-sm">This seller hasn't posted any ads yet.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                     {listings.map((listing) => (
                       <ProductCard
                         key={listing.id}
@@ -249,6 +332,7 @@ const SellerProfile = () => {
                         isFeatured={listing.is_featured}
                         isUrgent={listing.is_urgent}
                         isFavorited={favorites.has(listing.id)}
+                        categorySlug={(listing.main_categories as any)?.slug}
                       />
                     ))}
                   </div>
@@ -262,6 +346,7 @@ const SellerProfile = () => {
           </div>
         </div>
       </main>
+
       <Footer />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} defaultTab="login" />
     </div>
