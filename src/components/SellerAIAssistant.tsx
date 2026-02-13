@@ -49,21 +49,22 @@ const SellerAIAssistant = ({
 
   if (!isOpen) {
     return (
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="gap-2 border-primary/30 text-primary hover:bg-primary/5"
-        onClick={() => setIsOpen(true)}
-      >
-        <Sparkles className="h-4 w-4" />
-        AI Assist
-      </Button>
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          type="button"
+          size="icon"
+          className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground"
+          onClick={() => setIsOpen(true)}
+        >
+          <Sparkles className="h-6 w-6" />
+        </Button>
+      </div>
     );
   }
 
   return (
-    <Card className="border-primary/20 bg-primary/5">
+    <div className="fixed bottom-6 right-6 z-50 w-[90vw] max-w-sm">
+    <Card className="border-primary/20 bg-primary/5 shadow-2xl">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
@@ -209,6 +210,7 @@ const SellerAIAssistant = ({
         )}
       </CardContent>
     </Card>
+    </div>
   );
 };
 

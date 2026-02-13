@@ -567,21 +567,9 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
     switch (currentStep) {
       case 0: // Title & Description first
         return (
+          <>
           <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">What are you listing?</h2>
-              <SellerAIAssistant
-                category={selectedMainCategory?.name || categorySlug || "General"}
-                title={baseFormData.title}
-                description={baseFormData.description}
-                price={baseFormData.price}
-                location={baseFormData.location}
-                categoryFields={categoryFormData}
-                onApplyTitle={(t) => setBaseFormData(prev => ({ ...prev, title: t }))}
-                onApplyDescription={(d) => setBaseFormData(prev => ({ ...prev, description: d }))}
-                onApplyPrice={(p) => setBaseFormData(prev => ({ ...prev, price: p }))}
-              />
-            </div>
+            <h2 className="text-lg font-semibold">What are you listing?</h2>
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
               <Input id="title" value={baseFormData.title}
@@ -599,6 +587,18 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
               <p className="text-xs text-muted-foreground">{baseFormData.description.length}/2000 characters</p>
             </div>
           </div>
+          <SellerAIAssistant
+            category={selectedMainCategory?.name || categorySlug || "General"}
+            title={baseFormData.title}
+            description={baseFormData.description}
+            price={baseFormData.price}
+            location={baseFormData.location}
+            categoryFields={categoryFormData}
+            onApplyTitle={(t) => setBaseFormData(prev => ({ ...prev, title: t }))}
+            onApplyDescription={(d) => setBaseFormData(prev => ({ ...prev, description: d }))}
+            onApplyPrice={(p) => setBaseFormData(prev => ({ ...prev, price: p }))}
+          />
+          </>
         );
 
       case 1: // Category & Location
