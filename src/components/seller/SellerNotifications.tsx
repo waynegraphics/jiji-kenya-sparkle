@@ -11,7 +11,11 @@ import {
   Zap,
   Users,
   Package,
-  CheckCheck
+  CheckCheck,
+  Star,
+  Heart,
+  Flag,
+  ShieldCheck
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -31,6 +35,16 @@ const SellerNotifications = () => {
         return <Users className="h-5 w-5 text-orange-500" />;
       case 'addon':
         return <Zap className="h-5 w-5 text-yellow-500" />;
+      case 'review':
+        return <Star className="h-5 w-5 text-yellow-500" />;
+      case 'favorite':
+        return <Heart className="h-5 w-5 text-red-500" />;
+      case 'support':
+        return <MessageSquare className="h-5 w-5 text-primary" />;
+      case 'report':
+        return <Flag className="h-5 w-5 text-destructive" />;
+      case 'verification':
+        return <ShieldCheck className="h-5 w-5 text-green-600" />;
       default:
         return <Bell className="h-5 w-5" />;
     }

@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Bell, FileText, ShieldCheck, MessageSquare, Flag, Users, Briefcase } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Bell, FileText, ShieldCheck, MessageSquare, Flag, Users, Briefcase, Package, Star, Heart, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -13,110 +14,70 @@ import {
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 
-interface NotificationItem {
-  id: string;
-  type: string;
-  title: string;
-  description: string;
-  time: string;
-  icon: React.ElementType;
-  link: string;
-}
+const iconMap: Record<string, React.ElementType> = {
+  listing: FileText,
+  verification: ShieldCheck,
+  support: MessageSquare,
+  report: Flag,
+  career: Briefcase,
+  message: MessageSquare,
+  follower: Users,
+  subscription: Package,
+  review: Star,
+  favorite: Heart,
+};
 
 const AdminNotificationCenter = () => {
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: notifications = [], isLoading } = useQuery({
-    queryKey: ["admin-notifications-feed"],
+    queryKey: ["admin-notifications-db", user?.id],
     queryFn: async () => {
-      const items: NotificationItem[] = [];
-
-      const [
-        { data: recentListings },
-        { data: recentVerifications },
-        { data: recentSupport },
-        { data: recentReports },
-        { data: recentApplications },
-      ] = await Promise.all([
-        supabase.from("base_listings").select("id, title, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(5),
-        supabase.from("seller_verifications").select("id, created_at, user_id").eq("status", "pending").order("created_at", { ascending: false }).limit(5),
-        supabase.from("contact_submissions").select("id, name, subject, created_at").eq("status", "new").order("created_at", { ascending: false }).limit(5),
-        supabase.from("reports").select("id, reason, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(5),
-        supabase.from("career_applications").select("id, full_name, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(3),
-      ]);
-
-      recentListings?.forEach((l) =>
-        items.push({
-          id: `listing-${l.id}`,
-          type: "listing",
-          title: "New listing pending review",
-          description: l.title,
-          time: l.created_at,
-          icon: FileText,
-          link: "/apa/dashboard/listings",
-        })
-      );
-
-      recentVerifications?.forEach((v) =>
-        items.push({
-          id: `verif-${v.id}`,
-          type: "verification",
-          title: "Verification request",
-          description: "A seller needs identity verification",
-          time: v.created_at,
-          icon: ShieldCheck,
-          link: "/apa/dashboard/verifications",
-        })
-      );
-
-      recentSupport?.forEach((s) =>
-        items.push({
-          id: `support-${s.id}`,
-          type: "support",
-          title: "Support message",
-          description: `${s.name}: ${s.subject}`,
-          time: s.created_at,
-          icon: MessageSquare,
-          link: `/apa/dashboard/support?tab=contacts&contactId=${s.id}`,
-        })
-      );
-
-      recentReports?.forEach((r) =>
-        items.push({
-          id: `report-${r.id}`,
-          type: "report",
-          title: "New report",
-          description: r.reason,
-          time: r.created_at,
-          icon: Flag,
-          link: "/apa/dashboard/reports",
-        })
-      );
-
-      recentApplications?.forEach((a) =>
-        items.push({
-          id: `career-${a.id}`,
-          type: "career",
-          title: "Job application",
-          description: a.full_name,
-          time: a.created_at,
-          icon: Briefcase,
-          link: "/apa/dashboard/careers",
-        })
-      );
-
-      items.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-      return items.slice(0, 20);
+      if (!user) return [];
+      const { data } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      return data || [];
     },
-    refetchInterval: 30000,
+    refetchInterval: 15000,
+    enabled: !!user,
   });
 
-  const totalCount = notifications.length;
+  const unreadCount = notifications.filter((n: any) => !n.is_read).length;
 
-  const handleClick = (link: string) => {
+  const getLink = (n: any) => {
+    switch (n.type) {
+      case 'listing': return "/apa/dashboard/listings";
+      case 'verification': return "/apa/dashboard/verifications";
+      case 'support': return n.related_type === 'contact' ? `/apa/dashboard/support?tab=contacts&contactId=${n.related_id}` : "/apa/dashboard/support";
+      case 'report': return "/apa/dashboard/reports";
+      case 'message': return "/messages";
+      case 'follower': return "/apa/dashboard/users";
+      case 'subscription': return "/apa/dashboard/users";
+      case 'review': return "/apa/dashboard/users";
+      default: return "/apa/dashboard";
+    }
+  };
+
+  const handleClick = async (n: any) => {
+    if (!n.is_read) {
+      await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
+      queryClient.invalidateQueries({ queryKey: ["admin-notifications-db"] });
+    }
     setOpen(false);
-    navigate(link);
+    navigate(getLink(n));
+  };
+
+  const markAllRead = async () => {
+    if (!user) return;
+    await supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id).eq("is_read", false);
+    queryClient.invalidateQueries({ queryKey: ["admin-notifications-db"] });
   };
 
   return (
@@ -124,17 +85,24 @@ const AdminNotificationCenter = () => {
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="relative px-2">
           <Bell className="h-5 w-5" />
-          {totalCount > 0 && (
+          {unreadCount > 0 && (
             <Badge className="absolute -top-1 -right-1 h-5 min-w-[20px] px-1 text-[10px] bg-destructive text-destructive-foreground">
-              {totalCount > 99 ? "99+" : totalCount}
+              {unreadCount > 99 ? "99+" : unreadCount}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-96 p-0" align="end">
-        <div className="p-3 border-b">
-          <h3 className="font-semibold text-sm">Notifications</h3>
-          <p className="text-xs text-muted-foreground">{totalCount} items need attention</p>
+        <div className="p-3 border-b flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-sm">Notifications</h3>
+            <p className="text-xs text-muted-foreground">{unreadCount} unread</p>
+          </div>
+          {unreadCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={markAllRead} className="text-xs gap-1">
+              <CheckCheck className="h-3 w-3" /> Mark all read
+            </Button>
+          )}
         </div>
         <ScrollArea className="max-h-[400px]">
           {isLoading ? (
@@ -143,24 +111,30 @@ const AdminNotificationCenter = () => {
             <div className="p-8 text-center text-sm text-muted-foreground">All caught up! 🎉</div>
           ) : (
             <div className="divide-y">
-              {notifications.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleClick(item.link)}
-                  className="w-full flex items-start gap-3 p-3 hover:bg-muted/50 text-left transition-colors"
-                >
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <item.icon className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{item.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{item.description}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {formatDistanceToNow(new Date(item.time), { addSuffix: true })}
-                    </p>
-                  </div>
-                </button>
-              ))}
+              {notifications.map((item: any) => {
+                const Icon = iconMap[item.type] || Bell;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleClick(item)}
+                    className={`w-full flex items-start gap-3 p-3 hover:bg-muted/50 text-left transition-colors ${!item.is_read ? 'bg-primary/5' : ''}`}
+                  >
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium">{item.title}</p>
+                        {!item.is_read && <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{item.message}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </ScrollArea>
