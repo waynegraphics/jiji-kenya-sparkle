@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,11 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, Eye, X } from "lucide-react";
+import { Plus, Edit, Trash2, X, Upload, ImageIcon } from "lucide-react";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 
@@ -40,24 +39,16 @@ interface BlogPost {
   created_at: string;
 }
 
-const quillModules = {
-  toolbar: [
-    [{ header: [1, 2, 3, 4, 5, 6, false] }],
-    ["bold", "italic", "underline", "strike"],
-    [{ list: "ordered" }, { list: "bullet" }],
-    [{ align: [] }],
-    ["blockquote", "code-block"],
-    ["link", "image", "video"],
-    [{ color: [] }, { background: [] }],
-    ["clean"],
-  ],
-};
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 const AdminBlogs = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const quillRef = useRef<any>(null);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -72,6 +63,99 @@ const AdminBlogs = () => {
   const [status, setStatus] = useState("draft");
   const [readTime, setReadTime] = useState("");
   const [faqs, setFaqs] = useState<FAQ[]>([]);
+
+  // Upload image to Supabase storage
+  const uploadImage = async (file: File, folder: string = "content"): Promise<string> => {
+    const ext = file.name.split(".").pop();
+    const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from("blog").upload(fileName, file);
+    if (error) throw error;
+    return `${SUPABASE_URL}/storage/v1/object/public/blog/${fileName}`;
+  };
+
+  // Custom image handler for Quill
+  const imageHandler = useCallback(() => {
+    const input = document.createElement("input");
+    input.setAttribute("type", "file");
+    input.setAttribute("accept", "image/*");
+    input.setAttribute("multiple", "true");
+    input.click();
+    input.onchange = async () => {
+      const files = input.files;
+      if (!files) return;
+      const quill = quillRef.current?.getEditor();
+      if (!quill) return;
+
+      for (let i = 0; i < files.length; i++) {
+        try {
+          toast.loading("Uploading image...", { id: `img-upload-${i}` });
+          const url = await uploadImage(files[i]);
+          const range = quill.getSelection(true);
+          quill.insertEmbed(range.index + i, "image", url);
+          quill.setSelection(range.index + i + 1);
+          toast.success("Image uploaded", { id: `img-upload-${i}` });
+        } catch (err: any) {
+          toast.error(`Failed to upload: ${err.message}`, { id: `img-upload-${i}` });
+        }
+      }
+    };
+  }, []);
+
+  // Full Quill modules with image handler
+  const quillModules = useMemo(() => ({
+    toolbar: {
+      container: [
+        [{ font: [] }],
+        [{ header: [1, 2, 3, 4, 5, 6, false] }],
+        [{ size: ["small", false, "large", "huge"] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ color: [] }, { background: [] }],
+        [{ script: "sub" }, { script: "super" }],
+        [{ list: "ordered" }, { list: "bullet" }, { list: "check" }],
+        [{ indent: "-1" }, { indent: "+1" }],
+        [{ direction: "rtl" }],
+        [{ align: [] }],
+        ["blockquote", "code-block"],
+        ["link", "image", "video"],
+        ["clean"],
+      ],
+      handlers: {
+        image: imageHandler,
+      },
+    },
+    clipboard: { matchVisual: false },
+  }), [imageHandler]);
+
+  const quillFormats = [
+    "font", "header", "size",
+    "bold", "italic", "underline", "strike",
+    "color", "background",
+    "script",
+    "list", "indent", "direction", "align",
+    "blockquote", "code-block",
+    "link", "image", "video",
+  ];
+
+  // Thumbnail upload
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setThumbnailUploading(true);
+      const url = await uploadImage(file, "thumbnails");
+      setThumbnailUrl(url);
+      toast.success("Thumbnail uploaded");
+    } catch (err: any) {
+      toast.error(`Upload failed: ${err.message}`);
+    } finally {
+      setThumbnailUploading(false);
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = "";
+    }
+  };
+
+  const removeThumbnail = () => {
+    setThumbnailUrl("");
+  };
 
   const { data: posts, isLoading } = useQuery({
     queryKey: ["admin-blog-posts"],
@@ -88,10 +172,7 @@ const AdminBlogs = () => {
   const saveMutation = useMutation({
     mutationFn: async (postData: any) => {
       if (editingPost) {
-        const { error } = await supabase
-          .from("blog_posts")
-          .update(postData)
-          .eq("id", editingPost.id);
+        const { error } = await supabase.from("blog_posts").update(postData).eq("id", editingPost.id);
         if (error) throw error;
       } else {
         const { error } = await supabase.from("blog_posts").insert(postData);
@@ -213,14 +294,17 @@ const AdminBlogs = () => {
               <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="url-friendly-slug" />
             </div>
             <div>
-              <Label>Content (WYSIWYG)</Label>
-              <div className="bg-background rounded-md border">
+              <Label className="mb-2 block">Content (WYSIWYG) — Click the image icon in toolbar to upload images</Label>
+              <div className="bg-background rounded-md border blog-editor">
                 <ReactQuill
+                  ref={quillRef}
                   theme="snow"
                   value={content}
                   onChange={setContent}
                   modules={quillModules}
-                  className="min-h-[300px]"
+                  formats={quillFormats}
+                  className="min-h-[500px]"
+                  placeholder="Start writing your blog post... Use the toolbar to format text, add images, videos, and more."
                 />
               </div>
             </div>
@@ -278,13 +362,58 @@ const AdminBlogs = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Thumbnail Upload */}
             <div>
-              <Label>Thumbnail URL</Label>
-              <Input value={thumbnailUrl} onChange={(e) => setThumbnailUrl(e.target.value)} placeholder="https://..." />
-              {thumbnailUrl && (
-                <img src={thumbnailUrl} alt="Thumbnail" className="mt-2 rounded-md w-full h-32 object-cover" />
+              <Label>Thumbnail Image</Label>
+              {thumbnailUrl ? (
+                <div className="relative mt-2 group">
+                  <img src={thumbnailUrl} alt="Thumbnail" className="w-full h-40 object-cover rounded-lg border" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => thumbnailInputRef.current?.click()}
+                    >
+                      <Edit className="h-3 w-3 mr-1" /> Replace
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={removeThumbnail}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" /> Remove
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="mt-2 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
+                  onClick={() => thumbnailInputRef.current?.click()}
+                >
+                  {thumbnailUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                      <p className="text-sm text-muted-foreground">Uploading...</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">Click to upload thumbnail</p>
+                      <p className="text-xs text-muted-foreground">JPG, PNG, WebP up to 5MB</p>
+                    </div>
+                  )}
+                </div>
               )}
+              <input
+                ref={thumbnailInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleThumbnailUpload}
+              />
             </div>
+
             <div>
               <Label>Category</Label>
               <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Selling Tips" />
