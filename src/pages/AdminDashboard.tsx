@@ -23,6 +23,8 @@ import AdminCustomValues from "@/components/admin/AdminCustomValues";
 import AdminTiers from "@/components/admin/AdminTiers";
 import AdminBumpPackages from "@/components/admin/AdminBumpPackages";
 import AdminPromotions from "@/components/admin/AdminPromotions";
+import AdminBlogs from "@/components/admin/AdminBlogs";
+import AdminCareers from "@/components/admin/AdminCareers";
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -94,6 +96,8 @@ const AdminDashboard = () => {
     if (path.includes('/affiliates')) return 'Affiliates';
     if (path.includes('/custom-values')) return 'Custom Field Values';
     if (path.includes('/diagnostics')) return 'System Diagnostics';
+    if (path.includes('/blog')) return 'Blog Management';
+    if (path.includes('/careers')) return 'Careers Management';
     return 'Overview';
   };
 
@@ -164,6 +168,8 @@ const AdminDashboard = () => {
                 {hasPermission("view_affiliates") && <Route path="affiliates" element={<AdminAffiliates />} />}
                 <Route path="diagnostics" element={<AdminDiagnostics />} />
                 <Route path="custom-values" element={<AdminCustomValues />} />
+                <Route path="blog" element={<AdminBlogs />} />
+                <Route path="careers" element={<AdminCareers />} />
               </Routes>
             </div>
           </main>

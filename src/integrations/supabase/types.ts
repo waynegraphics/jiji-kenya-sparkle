@@ -550,6 +550,69 @@ export type Database = {
           },
         ]
       }
+      blog_posts: {
+        Row: {
+          author_id: string
+          author_name: string
+          category: string | null
+          content: string
+          created_at: string
+          excerpt: string | null
+          faqs: Json | null
+          id: string
+          keywords: string[] | null
+          meta_description: string | null
+          published_at: string | null
+          read_time: string | null
+          slug: string
+          status: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          views: number | null
+        }
+        Insert: {
+          author_id: string
+          author_name?: string
+          category?: string | null
+          content?: string
+          created_at?: string
+          excerpt?: string | null
+          faqs?: Json | null
+          id?: string
+          keywords?: string[] | null
+          meta_description?: string | null
+          published_at?: string | null
+          read_time?: string | null
+          slug: string
+          status?: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string
+          views?: number | null
+        }
+        Update: {
+          author_id?: string
+          author_name?: string
+          category?: string | null
+          content?: string
+          created_at?: string
+          excerpt?: string | null
+          faqs?: Json | null
+          id?: string
+          keywords?: string[] | null
+          meta_description?: string | null
+          published_at?: string | null
+          read_time?: string | null
+          slug?: string
+          status?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          views?: number | null
+        }
+        Relationships: []
+      }
       bump_packages: {
         Row: {
           created_at: string
@@ -630,6 +693,113 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      career_applications: {
+        Row: {
+          admin_notes: string | null
+          cover_letter: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          opening_id: string
+          phone: string | null
+          resume_url: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          cover_letter?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          opening_id: string
+          phone?: string | null
+          resume_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          cover_letter?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          opening_id?: string
+          phone?: string | null
+          resume_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_applications_opening_id_fkey"
+            columns: ["opening_id"]
+            isOneToOne: false
+            referencedRelation: "career_openings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      career_openings: {
+        Row: {
+          application_deadline: string | null
+          benefits: string[] | null
+          created_at: string
+          department: string
+          description: string
+          display_order: number | null
+          id: string
+          job_type: string
+          location: string
+          requirements: string[] | null
+          salary_range: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          application_deadline?: string | null
+          benefits?: string[] | null
+          created_at?: string
+          department: string
+          description?: string
+          display_order?: number | null
+          id?: string
+          job_type?: string
+          location?: string
+          requirements?: string[] | null
+          salary_range?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          application_deadline?: string | null
+          benefits?: string[] | null
+          created_at?: string
+          department?: string
+          description?: string
+          display_order?: number | null
+          id?: string
+          job_type?: string
+          location?: string
+          requirements?: string[] | null
+          salary_range?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       construction_listings: {
         Row: {
