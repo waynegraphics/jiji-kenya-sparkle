@@ -64,7 +64,7 @@ const SellerAIAssistant = ({
 
   return (
     <div className="fixed bottom-6 right-6 z-50 w-[90vw] max-w-sm">
-    <Card className="border-primary/20 bg-primary/5 shadow-2xl">
+    <Card className="border-primary/20 bg-white shadow-2xl">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
