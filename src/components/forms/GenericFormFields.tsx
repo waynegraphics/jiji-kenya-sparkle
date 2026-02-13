@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { X } from "lucide-react";
+import { X, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -22,13 +22,23 @@ interface GenericFormFieldsProps {
   errors: Record<string, string>;
 }
 
-// Shared condition options
-const conditions = [
+// Shared condition options per category context
+const generalConditions = [
   { value: "brand_new", label: "Brand New" },
   { value: "like_new", label: "Like New" },
   { value: "good", label: "Good" },
   { value: "fair", label: "Fair" },
   { value: "for_parts", label: "For Parts" },
+];
+
+// Colors palette (comprehensive)
+const colorOptions = [
+  "Black", "White", "Silver", "Gray", "Red", "Blue", "Navy", "Green",
+  "Dark Green", "Brown", "Beige", "Gold", "Rose Gold", "Orange", "Yellow",
+  "Purple", "Pink", "Teal", "Cyan", "Maroon", "Burgundy", "Cream",
+  "Ivory", "Champagne", "Bronze", "Copper", "Coral", "Lavender",
+  "Mint", "Olive", "Peach", "Turquoise", "Wine Red", "Charcoal",
+  "Space Gray", "Midnight Blue", "Forest Green", "Sky Blue", "Other"
 ];
 
 // ── Electronics ──
@@ -40,7 +50,42 @@ const deviceTypes = [
 const electronicsBrands = [
   "Apple", "Samsung", "HP", "Dell", "Lenovo", "LG", "Sony", "Asus",
   "Acer", "Microsoft", "Hisense", "TCL", "JBL", "Bose", "Canon",
-  "Nikon", "Epson", "Logitech", "Other"
+  "Nikon", "Epson", "Logitech", "BenQ", "ViewSonic", "AOC", "Philips",
+  "Panasonic", "Sharp", "Toshiba", "MSI", "Razer", "Other"
+];
+const screenResolutions = [
+  "HD (1366x768)", "Full HD (1920x1080)", "QHD / 2K (2560x1440)",
+  "4K UHD (3840x2160)", "5K (5120x2880)", "8K (7680x4320)",
+  "WQXGA (2560x1600)", "UWQHD (3440x1440)", "Other"
+];
+const refreshRates = [
+  "60Hz", "75Hz", "100Hz", "120Hz", "144Hz", "165Hz", "240Hz", "360Hz", "Other"
+];
+const panelTypes = [
+  "IPS", "VA", "TN", "OLED", "AMOLED", "Mini-LED", "QLED", "Nano IPS", "Other"
+];
+const operatingSystems = [
+  "Windows 11", "Windows 10", "macOS", "Chrome OS", "Linux / Ubuntu",
+  "FreeDOS (No OS)", "Other"
+];
+const graphicsCards = [
+  "Integrated Graphics", "NVIDIA GeForce GTX 1650", "NVIDIA GeForce GTX 1660",
+  "NVIDIA GeForce RTX 3050", "NVIDIA GeForce RTX 3060", "NVIDIA GeForce RTX 3070",
+  "NVIDIA GeForce RTX 3080", "NVIDIA GeForce RTX 4050", "NVIDIA GeForce RTX 4060",
+  "NVIDIA GeForce RTX 4070", "NVIDIA GeForce RTX 4080", "NVIDIA GeForce RTX 4090",
+  "NVIDIA GeForce RTX 5070", "NVIDIA GeForce RTX 5080", "NVIDIA GeForce RTX 5090",
+  "AMD Radeon RX 6600", "AMD Radeon RX 6700", "AMD Radeon RX 7600",
+  "AMD Radeon RX 7700", "AMD Radeon RX 7800", "AMD Radeon RX 7900",
+  "Apple M1", "Apple M2", "Apple M3", "Apple M4", "Other"
+];
+const processorOptions = [
+  "Intel Core i3", "Intel Core i5", "Intel Core i7", "Intel Core i9",
+  "Intel Core Ultra 5", "Intel Core Ultra 7", "Intel Core Ultra 9",
+  "Intel Celeron", "Intel Pentium", "AMD Ryzen 3", "AMD Ryzen 5",
+  "AMD Ryzen 7", "AMD Ryzen 9", "Apple M1", "Apple M1 Pro", "Apple M1 Max",
+  "Apple M2", "Apple M2 Pro", "Apple M2 Max", "Apple M3", "Apple M3 Pro",
+  "Apple M3 Max", "Apple M4", "Apple M4 Pro", "Apple M4 Max",
+  "Qualcomm Snapdragon", "MediaTek", "Other"
 ];
 
 // ── Phones ──
@@ -50,7 +95,7 @@ const phoneBrands = [
   "Sony", "Nothing", "Other"
 ];
 const storageSizes = ["16GB", "32GB", "64GB", "128GB", "256GB", "512GB", "1TB", "2TB", "Other"];
-const ramSizes = ["1GB", "2GB", "3GB", "4GB", "6GB", "8GB", "12GB", "16GB", "32GB", "64GB"];
+const ramSizes = ["1GB", "2GB", "3GB", "4GB", "6GB", "8GB", "12GB", "16GB", "32GB", "64GB", "128GB"];
 
 // ── Fashion ──
 const genders = [
@@ -70,6 +115,15 @@ const fashionBrands = [
   "Calvin Klein", "Tommy Hilfiger", "Massimo Dutti", "Under Armour", "Other"
 ];
 const sizes = ["XS", "S", "M", "L", "XL", "XXL", "XXXL", "One Size", "28", "30", "32", "34", "36", "38", "40", "42", "44"];
+const fashionMaterials = [
+  "Cotton", "Polyester", "Silk", "Wool", "Linen", "Denim", "Leather",
+  "Suede", "Nylon", "Satin", "Chiffon", "Cashmere", "Velvet", "Fleece",
+  "Spandex", "Rayon", "Other"
+];
+const fashionOccasions = [
+  "Casual", "Formal", "Business", "Sport/Athletic", "Party/Evening",
+  "Wedding", "Traditional/Cultural", "Beach", "Outdoor", "Other"
+];
 
 // ── Animals & Pets ──
 const animalTypes = [
@@ -106,6 +160,10 @@ const furnitureBrands = [
 const furnitureMaterials = [
   "Wood", "Metal", "Plastic", "Glass", "Leather", "Fabric", "Bamboo",
   "MDF/Chipboard", "Stainless Steel", "Other"
+];
+const furnitureStyles = [
+  "Modern", "Classic", "Contemporary", "Minimalist", "Rustic", "Industrial",
+  "Mid-Century", "Scandinavian", "Traditional", "Bohemian", "Other"
 ];
 
 // ── Babies & Kids ──
@@ -180,14 +238,43 @@ const leisureBrands = [
   "Nintendo", "PlayStation", "Xbox", "Other"
 ];
 
-// Helper: Searchable select with "Other" manual input
+// ── Helper: determine which fields are relevant per device type ──
+const electronicsFieldVisibility = (deviceType: string) => {
+  const dt = (deviceType || "").toLowerCase();
+  const isComputer = ["laptop", "desktop computer"].includes(dt);
+  const isMonitor = dt === "monitor";
+  const isTV = dt === "tv";
+  const isScreen = isMonitor || isTV;
+  const isCamera = dt === "camera";
+  const isPrinter = dt === "printer";
+  const isConsole = dt === "gaming console";
+  const isAudio = dt === "audio equipment";
+  const isProjector = dt === "projector";
+  const isNetwork = ["router/networking", "smart home device", "ups/power supply"].includes(dt);
+
+  return {
+    showStorage: isComputer || isConsole,
+    showRam: isComputer,
+    showProcessor: isComputer,
+    showScreenSize: isComputer || isScreen || isProjector,
+    showScreenResolution: isComputer || isScreen || isProjector || isCamera,
+    showRefreshRate: isComputer || isScreen,
+    showPanelType: isScreen || isComputer,
+    showOS: isComputer || isConsole,
+    showGraphicsCard: isComputer,
+    showGenericSpecs: isCamera || isPrinter || isAudio || isNetwork || !deviceType,
+  };
+};
+
+// Helper: Searchable select with "Other" manual input and search filtering
 const SearchableSelect = ({ label, value, options, onChange, required, error, placeholder, categorySlug, fieldName }: {
   label: string; value: string; options: string[]; onChange: (v: string) => void;
   required?: boolean; error?: string; placeholder?: string;
   categorySlug?: string; fieldName?: string;
 }) => {
   const [customValue, setCustomValue] = useState("");
-  const [showCustom, setShowCustom] = useState(value === "__custom__" || (value && !options.includes(value) && value !== ""));
+  const [showCustom, setShowCustom] = useState(value === "__custom__" || (!!value && !options.includes(value) && value !== ""));
+  const [searchTerm, setSearchTerm] = useState("");
   const { user } = useAuth();
 
   // Fetch approved custom values for this field
@@ -208,6 +295,9 @@ const SearchableSelect = ({ label, value, options, onChange, required, error, pl
   });
 
   const allOptions = [...options, ...(approvedCustom?.filter(v => !options.includes(v)) || [])];
+  const filteredOptions = searchTerm
+    ? allOptions.filter(opt => opt.toLowerCase().includes(searchTerm.toLowerCase()))
+    : allOptions;
 
   const submitCustomValue = async (val: string) => {
     if (!user || !categorySlug || !fieldName || !val.trim()) return;
@@ -234,6 +324,7 @@ const SearchableSelect = ({ label, value, options, onChange, required, error, pl
             onChange(customValue || "");
           } else {
             setShowCustom(false);
+            setSearchTerm("");
             onChange(v);
           }
         }}
@@ -242,9 +333,29 @@ const SearchableSelect = ({ label, value, options, onChange, required, error, pl
           <SelectValue placeholder={placeholder || `Select ${label.toLowerCase()}`} />
         </SelectTrigger>
         <SelectContent className="max-h-60">
-          {allOptions.map((opt) => (
+          {allOptions.length > 8 && (
+            <div className="px-2 pb-2 sticky top-0 bg-popover">
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder={`Search ${label.toLowerCase()}...`}
+                  value={searchTerm}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    setSearchTerm(e.target.value);
+                  }}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  className="h-8 pl-8 text-sm"
+                />
+              </div>
+            </div>
+          )}
+          {filteredOptions.map((opt) => (
             <SelectItem key={opt} value={opt}>{opt}</SelectItem>
           ))}
+          {filteredOptions.length === 0 && searchTerm && (
+            <p className="text-sm text-muted-foreground px-2 py-1">No results found</p>
+          )}
           <SelectItem value="__custom__">✏️ Enter manually...</SelectItem>
         </SelectContent>
       </Select>
@@ -268,40 +379,127 @@ const SearchableSelect = ({ label, value, options, onChange, required, error, pl
   );
 };
 
+// Helper: Condition select that properly maps values
+const ConditionSelect = ({ value, onChange, required, error, conditionOptions }: {
+  value: string; onChange: (v: string) => void; required?: boolean; error?: string;
+  conditionOptions?: typeof generalConditions;
+}) => {
+  const options = conditionOptions || generalConditions;
+  return (
+    <div className="space-y-2">
+      <Label>Condition{required ? " *" : ""}</Label>
+      <Select value={value || ""} onValueChange={onChange}>
+        <SelectTrigger className={error ? "border-destructive" : ""}>
+          <SelectValue placeholder="Select condition" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((c) => (
+            <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+};
+
 const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericFormFieldsProps) => {
   const updateField = (field: string, value: unknown) => {
     onChange({ ...data, [field]: value });
   };
 
   switch (categorySlug) {
-    case "electronics":
+    case "electronics": {
+      const deviceType = (data.device_type as string) || "";
+      const vis = electronicsFieldVisibility(deviceType);
       return (
         <div className="space-y-6">
-          <SearchableSelect label="Device Type" value={data.device_type as string || ""} options={deviceTypes}
-            onChange={(v) => updateField("device_type", v)} required error={errors.device_type} categorySlug={categorySlug} fieldName="device_type" />
+          <SearchableSelect label="Device Type" value={deviceType} options={deviceTypes}
+            onChange={(v) => updateField("device_type", v)} required error={errors.device_type}
+            categorySlug={categorySlug} fieldName="device_type" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SearchableSelect label="Brand" value={data.brand as string || ""} options={electronicsBrands}
-              onChange={(v) => updateField("brand", v)} required error={errors.brand} categorySlug={categorySlug} fieldName="brand" />
+              onChange={(v) => updateField("brand", v)} required error={errors.brand}
+              categorySlug={categorySlug} fieldName="brand" />
             <div className="space-y-2">
               <Label>Model *</Label>
-              <Input value={data.model as string || ""} onChange={(e) => updateField("model", e.target.value)} placeholder="e.g., MacBook Pro 14-inch" />
+              <Input value={data.model as string || ""} onChange={(e) => updateField("model", e.target.value)}
+                placeholder={deviceType === "Monitor" ? "e.g., Dell U2723QE" : deviceType === "TV" ? "e.g., Samsung QN85B" : "e.g., MacBook Pro 14-inch"} />
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <SearchableSelect label="Storage" value={data.storage as string || ""} options={storageSizes} onChange={(v) => updateField("storage", v)} />
-            <SearchableSelect label="RAM" value={data.ram as string || ""} options={ramSizes} onChange={(v) => updateField("ram", v)} />
-            <SearchableSelect label="Condition" value={data.condition as string || ""} options={conditions.map(c => c.label)}
-              onChange={(v) => {
-                const cond = conditions.find(c => c.label === v);
-                updateField("condition", cond ? cond.value : v);
-              }} required />
-          </div>
+
+          <ConditionSelect value={data.condition as string || ""} onChange={(v) => updateField("condition", v)} required error={errors.condition} />
+
+          {/* Screen specs */}
+          {vis.showScreenSize && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Screen Size</Label>
+                <Input value={data.screen_size as string || ""} onChange={(e) => updateField("screen_size", e.target.value)}
+                  placeholder='e.g., 27", 15.6"' />
+              </div>
+              {vis.showScreenResolution && (
+                <SearchableSelect label="Screen Resolution" value={data.screen_resolution as string || ""} options={screenResolutions}
+                  onChange={(v) => updateField("screen_resolution", v)} categorySlug={categorySlug} fieldName="screen_resolution" />
+              )}
+            </div>
+          )}
+
+          {(vis.showRefreshRate || vis.showPanelType) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {vis.showRefreshRate && (
+                <SearchableSelect label="Refresh Rate" value={data.refresh_rate as string || ""} options={refreshRates}
+                  onChange={(v) => updateField("refresh_rate", v)} categorySlug={categorySlug} fieldName="refresh_rate" />
+              )}
+              {vis.showPanelType && (
+                <SearchableSelect label="Panel Type" value={data.panel_type as string || ""} options={panelTypes}
+                  onChange={(v) => updateField("panel_type", v)} categorySlug={categorySlug} fieldName="panel_type" />
+              )}
+            </div>
+          )}
+
+          {/* Computer specs */}
+          {vis.showProcessor && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <SearchableSelect label="Processor" value={data.processor as string || ""} options={processorOptions}
+                onChange={(v) => updateField("processor", v)} categorySlug={categorySlug} fieldName="processor" />
+              <SearchableSelect label="Graphics Card" value={data.graphics_card as string || ""} options={graphicsCards}
+                onChange={(v) => updateField("graphics_card", v)} categorySlug={categorySlug} fieldName="graphics_card" />
+            </div>
+          )}
+
+          {(vis.showStorage || vis.showRam) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {vis.showStorage && (
+                <SearchableSelect label="Storage" value={data.storage as string || ""} options={storageSizes}
+                  onChange={(v) => updateField("storage", v)} categorySlug={categorySlug} fieldName="storage" />
+              )}
+              {vis.showRam && (
+                <SearchableSelect label="RAM" value={data.ram as string || ""} options={ramSizes}
+                  onChange={(v) => updateField("ram", v)} categorySlug={categorySlug} fieldName="ram" />
+              )}
+            </div>
+          )}
+
+          {vis.showOS && (
+            <SearchableSelect label="Operating System" value={data.operating_system as string || ""} options={operatingSystems}
+              onChange={(v) => updateField("operating_system", v)} categorySlug={categorySlug} fieldName="operating_system" />
+          )}
+
           <div className="flex items-center justify-between">
             <div><Label>Has Warranty</Label><p className="text-sm text-muted-foreground">Is warranty still valid?</p></div>
             <Switch checked={data.has_warranty as boolean} onCheckedChange={(v) => updateField("has_warranty", v)} />
           </div>
+          {data.has_warranty && (
+            <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+              <Label>Warranty Duration</Label>
+              <Input value={data.warranty_duration as string || ""} onChange={(e) => updateField("warranty_duration", e.target.value)}
+                placeholder="e.g., 6 months, 1 year" />
+            </div>
+          )}
         </div>
       );
+    }
 
     case "phones-tablets":
       return (
@@ -320,29 +518,38 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
               </Select>
             </div>
             <SearchableSelect label="Brand" value={data.brand as string || ""} options={phoneBrands}
-              onChange={(v) => updateField("brand", v)} required />
+              onChange={(v) => updateField("brand", v)} required categorySlug={categorySlug} fieldName="brand" />
           </div>
           <div className="space-y-2">
             <Label>Model *</Label>
             <Input value={data.model as string || ""} onChange={(e) => updateField("model", e.target.value)} placeholder="e.g., iPhone 15 Pro Max" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SearchableSelect label="Storage" value={data.storage as string || ""} options={storageSizes}
-              onChange={(v) => updateField("storage", v)} required />
-            <SearchableSelect label="Condition" value={data.condition as string || ""} options={conditions.map(c => c.label)}
-              onChange={(v) => {
-                const cond = conditions.find(c => c.label === v);
-                updateField("condition", cond ? cond.value : v);
-              }} required />
-            <div className="space-y-2">
-              <Label>Color</Label>
-              <Input value={data.color as string || ""} onChange={(e) => updateField("color", e.target.value)} placeholder="e.g., Space Black" />
-            </div>
+              onChange={(v) => updateField("storage", v)} required categorySlug={categorySlug} fieldName="storage" />
+            <ConditionSelect value={data.condition as string || ""} onChange={(v) => updateField("condition", v)} required error={errors.condition} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SearchableSelect label="Color" value={data.color as string || ""} options={colorOptions}
+              onChange={(v) => updateField("color", v)} categorySlug={categorySlug} fieldName="color" />
+            <SearchableSelect label="RAM" value={data.ram as string || ""} options={ramSizes}
+              onChange={(v) => updateField("ram", v)} categorySlug={categorySlug} fieldName="ram" />
           </div>
           <div className="flex items-center justify-between">
             <div><Label>Unlocked</Label><p className="text-sm text-muted-foreground">Is the device unlocked?</p></div>
             <Switch checked={data.is_unlocked as boolean ?? true} onCheckedChange={(v) => updateField("is_unlocked", v)} />
           </div>
+          <div className="flex items-center justify-between">
+            <div><Label>Has Warranty</Label><p className="text-sm text-muted-foreground">Is warranty still valid?</p></div>
+            <Switch checked={data.has_warranty as boolean} onCheckedChange={(v) => updateField("has_warranty", v)} />
+          </div>
+          {data.has_warranty && (
+            <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+              <Label>Warranty Duration</Label>
+              <Input value={data.warranty_duration as string || ""} onChange={(e) => updateField("warranty_duration", e.target.value)}
+                placeholder="e.g., 6 months, 1 year" />
+            </div>
+          )}
         </div>
       );
 
@@ -360,29 +567,24 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
               </Select>
             </div>
             <SearchableSelect label="Clothing Type" value={data.clothing_type as string || ""} options={clothingTypes}
-              onChange={(v) => updateField("clothing_type", v)} required />
+              onChange={(v) => updateField("clothing_type", v)} required categorySlug={categorySlug} fieldName="clothing_type" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <SearchableSelect label="Size" value={data.size as string || ""} options={sizes}
-              onChange={(v) => updateField("size", v)} required />
+              onChange={(v) => updateField("size", v)} required categorySlug={categorySlug} fieldName="size" />
             <SearchableSelect label="Brand" value={data.brand as string || ""} options={fashionBrands}
-              onChange={(v) => updateField("brand", v)} />
-            <SearchableSelect label="Condition" value={data.condition as string || ""} options={conditions.slice(0, 4).map(c => c.label)}
-              onChange={(v) => {
-                const cond = conditions.find(c => c.label === v);
-                updateField("condition", cond ? cond.value : v);
-              }} required />
+              onChange={(v) => updateField("brand", v)} categorySlug={categorySlug} fieldName="brand" />
+            <ConditionSelect value={data.condition as string || ""} onChange={(v) => updateField("condition", v)} required error={errors.condition}
+              conditionOptions={generalConditions.slice(0, 4)} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Color</Label>
-              <Input value={data.color as string || ""} onChange={(e) => updateField("color", e.target.value)} placeholder="e.g., Blue" />
-            </div>
-            <div className="space-y-2">
-              <Label>Material</Label>
-              <Input value={data.material as string || ""} onChange={(e) => updateField("material", e.target.value)} placeholder="e.g., Cotton" />
-            </div>
+            <SearchableSelect label="Color" value={data.color as string || ""} options={colorOptions}
+              onChange={(v) => updateField("color", v)} categorySlug={categorySlug} fieldName="color" />
+            <SearchableSelect label="Material" value={data.material as string || ""} options={fashionMaterials}
+              onChange={(v) => updateField("material", v)} categorySlug={categorySlug} fieldName="material" />
           </div>
+          <SearchableSelect label="Occasion" value={data.occasion as string || ""} options={fashionOccasions}
+            onChange={(v) => updateField("occasion", v)} categorySlug={categorySlug} fieldName="occasion" />
         </div>
       );
 
@@ -391,7 +593,7 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SearchableSelect label="Animal Type" value={data.animal_type as string || ""} options={animalTypes}
-              onChange={(v) => updateField("animal_type", v)} required />
+              onChange={(v) => updateField("animal_type", v)} required categorySlug={categorySlug} fieldName="animal_type" />
             <div className="space-y-2">
               <Label>Breed</Label>
               <Input value={data.breed as string || ""} onChange={(e) => updateField("breed", e.target.value)} placeholder="e.g., German Shepherd" />
@@ -426,12 +628,12 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
       return (
         <div className="space-y-6">
           <SearchableSelect label="Product Type" value={data.product_type as string || ""} options={beautyProductTypes}
-            onChange={(v) => updateField("product_type", v)} required error={errors.product_type} />
+            onChange={(v) => updateField("product_type", v)} required error={errors.product_type} categorySlug={categorySlug} fieldName="product_type" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SearchableSelect label="Brand" value={data.brand as string || ""} options={beautyBrands}
-              onChange={(v) => updateField("brand", v)} />
+              onChange={(v) => updateField("brand", v)} categorySlug={categorySlug} fieldName="brand" />
             <SearchableSelect label="Skin Type" value={data.skin_type as string || ""} options={skinTypes}
-              onChange={(v) => updateField("skin_type", v)} />
+              onChange={(v) => updateField("skin_type", v)} categorySlug={categorySlug} fieldName="skin_type" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -445,11 +647,8 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
                 </SelectContent>
               </Select>
             </div>
-            <SearchableSelect label="Condition" value={data.condition as string || ""} options={conditions.slice(0, 3).map(c => c.label)}
-              onChange={(v) => {
-                const cond = conditions.find(c => c.label === v);
-                updateField("condition", cond ? cond.value : v);
-              }} />
+            <ConditionSelect value={data.condition as string || ""} onChange={(v) => updateField("condition", v)}
+              conditionOptions={generalConditions.slice(0, 3)} />
           </div>
           <div className="flex items-center justify-between">
             <div><Label>Organic/Natural</Label><p className="text-sm text-muted-foreground">Is this product organic or natural?</p></div>
@@ -466,33 +665,25 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
       return (
         <div className="space-y-6">
           <SearchableSelect label="Item Type" value={data.item_type as string || ""} options={furnitureItemTypes}
-            onChange={(v) => updateField("item_type", v)} required error={errors.item_type} />
+            onChange={(v) => updateField("item_type", v)} required error={errors.item_type} categorySlug={categorySlug} fieldName="item_type" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SearchableSelect label="Brand" value={data.brand as string || ""} options={furnitureBrands}
-              onChange={(v) => updateField("brand", v)} />
+              onChange={(v) => updateField("brand", v)} categorySlug={categorySlug} fieldName="brand" />
             <SearchableSelect label="Material" value={data.material as string || ""} options={furnitureMaterials}
-              onChange={(v) => updateField("material", v)} />
+              onChange={(v) => updateField("material", v)} categorySlug={categorySlug} fieldName="material" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SearchableSelect label="Condition" value={data.condition as string || ""} options={conditions.map(c => c.label)}
-              onChange={(v) => {
-                const cond = conditions.find(c => c.label === v);
-                updateField("condition", cond ? cond.value : v);
-              }} required />
+            <ConditionSelect value={data.condition as string || ""} onChange={(v) => updateField("condition", v)} required error={errors.condition} />
+            <SearchableSelect label="Color" value={data.color as string || ""} options={colorOptions}
+              onChange={(v) => updateField("color", v)} categorySlug={categorySlug} fieldName="color" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Dimensions</Label>
               <Input value={data.dimensions as string || ""} onChange={(e) => updateField("dimensions", e.target.value)} placeholder="e.g., 200cm x 150cm x 80cm" />
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Color</Label>
-              <Input value={data.color as string || ""} onChange={(e) => updateField("color", e.target.value)} placeholder="e.g., Brown" />
-            </div>
-            <div className="space-y-2">
-              <Label>Style</Label>
-              <Input value={data.style as string || ""} onChange={(e) => updateField("style", e.target.value)} placeholder="e.g., Modern, Classic" />
-            </div>
+            <SearchableSelect label="Style" value={data.style as string || ""} options={furnitureStyles}
+              onChange={(v) => updateField("style", v)} categorySlug={categorySlug} fieldName="style" />
           </div>
           <div className="flex items-center justify-between">
             <div><Label>Assembly Required</Label><p className="text-sm text-muted-foreground">Does this need assembly?</p></div>
@@ -505,12 +696,12 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
       return (
         <div className="space-y-6">
           <SearchableSelect label="Item Type" value={data.item_type as string || ""} options={kidsItemTypes}
-            onChange={(v) => updateField("item_type", v)} required error={errors.item_type} />
+            onChange={(v) => updateField("item_type", v)} required error={errors.item_type} categorySlug={categorySlug} fieldName="item_type" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SearchableSelect label="Brand" value={data.brand as string || ""} options={kidsBrands}
-              onChange={(v) => updateField("brand", v)} />
+              onChange={(v) => updateField("brand", v)} categorySlug={categorySlug} fieldName="brand" />
             <SearchableSelect label="Age Range" value={data.age_range as string || ""} options={ageRanges}
-              onChange={(v) => updateField("age_range", v)} />
+              onChange={(v) => updateField("age_range", v)} categorySlug={categorySlug} fieldName="age_range" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -524,11 +715,8 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
                 </SelectContent>
               </Select>
             </div>
-            <SearchableSelect label="Condition" value={data.condition as string || ""} options={conditions.slice(0, 4).map(c => c.label)}
-              onChange={(v) => {
-                const cond = conditions.find(c => c.label === v);
-                updateField("condition", cond ? cond.value : v);
-              }} required />
+            <ConditionSelect value={data.condition as string || ""} onChange={(v) => updateField("condition", v)} required error={errors.condition}
+              conditionOptions={generalConditions.slice(0, 4)} />
           </div>
           <div className="flex items-center justify-between">
             <div><Label>Safety Certified</Label><p className="text-sm text-muted-foreground">Has safety certifications?</p></div>
@@ -541,7 +729,7 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
       return (
         <div className="space-y-6">
           <SearchableSelect label="Service Type" value={data.service_type as string || ""} options={serviceTypes}
-            onChange={(v) => updateField("service_type", v)} required error={errors.service_type} />
+            onChange={(v) => updateField("service_type", v)} required error={errors.service_type} categorySlug={categorySlug} fieldName="service_type" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Pricing Model</Label>
@@ -581,7 +769,7 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
       return (
         <div className="space-y-6">
           <SearchableSelect label="Product Type" value={data.product_type as string || ""} options={agriProductTypes}
-            onChange={(v) => updateField("product_type", v)} required error={errors.product_type} />
+            onChange={(v) => updateField("product_type", v)} required error={errors.product_type} categorySlug={categorySlug} fieldName="product_type" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Quantity</Label>
@@ -620,15 +808,11 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
       return (
         <div className="space-y-6">
           <SearchableSelect label="Item Type" value={data.item_type as string || ""} options={constructionItemTypes}
-            onChange={(v) => updateField("item_type", v)} required error={errors.item_type} />
+            onChange={(v) => updateField("item_type", v)} required error={errors.item_type} categorySlug={categorySlug} fieldName="item_type" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SearchableSelect label="Brand" value={data.brand as string || ""} options={constructionBrands}
-              onChange={(v) => updateField("brand", v)} />
-            <SearchableSelect label="Condition" value={data.condition as string || ""} options={conditions.map(c => c.label)}
-              onChange={(v) => {
-                const cond = conditions.find(c => c.label === v);
-                updateField("condition", cond ? cond.value : v);
-              }} />
+              onChange={(v) => updateField("brand", v)} categorySlug={categorySlug} fieldName="brand" />
+            <ConditionSelect value={data.condition as string || ""} onChange={(v) => updateField("condition", v)} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
@@ -656,21 +840,17 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
       return (
         <div className="space-y-6">
           <SearchableSelect label="Equipment Type" value={data.equipment_type as string || ""} options={equipmentTypes}
-            onChange={(v) => updateField("equipment_type", v)} required error={errors.equipment_type} />
+            onChange={(v) => updateField("equipment_type", v)} required error={errors.equipment_type} categorySlug={categorySlug} fieldName="equipment_type" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SearchableSelect label="Brand" value={data.brand as string || ""} options={equipmentBrands}
-              onChange={(v) => updateField("brand", v)} />
+              onChange={(v) => updateField("brand", v)} categorySlug={categorySlug} fieldName="brand" />
             <div className="space-y-2">
               <Label>Model</Label>
               <Input value={data.model as string || ""} onChange={(e) => updateField("model", e.target.value)} placeholder="e.g., CAT 320" />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <SearchableSelect label="Condition" value={data.condition as string || ""} options={conditions.map(c => c.label)}
-              onChange={(v) => {
-                const cond = conditions.find(c => c.label === v);
-                updateField("condition", cond ? cond.value : v);
-              }} />
+            <ConditionSelect value={data.condition as string || ""} onChange={(v) => updateField("condition", v)} />
             <div className="space-y-2">
               <Label>Year</Label>
               <Input type="number" value={data.year as number || ""} onChange={(e) => updateField("year", parseInt(e.target.value))} placeholder="e.g., 2020" />
@@ -706,15 +886,11 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
       return (
         <div className="space-y-6">
           <SearchableSelect label="Item Type" value={data.item_type as string || ""} options={leisureItemTypes}
-            onChange={(v) => updateField("item_type", v)} required error={errors.item_type} />
+            onChange={(v) => updateField("item_type", v)} required error={errors.item_type} categorySlug={categorySlug} fieldName="item_type" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SearchableSelect label="Brand" value={data.brand as string || ""} options={leisureBrands}
-              onChange={(v) => updateField("brand", v)} />
-            <SearchableSelect label="Condition" value={data.condition as string || ""} options={conditions.map(c => c.label)}
-              onChange={(v) => {
-                const cond = conditions.find(c => c.label === v);
-                updateField("condition", cond ? cond.value : v);
-              }} required />
+              onChange={(v) => updateField("brand", v)} categorySlug={categorySlug} fieldName="brand" />
+            <ConditionSelect value={data.condition as string || ""} onChange={(v) => updateField("condition", v)} required error={errors.condition} />
           </div>
         </div>
       );
@@ -732,15 +908,7 @@ const GenericFormFields = ({ categorySlug, data, onChange, errors }: GenericForm
               <Label>Brand</Label>
               <Input value={data.brand as string || ""} onChange={(e) => updateField("brand", e.target.value)} placeholder="Brand name" />
             </div>
-            <div className="space-y-2">
-              <Label>Condition *</Label>
-              <Select value={data.condition as string} onValueChange={(v) => updateField("condition", v)}>
-                <SelectTrigger><SelectValue placeholder="Select condition" /></SelectTrigger>
-                <SelectContent>
-                  {conditions.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            <ConditionSelect value={data.condition as string || ""} onChange={(v) => updateField("condition", v)} />
           </div>
         </div>
       );

@@ -76,6 +76,8 @@ const PropertyFormFields = ({ data, onChange, errors }: PropertyFormFieldsProps)
   };
 
   const isLand = data.property_type === "land";
+  const isCommercial = ["commercial", "office", "warehouse", "shop"].includes(data.property_type || "");
+  const showBedrooms = !isLand && !isCommercial;
   const isRental = data.listing_type === "for_rent" || data.listing_type === "short_stay";
 
   return (
@@ -123,8 +125,8 @@ const PropertyFormFields = ({ data, onChange, errors }: PropertyFormFieldsProps)
         </div>
       </div>
 
-      {/* Bedrooms & Bathrooms (not for land) */}
-      {!isLand && (
+      {/* Bedrooms & Bathrooms (only for residential) */}
+      {showBedrooms && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Bedrooms *</Label>
@@ -195,7 +197,7 @@ const PropertyFormFields = ({ data, onChange, errors }: PropertyFormFieldsProps)
         )}
       </div>
 
-      {/* Furnished (not for land) */}
+      {/* Furnished (not for land/commercial without furnishing) */}
       {!isLand && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -314,7 +316,7 @@ const PropertyFormFields = ({ data, onChange, errors }: PropertyFormFieldsProps)
         </div>
       )}
 
-      {/* Amenities (not for land) */}
+      {/* Amenities */}
       {!isLand && (
         <div className="space-y-3">
           <Label>Amenities</Label>
