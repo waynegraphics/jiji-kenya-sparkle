@@ -1,7 +1,9 @@
 import { Shield, Truck, HeadphonesIcon, CheckCircle } from "lucide-react";
 import AjaxSearch from "./AjaxSearch";
+import AISearchBar from "./AISearchBar";
 import LocationPopup from "./LocationPopup";
 import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const features = [
   { icon: Shield, title: "Safe & Secure", description: "Verified sellers" },
@@ -32,13 +34,26 @@ const HeroBanner = () => {
         </div>
 
         {/* Search Bar + Location - Desktop */}
-        <div className="hidden md:flex max-w-3xl mx-auto mb-8 gap-2 items-center">
-          <LocationPopup
-            onSelect={handleLocationSelect}
-            selectedCounty={selectedCounty}
-            selectedTown={selectedTown}
-          />
-          <AjaxSearch className="flex-1" inputClassName="h-12 rounded-lg" />
+        <div className="hidden md:block max-w-3xl mx-auto mb-8">
+          <Tabs defaultValue="smart" className="w-full">
+            <TabsList className="grid w-48 grid-cols-2 mx-auto mb-3 bg-card/20">
+              <TabsTrigger value="smart" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">✨ Smart</TabsTrigger>
+              <TabsTrigger value="classic" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">Classic</TabsTrigger>
+            </TabsList>
+            <div className="flex gap-2 items-center">
+              <LocationPopup
+                onSelect={handleLocationSelect}
+                selectedCounty={selectedCounty}
+                selectedTown={selectedTown}
+              />
+              <TabsContent value="smart" className="flex-1 mt-0">
+                <AISearchBar />
+              </TabsContent>
+              <TabsContent value="classic" className="flex-1 mt-0">
+                <AjaxSearch inputClassName="h-12 rounded-lg" />
+              </TabsContent>
+            </div>
+          </Tabs>
         </div>
 
         {/* Mobile Search + Location */}
@@ -48,7 +63,18 @@ const HeroBanner = () => {
             selectedCounty={selectedCounty}
             selectedTown={selectedTown}
           />
-          <AjaxSearch inputClassName="h-10 rounded-lg" />
+          <Tabs defaultValue="smart" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-2 bg-card/20">
+              <TabsTrigger value="smart" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">✨ Smart Search</TabsTrigger>
+              <TabsTrigger value="classic" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">Classic</TabsTrigger>
+            </TabsList>
+            <TabsContent value="smart" className="mt-0">
+              <AISearchBar />
+            </TabsContent>
+            <TabsContent value="classic" className="mt-0">
+              <AjaxSearch inputClassName="h-10 rounded-lg" />
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Feature Pills */}

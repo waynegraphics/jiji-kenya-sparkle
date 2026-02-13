@@ -15,7 +15,7 @@ import {
   LayoutDashboard, Users, FileText, FolderTree, Package, 
   MessageSquare, LifeBuoy, Flag, Settings, Shield, ShieldCheck,
   UsersRound, Link2, Activity, ListChecks, Crown, Zap, TrendingUp,
-  BookOpen, Briefcase
+  BookOpen, Briefcase, Brain
 } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 
@@ -54,6 +54,7 @@ const AdminSidebar = () => {
     { title: "Custom Values", url: `${basePath}/custom-values`, icon: ListChecks, permission: "manage_settings" },
     { title: "Blog", url: `${basePath}/blog`, icon: BookOpen, permission: null },
     { title: "Careers", url: `${basePath}/careers`, icon: Briefcase, permission: null },
+    { title: "AI Engine", url: `${basePath}/ai-settings`, icon: Brain, permission: "manage_settings" },
     { title: "Settings", url: `${basePath}/settings`, icon: Settings, permission: "manage_settings" },
   ];
 

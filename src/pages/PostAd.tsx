@@ -35,6 +35,7 @@ import VehicleFormFields from "@/components/forms/VehicleFormFields";
 import PropertyFormFields from "@/components/forms/PropertyFormFields";
 import JobFormFields from "@/components/forms/JobFormFields";
 import GenericFormFields from "@/components/forms/GenericFormFields";
+import SellerAIAssistant from "@/components/SellerAIAssistant";
 
 const ACCEPTED_IMAGE_TYPES = ".jpg,.jpeg,.png,.heic,.heif";
 const MAX_IMAGES = 10;
@@ -567,7 +568,22 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
       case 0: // Title & Description first
         return (
           <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
-            <h2 className="text-lg font-semibold">What are you listing?</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">What are you listing?</h2>
+              {selectedMainCategory && (
+                <SellerAIAssistant
+                  category={selectedMainCategory.name || categorySlug}
+                  title={baseFormData.title}
+                  description={baseFormData.description}
+                  price={baseFormData.price}
+                  location={baseFormData.location}
+                  categoryFields={categoryFormData}
+                  onApplyTitle={(t) => setBaseFormData(prev => ({ ...prev, title: t }))}
+                  onApplyDescription={(d) => setBaseFormData(prev => ({ ...prev, description: d }))}
+                  onApplyPrice={(p) => setBaseFormData(prev => ({ ...prev, price: p }))}
+                />
+              )}
+            </div>
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
               <Input id="title" value={baseFormData.title}
