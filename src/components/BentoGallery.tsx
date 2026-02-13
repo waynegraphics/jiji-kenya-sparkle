@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface BentoGalleryProps {
   images: string[];
@@ -13,6 +14,9 @@ interface BentoGalleryProps {
 const BentoGallery = ({ images, title, isFeatured, isUrgent }: BentoGalleryProps) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const isMobile = useIsMobile();
+  const thumbnailRef = useRef<HTMLDivElement>(null);
 
   const displayImages = images.length > 0 ? images : ["/placeholder.svg"];
 
@@ -24,7 +28,10 @@ const BentoGallery = ({ images, title, isFeatured, isUrgent }: BentoGalleryProps
   const nextImage = () => setLightboxIndex((i) => (i + 1) % displayImages.length);
   const prevImage = () => setLightboxIndex((i) => (i - 1 + displayImages.length) % displayImages.length);
 
-  // Airbnb-style bento: 1 large left + up to 4 small right
+  const selectImage = (index: number) => {
+    setActiveIndex(index);
+  };
+
   return (
     <>
       <div className="relative rounded-xl overflow-hidden">
@@ -34,17 +41,55 @@ const BentoGallery = ({ images, title, isFeatured, isUrgent }: BentoGalleryProps
           {isUrgent && <Badge className="bg-secondary text-secondary-foreground">URGENT</Badge>}
         </div>
 
-        {displayImages.length === 1 ? (
+        {isMobile ? (
+          /* ─── Mobile: Main image + thumbnail carousel ─── */
+          <div className="space-y-2">
+            {/* Main display image */}
+            <button onClick={() => openLightbox(activeIndex)} className="w-full">
+              <img
+                src={displayImages[activeIndex]}
+                alt={title}
+                className="w-full h-[260px] object-cover rounded-xl"
+              />
+            </button>
+
+            {/* Thumbnail carousel */}
+            {displayImages.length > 1 && (
+              <div
+                ref={thumbnailRef}
+                className="flex gap-2 overflow-x-auto pb-1 scrollbar-none"
+              >
+                {displayImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => selectImage(idx)}
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                      idx === activeIndex
+                        ? "border-primary ring-1 ring-primary"
+                        : "border-transparent opacity-70 hover:opacity-100"
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`${title} ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : displayImages.length === 1 ? (
           <button onClick={() => openLightbox(0)} className="w-full">
             <img
               src={displayImages[0]}
               alt={title}
-              className="w-full h-[260px] md:h-[320px] lg:h-[480px] object-cover"
+              className="w-full h-[320px] lg:h-[480px] object-cover"
             />
           </button>
         ) : (
-          <div className="grid grid-cols-4 grid-rows-2 gap-1.5 h-[260px] md:h-[320px] lg:h-[480px]">
-            {/* Main large image */}
+          /* ─── Desktop/Tablet: Bento grid ─── */
+          <div className="grid grid-cols-4 grid-rows-2 gap-1.5 h-[320px] lg:h-[480px]">
             <button
               onClick={() => openLightbox(0)}
               className="col-span-2 row-span-2 overflow-hidden"
@@ -56,7 +101,6 @@ const BentoGallery = ({ images, title, isFeatured, isUrgent }: BentoGalleryProps
               />
             </button>
 
-            {/* Smaller images */}
             {displayImages.slice(1, 5).map((img, idx) => (
               <button
                 key={idx}
@@ -68,7 +112,6 @@ const BentoGallery = ({ images, title, isFeatured, isUrgent }: BentoGalleryProps
                   alt={`${title} ${idx + 2}`}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                 />
-                {/* Show all photos overlay on last visible image */}
                 {idx === 3 && displayImages.length > 5 && (
                   <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center">
                     <span className="text-card font-semibold text-sm">
@@ -79,7 +122,6 @@ const BentoGallery = ({ images, title, isFeatured, isUrgent }: BentoGalleryProps
               </button>
             ))}
 
-            {/* Fill empty slots if less than 5 images */}
             {displayImages.length < 5 &&
               Array.from({ length: Math.min(4, 5 - displayImages.length) }).map((_, i) => (
                 <div key={`empty-${i}`} className="bg-muted" />
