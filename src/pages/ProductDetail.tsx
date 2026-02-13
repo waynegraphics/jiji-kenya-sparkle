@@ -588,7 +588,7 @@ const SimilarAds = ({ categoryId, currentId, categorySlug }: { categoryId: strin
   return (
     <div className="mt-10">
       <h2 className="text-xl font-bold mb-4">Similar Ads</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {ads.map((ad) => (
           <ProductCard 
             key={ad.id} 
