@@ -78,7 +78,7 @@ const AdminNotificationCenter = () => {
           description: `${s.name}: ${s.subject}`,
           time: s.created_at,
           icon: MessageSquare,
-          link: "/apa/dashboard/support",
+          link: `/apa/dashboard/support?tab=contacts&contactId=${s.id}`,
         })
       );
 
