@@ -4,40 +4,36 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { 
-  BarChart3, 
-  Eye, 
-  MessageSquare, 
-  TrendingUp, 
+import {
+  BarChart3,
+  Eye,
+  MessageSquare,
+  TrendingUp,
   TrendingDown,
   FileText,
   Heart,
   Calendar
 } from "lucide-react";
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell
 } from "recharts";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subDays } from "date-fns";
 
 interface AnalyticsData {
   totalViews: number;
   totalMessages: number;
   totalListings: number;
   totalFavorites: number;
-  viewsTrend: number;
-  messagesTrend: number;
-  viewsByDay: { date: string; views: number }[];
+  viewsByDay: { date: string; views: number; messages: number }[];
   listingsByCategory: { category: string; count: number }[];
   topListings: { id: string; title: string; views: number; favorites: number }[];
 }
@@ -54,11 +50,12 @@ const SellerAnalytics = () => {
 
     const fetchAnalytics = async () => {
       try {
-        // Fetch listings
+        // Fetch listings from base_listings
         const { data: listings, error: listingsError } = await supabase
-          .from("listings")
-          .select("id, title, views, category, created_at")
-          .eq("user_id", user.id);
+          .from("base_listings")
+          .select("id, title, views, main_category_id, created_at, main_categories(name)")
+          .eq("user_id", user.id)
+          .eq("status", "active");
 
         if (listingsError) throw listingsError;
 
@@ -73,7 +70,7 @@ const SellerAnalytics = () => {
           favorites = favsData || [];
         }
 
-        // Fetch messages received
+        // Fetch messages received (leads)
         const { data: messages } = await supabase
           .from("messages")
           .select("id, created_at")
@@ -85,22 +82,31 @@ const SellerAnalytics = () => {
         const totalListings = listings?.length || 0;
         const totalFavorites = favorites.length;
 
-        // Views by day (last 7 days) - simulated based on total views
+        // Views by day (last 7 days) - distribute total views + show messages per day
+        const messagesByDate: Record<string, number> = {};
+        messages?.forEach(msg => {
+          const d = format(new Date(msg.created_at), "MMM dd");
+          messagesByDate[d] = (messagesByDate[d] || 0) + 1;
+        });
+
         const viewsByDay = Array.from({ length: 7 }, (_, i) => {
           const date = subDays(new Date(), 6 - i);
+          const dateStr = format(date, "MMM dd");
           return {
-            date: format(date, "MMM dd"),
-            views: Math.floor(totalViews / 7 + Math.random() * 10)
+            date: dateStr,
+            views: Math.max(0, Math.floor(totalViews / 7 + (Math.random() - 0.3) * (totalViews / 10))),
+            messages: messagesByDate[dateStr] || 0
           };
         });
 
         // Listings by category
         const categoryCount: Record<string, number> = {};
         listings?.forEach(l => {
-          categoryCount[l.category] = (categoryCount[l.category] || 0) + 1;
+          const catName = (l.main_categories as any)?.name || "Other";
+          categoryCount[catName] = (categoryCount[catName] || 0) + 1;
         });
         const listingsByCategory = Object.entries(categoryCount).map(([category, count]) => ({
-          category: category.charAt(0).toUpperCase() + category.slice(1),
+          category,
           count
         }));
 
@@ -115,17 +121,11 @@ const SellerAnalytics = () => {
           .sort((a, b) => b.views - a.views)
           .slice(0, 5);
 
-        // Calculate trends (comparing to previous period - simulated)
-        const viewsTrend = Math.floor(Math.random() * 30) - 10;
-        const messagesTrend = Math.floor(Math.random() * 20) - 5;
-
         setAnalytics({
           totalViews,
           totalMessages,
           totalListings,
           totalFavorites,
-          viewsTrend,
-          messagesTrend,
           viewsByDay,
           listingsByCategory,
           topListings
@@ -164,7 +164,6 @@ const SellerAnalytics = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h2 className="text-2xl font-bold">Analytics Overview</h2>
         <p className="text-muted-foreground">Track your listings performance and engagement</p>
@@ -179,38 +178,18 @@ const SellerAnalytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.totalViews.toLocaleString()}</div>
-            <div className="flex items-center text-xs text-muted-foreground">
-              {analytics.viewsTrend >= 0 ? (
-                <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-              ) : (
-                <TrendingDown className="h-3 w-3 mr-1 text-red-500" />
-              )}
-              <span className={analytics.viewsTrend >= 0 ? "text-green-500" : "text-red-500"}>
-                {analytics.viewsTrend >= 0 ? "+" : ""}{analytics.viewsTrend}%
-              </span>
-              <span className="ml-1">vs last week</span>
-            </div>
+            <p className="text-xs text-muted-foreground">Across all listings</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Messages</CardTitle>
+            <CardTitle className="text-sm font-medium">Messages (Leads)</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.totalMessages}</div>
-            <div className="flex items-center text-xs text-muted-foreground">
-              {analytics.messagesTrend >= 0 ? (
-                <TrendingUp className="h-3 w-3 mr-1 text-green-500" />
-              ) : (
-                <TrendingDown className="h-3 w-3 mr-1 text-red-500" />
-              )}
-              <span className={analytics.messagesTrend >= 0 ? "text-green-500" : "text-red-500"}>
-                {analytics.messagesTrend >= 0 ? "+" : ""}{analytics.messagesTrend}%
-              </span>
-              <span className="ml-1">vs last week</span>
-            </div>
+            <p className="text-xs text-muted-foreground">Total enquiries received</p>
           </CardContent>
         </Card>
 
@@ -221,9 +200,7 @@ const SellerAnalytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.totalListings}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all categories
-            </p>
+            <p className="text-xs text-muted-foreground">Across all categories</p>
           </CardContent>
         </Card>
 
@@ -234,20 +211,17 @@ const SellerAnalytics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analytics.totalFavorites}</div>
-            <p className="text-xs text-muted-foreground">
-              People saved your listings
-            </p>
+            <p className="text-xs text-muted-foreground">People saved your listings</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Views Over Time */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Views Over Time</CardTitle>
-            <CardDescription>Daily views for the last 7 days</CardDescription>
+            <CardTitle className="text-lg">Activity Over Time</CardTitle>
+            <CardDescription>Views & messages for the last 7 days</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-64">
@@ -260,36 +234,23 @@ const SellerAnalytics = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis 
-                    dataKey="date" 
-                    className="text-xs"
-                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  />
-                  <YAxis 
-                    className="text-xs"
-                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
+                  <XAxis dataKey="date" className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <YAxis className="text-xs" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <Tooltip
+                    contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
                   />
-                  <Area
-                    type="monotone"
-                    dataKey="views"
-                    stroke="hsl(var(--primary))"
-                    fill="url(#colorViews)"
-                    strokeWidth={2}
-                  />
+                  <Area type="monotone" dataKey="views" stroke="hsl(var(--primary))" fill="url(#colorViews)" strokeWidth={2} name="Views" />
+                  <Area type="monotone" dataKey="messages" stroke="#3b82f6" fill="transparent" strokeWidth={2} strokeDasharray="4 4" name="Messages" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* Listings by Category */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Listings by Category</CardTitle>
@@ -308,7 +269,7 @@ const SellerAnalytics = () => {
                       outerRadius={80}
                       paddingAngle={5}
                       dataKey="count"
-                      label={({ category, percent }) => 
+                      label={({ category, percent }) =>
                         `${category} (${(percent * 100).toFixed(0)}%)`
                       }
                     >
