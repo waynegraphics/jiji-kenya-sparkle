@@ -126,24 +126,24 @@ const AdminDashboard = () => {
               <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm min-w-0">
                 <span className="text-muted-foreground hidden sm:inline">Admin</span>
                 <span className="text-muted-foreground hidden sm:inline">/</span>
-                <span className="font-medium truncate">{getPageTitle()}</span>
+                <span className="font-medium truncate hidden sm:inline">{getPageTitle()}</span>
               </nav>
             </div>
             
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <AdminNotificationCenter />
               {(isSuperAdmin || hasPermission("view_seller_dashboard")) && (
-                <Link to="/seller-dashboard" className="hidden sm:block">
-                  <Button variant="ghost" size="sm">
+                <Link to="/seller-dashboard">
+                  <Button variant="ghost" size="sm" className="px-2 sm:px-3">
                     <Eye className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden md:inline">View as Seller</span>
+                    <span className="hidden md:inline">Seller Panel</span>
                   </Button>
                 </Link>
               )}
               <Link to="/">
                 <Button variant="outline" size="sm" className="px-2 sm:px-3">
                   <Home className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">View Site</span>
+                  <span className="hidden sm:inline">Site</span>
                 </Button>
               </Link>
               <Button variant="outline" size="sm" onClick={handleLogout} className="px-2 sm:px-3">
@@ -154,8 +154,8 @@ const AdminDashboard = () => {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto">
-            <div className="max-w-7xl mx-auto">
+          <main className="flex-1 p-2 sm:p-4 md:p-6 overflow-x-hidden overflow-y-auto">
+            <div className="max-w-7xl mx-auto w-full">
               <Routes>
                 <Route index element={<AdminOverview />} />
                 {hasPermission("view_users") && <Route path="users" element={<AdminUsers />} />}

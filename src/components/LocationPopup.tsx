@@ -109,7 +109,7 @@ const LocationPopup = ({ onSelect, selectedCounty, selectedTown }: LocationPopup
       <Dialog open={open} onOpenChange={(v) => { if (!v) resetAndClose(); else setOpen(true); }}>
         <DialogContent className="max-w-4xl w-[95vw] p-0 gap-0 max-h-[85vh] [&>button]:hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-border gap-2 sm:gap-3">
             <div className="flex items-center gap-2 min-w-0">
               {drillCountyId && (
                 <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={goBack}>
@@ -122,10 +122,13 @@ const LocationPopup = ({ onSelect, selectedCounty, selectedTown }: LocationPopup
                   {!drillCountyId && `• ${total.toLocaleString()} Ads`}
                 </span>
               </DialogTitle>
+              <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto sm:hidden" onClick={resetAndClose}>
+                <X className="h-4 w-4" />
+              </Button>
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="relative w-52 md:w-64">
+              <div className="relative flex-1 sm:w-52 md:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   placeholder={drillCountyId ? "Find area..." : "Find county..."}
@@ -134,7 +137,7 @@ const LocationPopup = ({ onSelect, selectedCounty, selectedTown }: LocationPopup
                   className="pl-9 pr-3 h-9 text-sm"
                 />
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={resetAndClose}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:flex" onClick={resetAndClose}>
                 <X className="h-4 w-4" />
               </Button>
             </div>
