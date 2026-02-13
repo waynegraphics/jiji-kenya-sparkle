@@ -75,8 +75,13 @@ export function SellerSidebar() {
   };
 
   const getBadgeCount = (badgeType?: string) => {
-    if (badgeType === "messages") return unreadMessages;
-    if (badgeType === "notifications") return unreadNotifications;
+    // Don't show badge when user is already on that page (they're viewing it)
+    if (badgeType === "messages") {
+      return currentPath.startsWith("/seller-dashboard/messages") ? 0 : unreadMessages;
+    }
+    if (badgeType === "notifications") {
+      return currentPath.startsWith("/seller-dashboard/notifications") ? 0 : unreadNotifications;
+    }
     return 0;
   };
 
