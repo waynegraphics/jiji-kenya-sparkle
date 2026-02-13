@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
-import { useSellerAddons } from "@/hooks/useSubscriptions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,16 +18,13 @@ import {
   TrendingUp,
   Plus,
   ArrowRight,
-  Clock,
   AlertCircle
 } from "lucide-react";
-import { format } from "date-fns";
 import { CountdownTimer } from "@/components/CountdownTimer";
 
 const SellerOverview = () => {
   const { user } = useAuth();
   const { data: limits, isLoading: limitsLoading } = useSubscriptionLimits();
-  const { data: sellerAddons } = useSellerAddons(user?.id);
   
   const [stats, setStats] = useState({
     totalListings: 0,
@@ -37,7 +33,7 @@ const SellerOverview = () => {
     recentListings: [] as { id: string; title: string; views: number }[],
     tierUsage: { active: 0, total: 0 },
     promotionUsage: { active: 0, total: 0 },
-    bumpUsage: { used: 0, total: 0 }
+    bumpBalance: 0
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -71,11 +67,12 @@ const SellerOverview = () => {
           .select("id, expires_at")
           .eq("user_id", user.id);
 
-        // Fetch bump transactions
-        const { data: bumpTransactions } = await supabase
-          .from("bump_transactions")
-          .select("credits, type")
-          .eq("user_id", user.id);
+        // Fetch bump balance
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("bump_wallet_balance")
+          .eq("user_id", user.id)
+          .single();
 
         const totalViews = listings?.reduce((sum, l) => sum + (l.views || 0), 0) || 0;
         
@@ -87,10 +84,6 @@ const SellerOverview = () => {
         const activePromotions = listings?.filter(l => l.promotion_type_id && l.promotion_expires_at && new Date(l.promotion_expires_at) > new Date()).length || 0;
         const totalPromotionPurchases = promotionPurchases?.length || 0;
 
-        // Calculate bump usage
-        const bumpPurchases = bumpTransactions?.filter(t => t.type === 'purchase').reduce((sum, t) => sum + (t.credits || 0), 0) || 0;
-        const bumpUsed = Math.abs(bumpTransactions?.filter(t => t.type === 'use').reduce((sum, t) => sum + (t.credits || 0), 0) || 0);
-
         setStats({
           totalListings: listings?.length || 0,
           totalViews,
@@ -98,7 +91,7 @@ const SellerOverview = () => {
           recentListings: listings?.slice(0, 3).map(l => ({ id: l.id, title: l.title, views: l.views || 0 })) || [],
           tierUsage: { active: activeTiers, total: totalTierPurchases },
           promotionUsage: { active: activePromotions, total: totalPromotionPurchases },
-          bumpUsage: { used: bumpUsed, total: bumpPurchases }
+          bumpBalance: profile?.bump_wallet_balance || 0
         });
       } catch (error) {
         console.error("Error fetching stats:", error);
@@ -110,13 +103,6 @@ const SellerOverview = () => {
     fetchStats();
   }, [user]);
 
-  // Calculate add-on credits
-  const bumpCredits = sellerAddons?.filter(sa => sa.addon?.type === 'bumping')
-    .reduce((sum, a) => sum + (a.quantity_purchased - a.quantity_used), 0) || 0;
-  const featuredCredits = sellerAddons?.filter(sa => sa.addon?.type === 'featured')
-    .reduce((sum, a) => sum + (a.quantity_purchased - a.quantity_used), 0) || 0;
-  const promotionCredits = sellerAddons?.filter(sa => sa.addon?.type === 'promotion')
-    .reduce((sum, a) => sum + (a.quantity_purchased - a.quantity_used), 0) || 0;
 
   if (isLoading || limitsLoading) {
     return (
@@ -256,7 +242,7 @@ const SellerOverview = () => {
               <Zap className="h-5 w-5 text-primary" />
               Your Add-ons
             </CardTitle>
-            <CardDescription>Boost credits available</CardDescription>
+            <CardDescription>Boost credits & active packages</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -265,45 +251,50 @@ const SellerOverview = () => {
                   <Zap className="h-4 w-4 text-yellow-600" />
                   <div>
                     <span className="font-medium">Bump Credits</span>
-                    <p className="text-xs text-muted-foreground">Used: {stats.bumpUsage.used} / {stats.bumpUsage.total}</p>
+                    <p className="text-xs text-muted-foreground">Available to use</p>
                   </div>
                 </div>
-                <Badge variant="secondary">{bumpCredits}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{stats.bumpBalance}</Badge>
+                  <Link to="/seller-dashboard/subscription">
+                    <Button variant="outline" size="sm" className="h-7 text-xs px-2">Buy</Button>
+                  </Link>
+                </div>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20">
                 <div className="flex items-center gap-2">
                   <Star className="h-4 w-4 text-purple-600" />
                   <div>
-                    <span className="font-medium">Featured Credits</span>
-                    <p className="text-xs text-muted-foreground">Available</p>
+                    <span className="font-medium">Active Tiers</span>
+                    <p className="text-xs text-muted-foreground">{stats.tierUsage.active} ads boosted</p>
                   </div>
                 </div>
-                <Badge variant="secondary">{featuredCredits}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{stats.tierUsage.active}</Badge>
+                  <Link to="/seller-dashboard/subscription">
+                    <Button variant="outline" size="sm" className="h-7 text-xs px-2">Buy</Button>
+                  </Link>
+                </div>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-blue-600" />
                   <div>
-                    <span className="font-medium">Promotion Credits</span>
-                    <p className="text-xs text-muted-foreground">Available</p>
+                    <span className="font-medium">Active Promotions</span>
+                    <p className="text-xs text-muted-foreground">{stats.promotionUsage.active} ads promoted</p>
                   </div>
                 </div>
-                <Badge variant="secondary">{promotionCredits}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">{stats.promotionUsage.active}</Badge>
+                  <Link to="/seller-dashboard/subscription">
+                    <Button variant="outline" size="sm" className="h-7 text-xs px-2">Buy</Button>
+                  </Link>
+                </div>
               </div>
             </div>
-            <div className="mt-4 space-y-2">
-              <div className="flex items-center justify-between text-sm p-2 bg-muted rounded">
-                <span className="text-muted-foreground">Active Tiers:</span>
-                <Badge>{stats.tierUsage.active} / {stats.tierUsage.total}</Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm p-2 bg-muted rounded">
-                <span className="text-muted-foreground">Active Promotions:</span>
-                <Badge>{stats.promotionUsage.active} / {stats.promotionUsage.total}</Badge>
-              </div>
-            </div>
-            <Link to="/seller-dashboard/addons" className="block mt-4">
+            <Link to="/seller-dashboard/subscription" className="block mt-4">
               <Button variant="outline" className="w-full">
-                Manage Add-ons
+                Manage Packages & Add-ons
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </Link>
