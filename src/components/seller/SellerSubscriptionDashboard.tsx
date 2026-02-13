@@ -22,12 +22,20 @@ const SellerSubscriptionDashboard = () => {
   const { data: subscription, isLoading: subLoading } = useSellerSubscription(user?.id);
   const { data: packages } = useSubscriptionPackages(true);
 
-  const { data: bumpBalance } = useQuery({
-    queryKey: ["bump-balance", user?.id],
+  const { data: userCredits } = useQuery({
+    queryKey: ["user-credits-summary", user?.id],
     queryFn: async () => {
-      if (!user) return 0;
-      const { data } = await supabase.from("profiles").select("bump_wallet_balance").eq("user_id", user.id).single();
-      return data?.bump_wallet_balance || 0;
+      if (!user) return { bumpBalance: 0, unusedTiers: 0, unusedPromos: 0 };
+      const [profileRes, tiersRes, promosRes] = await Promise.all([
+        supabase.from("profiles").select("bump_wallet_balance").eq("user_id", user.id).single(),
+        supabase.from("listing_tier_purchases").select("id", { count: "exact" }).eq("user_id", user.id).is("listing_id", null).eq("status", "active").eq("payment_status", "completed"),
+        supabase.from("listing_promotions").select("id", { count: "exact" }).eq("user_id", user.id).is("listing_id", null).eq("status", "active").eq("payment_status", "completed"),
+      ]);
+      return {
+        bumpBalance: profileRes.data?.bump_wallet_balance || 0,
+        unusedTiers: tiersRes.count || 0,
+        unusedPromos: promosRes.count || 0,
+      };
     },
     enabled: !!user,
   });
@@ -139,7 +147,7 @@ const SellerSubscriptionDashboard = () => {
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-lg bg-blue-500/10"><Zap className="h-5 w-5 text-blue-600" /></div>
             <div>
-              <p className="text-2xl font-bold">{bumpBalance || 0}</p>
+              <p className="text-2xl font-bold">{userCredits?.bumpBalance || 0}</p>
               <p className="text-sm text-muted-foreground">Bump Credits</p>
             </div>
           </CardContent>
@@ -148,8 +156,8 @@ const SellerSubscriptionDashboard = () => {
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-lg bg-yellow-500/10"><Crown className="h-5 w-5 text-yellow-600" /></div>
             <div>
-              <p className="text-2xl font-bold">{tiers.filter(t => t.price > 0).length}</p>
-              <p className="text-sm text-muted-foreground">Ad Tiers Available</p>
+              <p className="text-2xl font-bold">{userCredits?.unusedTiers || 0}</p>
+              <p className="text-sm text-muted-foreground">Unused Tier Credits</p>
             </div>
           </CardContent>
         </Card>
@@ -157,8 +165,8 @@ const SellerSubscriptionDashboard = () => {
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-lg bg-orange-500/10"><Megaphone className="h-5 w-5 text-orange-600" /></div>
             <div>
-              <p className="text-2xl font-bold">{promotions.length}</p>
-              <p className="text-sm text-muted-foreground">Promotion Slots</p>
+              <p className="text-2xl font-bold">{userCredits?.unusedPromos || 0}</p>
+              <p className="text-sm text-muted-foreground">Unused Promotion Credits</p>
             </div>
           </CardContent>
         </Card>
@@ -184,7 +192,7 @@ const SellerSubscriptionDashboard = () => {
                   <Crown className="h-5 w-5 mx-auto mb-1" style={{ color: t.badge_color }} />
                   <h4 className="font-bold">{t.name}</h4>
                   <p className="text-lg font-extrabold mt-1">{t.price === 0 ? "Free" : fmt(t.price)}</p>
-                  <p className="text-xs text-muted-foreground mb-3">Weight: {t.priority_weight}{t.included_featured_days > 0 ? ` • ${t.included_featured_days}d featured` : ""}</p>
+                  <p className="text-xs text-muted-foreground mb-3">Weight: {t.priority_weight} • Max {(t as any).max_ads || 5} ads{t.included_featured_days > 0 ? ` • ${t.included_featured_days}d featured` : ""}</p>
                   <Button size="sm" className="w-full" onClick={() => navigate(`/checkout/tier/${t.id}`)}>
                     Purchase Tier
                   </Button>

@@ -39,6 +39,7 @@ const defaultForm = {
   name: "", priority_weight: 0, badge_label: "", badge_color: "#888888",
   border_style: "none", shadow_intensity: "none", ribbon_text: "",
   price: 0, currency: "KES", included_featured_days: 0, is_active: true, display_order: 0,
+  max_ads: 5,
 };
 
 const AdminTiers = () => {
@@ -110,6 +111,7 @@ const AdminTiers = () => {
       badge_color: t.badge_color, border_style: t.border_style, shadow_intensity: t.shadow_intensity,
       ribbon_text: t.ribbon_text || "", price: t.price, currency: t.currency,
       included_featured_days: t.included_featured_days, is_active: t.is_active, display_order: t.display_order,
+      max_ads: (t as any).max_ads || 5,
     });
     setIsFormOpen(true);
   };
@@ -163,7 +165,7 @@ const AdminTiers = () => {
                     {!t.is_active && <Badge variant="secondary">Inactive</Badge>}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {formatPrice(t.price)} per ad • {t.included_featured_days > 0 ? `${t.included_featured_days} featured days included` : "No featured days"}
+                    {formatPrice(t.price)} per ad • Max {(t as any).max_ads || 5} ads • {t.included_featured_days > 0 ? `${t.included_featured_days} featured days included` : "No featured days"}
                   </p>
                 </div>
                 <Switch checked={t.is_active} onCheckedChange={(v) => toggleActive.mutate({ id: t.id, active: v })} />
@@ -200,7 +202,10 @@ const AdminTiers = () => {
               <div><Label>Price (KES)</Label><Input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: parseFloat(e.target.value) || 0 }))} /></div>
               <div><Label>Included Featured Days</Label><Input type="number" value={form.included_featured_days} onChange={e => setForm(f => ({ ...f, included_featured_days: parseInt(e.target.value) || 0 }))} /></div>
             </div>
-            <div><Label>Display Order</Label><Input type="number" value={form.display_order} onChange={e => setForm(f => ({ ...f, display_order: parseInt(e.target.value) || 0 }))} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Max Ads Allowed</Label><Input type="number" value={form.max_ads} onChange={e => setForm(f => ({ ...f, max_ads: parseInt(e.target.value) || 1 }))} placeholder="e.g. 10 for Gold" /></div>
+              <div><Label>Display Order</Label><Input type="number" value={form.display_order} onChange={e => setForm(f => ({ ...f, display_order: parseInt(e.target.value) || 0 }))} /></div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
