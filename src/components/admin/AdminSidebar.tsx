@@ -14,7 +14,8 @@ import logo from "@/assets/logo.png";
 import { 
   LayoutDashboard, Users, FileText, FolderTree, Package, 
   MessageSquare, LifeBuoy, Flag, Settings, Shield, ShieldCheck,
-  UsersRound, Link2, Activity, ListChecks, Crown, Zap, TrendingUp
+  UsersRound, Link2, Activity, ListChecks, Crown, Zap, TrendingUp,
+  BookOpen, Briefcase
 } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 
@@ -51,6 +52,8 @@ const AdminSidebar = () => {
     { title: "Team", url: `${basePath}/team`, icon: UsersRound, permission: "manage_team", superAdminOnly: true },
     { title: "Diagnostics", url: `${basePath}/diagnostics`, icon: Activity, permission: "manage_settings" },
     { title: "Custom Values", url: `${basePath}/custom-values`, icon: ListChecks, permission: "manage_settings" },
+    { title: "Blog", url: `${basePath}/blog`, icon: BookOpen, permission: null },
+    { title: "Careers", url: `${basePath}/careers`, icon: Briefcase, permission: null },
     { title: "Settings", url: `${basePath}/settings`, icon: Settings, permission: "manage_settings" },
   ];
 

@@ -28,6 +28,7 @@ import AffiliateApply from "./pages/AffiliateApply";
 import NotFound from "./pages/NotFound";
 import ComparePage from "./pages/ComparePage";
 import AboutUs from "./pages/AboutUs";
+import BlogPost from "./pages/BlogPost";
 import ContactUs from "./pages/ContactUs";
 import FAQs from "./pages/FAQs";
 import Sellers from "./pages/Sellers";
@@ -101,6 +102,7 @@ const App = () => (
             <Route path="/saved-ads" element={<Navigate to="/favorites" replace />} />
             <Route path="/quick-links" element={<QuickLinks />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/careers" element={<Careers />} />
             
             {/* Legal & Policy Pages */}
