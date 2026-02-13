@@ -35,10 +35,10 @@ const HeroBanner = () => {
 
         {/* Search Bar + Location - Desktop */}
         <div className="hidden md:block max-w-3xl mx-auto mb-8">
-          <Tabs defaultValue="smart" className="w-full">
+          <Tabs defaultValue="classic" className="w-full">
             <TabsList className="grid w-48 grid-cols-2 mx-auto mb-3 bg-card/20">
+              <TabsTrigger value="classic" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">🔍 Classic</TabsTrigger>
               <TabsTrigger value="smart" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">✨ Smart</TabsTrigger>
-              <TabsTrigger value="classic" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">Classic</TabsTrigger>
             </TabsList>
             <div className="flex gap-2 items-center">
               <LocationPopup
@@ -63,10 +63,10 @@ const HeroBanner = () => {
             selectedCounty={selectedCounty}
             selectedTown={selectedTown}
           />
-          <Tabs defaultValue="smart" className="w-full">
+          <Tabs defaultValue="classic" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-2 bg-card/20">
+              <TabsTrigger value="classic" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">🔍 Classic</TabsTrigger>
               <TabsTrigger value="smart" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">✨ Smart Search</TabsTrigger>
-              <TabsTrigger value="classic" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">Classic</TabsTrigger>
             </TabsList>
             <TabsContent value="smart" className="mt-0">
               <AISearchBar />
