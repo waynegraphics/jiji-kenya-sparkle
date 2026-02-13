@@ -10,9 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Phone, CreditCard, CheckCircle, XCircle, ImageIcon } from "lucide-react";
+import { Loader2, Phone, CreditCard, CheckCircle, XCircle } from "lucide-react";
 
 const Checkout = () => {
   const { type, id, tierId } = useParams<{ type: string; id: string; tierId?: string }>();
@@ -21,7 +20,6 @@ const Checkout = () => {
   const { toast } = useToast();
   
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [selectedListingId, setSelectedListingId] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<"idle" | "pending" | "success" | "failed">("idle");
   const [transactionId, setTransactionId] = useState<string | null>(null);
@@ -67,23 +65,7 @@ const Checkout = () => {
   const isPromotion = type === "promotion";
   const isAddon = type === "addon";
 
-  // Fetch user's active listings for tier/promotion purchases
-  const needsListingSelection = isTier || isPromotion;
-  const { data: userListings = [] } = useQuery({
-    queryKey: ["user-active-listings", user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from("base_listings")
-        .select("id, title, images, location, price")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user && needsListingSelection,
-  });
+
 
   const selectedPackage = isSubscription ? packages.find(p => p.id === id) : null;
   const selectedListingTier = isTier ? listingTiers.find(t => t.id === id) : null;
@@ -172,10 +154,8 @@ const Checkout = () => {
       toast({ title: "Phone Required", description: "Please enter your M-Pesa phone number.", variant: "destructive" });
       return;
     }
-    if (needsListingSelection && !selectedListingId) {
-      toast({ title: "Select a Listing", description: "Please choose which ad to apply this to.", variant: "destructive" });
-      return;
-    }
+
+
 
     setIsProcessing(true);
     setPaymentStatus("pending");
@@ -211,7 +191,6 @@ const Checkout = () => {
           addon_purchase_id: addonPurchaseId,
           purchase_type: type,
           purchase_item_id: id,
-          listing_id: selectedListingId || undefined,
           account_reference: itemName?.substring(0, 12) || "Payment",
           transaction_desc: `Payment for ${itemName}`,
         },
@@ -276,41 +255,11 @@ const Checkout = () => {
             </CardContent>
           </Card>
 
-          {/* Listing Selector for Tiers & Promotions */}
-          {needsListingSelection && (
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5" />
-                  Select an Ad to {isTier ? "Upgrade" : "Promote"}
-                </CardTitle>
-                <CardDescription>Choose which of your active listings to apply this to</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {userListings.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-muted-foreground mb-3">You don't have any active listings yet.</p>
-                    <Button variant="outline" onClick={() => navigate("/post-ad")}>Post an Ad First</Button>
-                  </div>
-                ) : (
-                  <Select value={selectedListingId} onValueChange={setSelectedListingId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a listing..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {userListings.map((listing) => (
-                        <SelectItem key={listing.id} value={listing.id}>
-                          <div className="flex items-center gap-2">
-                            <span className="truncate max-w-[250px]">{listing.title}</span>
-                            <span className="text-xs text-muted-foreground">• {listing.location}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </CardContent>
-            </Card>
+
+          {(isTier || isPromotion) && (
+            <p className="text-sm text-muted-foreground text-center mb-4">
+              After purchase, you can apply this to any of your active listings from your Listings page.
+            </p>
           )}
 
           {paymentStatus === "success" ? (
@@ -358,7 +307,7 @@ const Checkout = () => {
                   className="w-full"
                   size="lg"
                   onClick={handlePayment}
-                  disabled={isProcessing || paymentStatus === "pending" || (needsListingSelection && !selectedListingId)}
+                  disabled={isProcessing || paymentStatus === "pending"}
                 >
                   {isProcessing || paymentStatus === "pending" ? (
                     <>

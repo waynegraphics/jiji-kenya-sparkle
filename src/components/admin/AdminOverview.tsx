@@ -3,18 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  Users, 
-  FileText, 
-  DollarSign, 
-  TrendingUp, 
-  UserPlus, 
-  FilePlus,
-  LifeBuoy,
-  BarChart3,
-  Eye,
-  MessageSquare
+  Users, FileText, DollarSign, TrendingUp, UserPlus, FilePlus,
+  LifeBuoy, BarChart3, Eye, MessageSquare
 } from "lucide-react";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subDays, startOfDay } from "date-fns";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 
 interface Stats {
@@ -44,36 +36,36 @@ const AdminOverview = () => {
         // Fetch all stats in parallel
         const [
           usersResult,
-          listingsResult,
           baseListingsResult,
           newUsersResult,
           newListingsResult,
           ticketsResult,
           messagesResult,
-          revenueResult
+          revenueResult,
+          // Fetch last 7 days of real data
+          usersLast7,
+          listingsLast7
         ] = await Promise.all([
           supabase.from("profiles").select("id", { count: "exact" }),
-          supabase.from("listings").select("id, views, created_at"),
           supabase.from("base_listings").select("id, status, views"),
           supabase.from("profiles").select("id", { count: "exact" }).gte("created_at", startOfToday),
           supabase.from("base_listings").select("id", { count: "exact" }).gte("created_at", startOfToday),
           supabase.from("support_tickets").select("id, status", { count: "exact" }).in("status", ["open", "in_progress", "pending"]),
           supabase.from("messages").select("id", { count: "exact" }),
-          supabase.from("payment_transactions").select("amount").eq("status", "completed")
+          supabase.from("payment_transactions").select("amount").eq("status", "completed"),
+          // Real growth data: users created in last 7 days
+          supabase.from("profiles").select("created_at").gte("created_at", subDays(today, 7).toISOString()),
+          supabase.from("base_listings").select("created_at").gte("created_at", subDays(today, 7).toISOString()),
         ]);
 
-        // Calculate stats
-        const totalViews = (listingsResult.data?.reduce((sum, l) => sum + (l.views || 0), 0) || 0) +
-                          (baseListingsResult.data?.reduce((sum, l) => sum + (l.views || 0), 0) || 0);
-        
+        const totalViews = baseListingsResult.data?.reduce((sum, l) => sum + (l.views || 0), 0) || 0;
         const activeListings = baseListingsResult.data?.filter(l => l.status === 'active').length || 0;
         const pendingListings = baseListingsResult.data?.filter(l => l.status === 'pending').length || 0;
-        
         const totalRevenue = revenueResult.data?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
 
         setStats({
           totalUsers: usersResult.count || 0,
-          totalListings: (listingsResult.data?.length || 0) + (baseListingsResult.data?.length || 0),
+          totalListings: baseListingsResult.data?.length || 0,
           activeListings,
           pendingListings,
           totalRevenue,
@@ -84,16 +76,30 @@ const AdminOverview = () => {
           totalMessages: messagesResult.count || 0
         });
 
-        // Generate growth data for chart (last 7 days)
-        const last7Days = Array.from({ length: 7 }, (_, i) => {
-          const date = subDays(today, 6 - i);
+        // Build real growth data for last 7 days
+        const days = Array.from({ length: 7 }, (_, i) => subDays(today, 6 - i));
+        const chartData = days.map(day => {
+          const dayStr = format(day, "yyyy-MM-dd");
+          const nextDay = new Date(day);
+          nextDay.setDate(nextDay.getDate() + 1);
+          
+          const usersOnDay = (usersLast7.data || []).filter(u => {
+            const d = u.created_at?.substring(0, 10);
+            return d === dayStr;
+          }).length;
+          
+          const listingsOnDay = (listingsLast7.data || []).filter(l => {
+            const d = l.created_at?.substring(0, 10);
+            return d === dayStr;
+          }).length;
+
           return {
-            date: format(date, "MMM dd"),
-            users: Math.floor(Math.random() * 10) + (usersResult.count || 0) / 7,
-            listings: Math.floor(Math.random() * 5) + (listingsResult.data?.length || 0) / 7,
+            date: format(day, "MMM dd"),
+            users: usersOnDay,
+            listings: listingsOnDay,
           };
         });
-        setGrowthData(last7Days);
+        setGrowthData(chartData);
 
       } catch (error) {
         console.error("Error fetching admin stats:", error);
@@ -110,9 +116,7 @@ const AdminOverview = () => {
       <div className="space-y-6">
         <Skeleton className="h-8 w-48" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
+          {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-32" />)}
         </div>
       </div>
     );
@@ -120,13 +124,11 @@ const AdminOverview = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h2 className="text-2xl font-bold">Admin Overview</h2>
         <p className="text-muted-foreground">Platform statistics and performance metrics</p>
       </div>
 
-      {/* Key Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -136,8 +138,7 @@ const AdminOverview = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats?.totalUsers.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <UserPlus className="h-3 w-3 text-green-500" />
-              +{stats?.newUsersToday} today
+              <UserPlus className="h-3 w-3 text-green-500" />+{stats?.newUsersToday} today
             </p>
           </CardContent>
         </Card>
@@ -150,8 +151,7 @@ const AdminOverview = () => {
           <CardContent>
             <div className="text-2xl font-bold">{stats?.totalListings.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <FilePlus className="h-3 w-3 text-green-500" />
-              +{stats?.newListingsToday} today
+              <FilePlus className="h-3 w-3 text-green-500" />+{stats?.newListingsToday} today
             </p>
           </CardContent>
         </Card>
@@ -163,9 +163,7 @@ const AdminOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats?.activeListings.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats?.pendingListings} pending approval
-            </p>
+            <p className="text-xs text-muted-foreground">{stats?.pendingListings} pending approval</p>
           </CardContent>
         </Card>
 
@@ -176,7 +174,7 @@ const AdminOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">KES {stats?.totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">From subscriptions & add-ons</p>
+            <p className="text-xs text-muted-foreground">From payments</p>
           </CardContent>
         </Card>
 
@@ -225,12 +223,11 @@ const AdminOverview = () => {
         </Card>
       </div>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Platform Growth</CardTitle>
-            <CardDescription>Users and listings over the last 7 days</CardDescription>
+            <CardDescription>New users and listings over the last 7 days</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -238,22 +235,10 @@ const AdminOverview = () => {
                 <LineChart data={growthData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="date" className="text-xs" />
-                  <YAxis className="text-xs" />
+                  <YAxis className="text-xs" allowDecimals={false} />
                   <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="users" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    name="Users"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="listings" 
-                    stroke="hsl(var(--chart-2))" 
-                    strokeWidth={2}
-                    name="Listings"
-                  />
+                  <Line type="monotone" dataKey="users" stroke="hsl(var(--primary))" strokeWidth={2} name="New Users" />
+                  <Line type="monotone" dataKey="listings" stroke="hsl(var(--chart-2))" strokeWidth={2} name="New Listings" />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -262,8 +247,8 @@ const AdminOverview = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Activity Overview</CardTitle>
-            <CardDescription>Daily activity metrics</CardDescription>
+            <CardTitle>Daily Activity</CardTitle>
+            <CardDescription>Daily registrations and listings</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -271,7 +256,7 @@ const AdminOverview = () => {
                 <BarChart data={growthData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="date" className="text-xs" />
-                  <YAxis className="text-xs" />
+                  <YAxis className="text-xs" allowDecimals={false} />
                   <Tooltip />
                   <Bar dataKey="users" fill="hsl(var(--primary))" name="New Users" />
                   <Bar dataKey="listings" fill="hsl(var(--chart-2))" name="New Listings" />
