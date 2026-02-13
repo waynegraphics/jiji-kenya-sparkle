@@ -4,6 +4,7 @@ import CategoryGrid from "@/components/CategoryGrid";
 import FeaturedListings from "@/components/FeaturedListings";
 import SuperchargeSearch from "@/components/SuperchargeSearch";
 import Footer from "@/components/Footer";
+import FloatingAIButton from "@/components/FloatingAIButton";
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
@@ -15,6 +16,7 @@ const Index = () => {
         <SuperchargeSearch />
       </main>
       <Footer />
+      <FloatingAIButton />
     </div>
   );
 };
