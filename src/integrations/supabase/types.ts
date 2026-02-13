@@ -715,11 +715,16 @@ export type Database = {
           condition: string | null
           created_at: string | null
           device_type: string
+          graphics_card: string | null
           has_warranty: boolean | null
           id: string
           model: string
+          operating_system: string | null
+          panel_type: string | null
           processor: string | null
           ram: string | null
+          refresh_rate: string | null
+          screen_resolution: string | null
           screen_size: string | null
           storage: string | null
           warranty_duration: string | null
@@ -730,11 +735,16 @@ export type Database = {
           condition?: string | null
           created_at?: string | null
           device_type: string
+          graphics_card?: string | null
           has_warranty?: boolean | null
           id: string
           model: string
+          operating_system?: string | null
+          panel_type?: string | null
           processor?: string | null
           ram?: string | null
+          refresh_rate?: string | null
+          screen_resolution?: string | null
           screen_size?: string | null
           storage?: string | null
           warranty_duration?: string | null
@@ -745,11 +755,16 @@ export type Database = {
           condition?: string | null
           created_at?: string | null
           device_type?: string
+          graphics_card?: string | null
           has_warranty?: boolean | null
           id?: string
           model?: string
+          operating_system?: string | null
+          panel_type?: string | null
           processor?: string | null
           ram?: string | null
+          refresh_rate?: string | null
+          screen_resolution?: string | null
           screen_size?: string | null
           storage?: string | null
           warranty_duration?: string | null

@@ -130,10 +130,11 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
 
   // Multi-step definitions
   const steps = [
+    { title: "Ad Info", icon: "📝" },
     { title: "Category & Location", icon: "📂" },
-    { title: `${selectedMainCategory?.name || "Category"} Details`, icon: "📝" },
+    { title: `${selectedMainCategory?.name || "Category"} Details`, icon: "⚙️" },
     ...(isJobCategory ? [] : [{ title: "Photos", icon: "📷" }]),
-    { title: "Ad Details & Price", icon: "💰" },
+    { title: "Pricing", icon: "💰" },
   ];
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -194,13 +195,16 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
     const newErrors: Record<string, string> = {};
     
     if (step === 0) {
+      if (!baseFormData.title.trim() || baseFormData.title.length < 5)
+        newErrors.title = "Title must be at least 5 characters";
+    }
+    
+    if (step === 1) {
       if (!selectedMainCategoryId) newErrors.category = "Please select a category";
       if (!baseFormData.location) newErrors.location = "Please select a location";
     }
     
     if (step === steps.length - 1) {
-      if (!baseFormData.title.trim() || baseFormData.title.length < 5)
-        newErrors.title = "Title must be at least 5 characters";
       if (!isJobCategory && (!baseFormData.price || parseFloat(baseFormData.price) < 1))
         newErrors.price = "Price must be at least 1";
     }
@@ -395,6 +399,11 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
           has_warranty: (data.has_warranty as boolean) || false,
           warranty_duration: (data.warranty_duration as string) || null,
           accessories_included: (data.accessories_included as string[]) || null,
+          screen_resolution: (data.screen_resolution as string) || null,
+          refresh_rate: (data.refresh_rate as string) || null,
+          panel_type: (data.panel_type as string) || null,
+          operating_system: (data.operating_system as string) || null,
+          graphics_card: (data.graphics_card as string) || null,
         }]);
         break;
       case "phones-tablets":
@@ -555,7 +564,30 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 0: // Category & Location
+      case 0: // Title & Description first
+        return (
+          <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
+            <h2 className="text-lg font-semibold">What are you listing?</h2>
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input id="title" value={baseFormData.title}
+                onChange={(e) => setBaseFormData(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="Enter a descriptive title" maxLength={100}
+                className={errors.title ? "border-destructive" : ""} />
+              {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
+              <p className="text-xs text-muted-foreground">{baseFormData.title.length}/100 characters</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea id="description" value={baseFormData.description}
+                onChange={(e) => setBaseFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe your item in detail..." rows={5} maxLength={2000} />
+              <p className="text-xs text-muted-foreground">{baseFormData.description.length}/2000 characters</p>
+            </div>
+          </div>
+        );
+
+      case 1: // Category & Location
         return (
           <div className="space-y-6">
             <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
@@ -605,7 +637,7 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
           </div>
         );
 
-      case 1: // Category-specific fields
+      case 2: // Category-specific fields
         return (
           <div className="bg-card rounded-xl p-6 shadow-card">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -618,9 +650,9 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
           </div>
         );
 
-      case 2: // Photos (or Ad Details for jobs)
+      case 3: // Photos (or Pricing for jobs)
         if (isJobCategory) {
-          return renderAdDetailsStep();
+          return renderPricingStep();
         }
         return (
           <div className="bg-card rounded-xl p-6 shadow-card">
@@ -656,35 +688,17 @@ const PostAd = ({ inDashboard = false }: PostAdProps = {}) => {
           </div>
         );
 
-      case 3: // Ad Details (non-jobs)
-        return renderAdDetailsStep();
+      case 4: // Pricing (non-jobs)
+        return renderPricingStep();
 
       default:
         return null;
     }
   };
 
-  const renderAdDetailsStep = () => (
+  const renderPricingStep = () => (
     <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
-      <h2 className="text-lg font-semibold mb-4">Ad Details</h2>
-
-      <div className="space-y-2">
-        <Label htmlFor="title">Title *</Label>
-        <Input id="title" value={baseFormData.title}
-          onChange={(e) => setBaseFormData(prev => ({ ...prev, title: e.target.value }))}
-          placeholder="Enter a descriptive title" maxLength={100}
-          className={errors.title ? "border-destructive" : ""} />
-        {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
-        <p className="text-xs text-muted-foreground">{baseFormData.title.length}/100 characters</p>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea id="description" value={baseFormData.description}
-          onChange={(e) => setBaseFormData(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="Describe your item in detail..." rows={5} maxLength={2000} />
-        <p className="text-xs text-muted-foreground">{baseFormData.description.length}/2000 characters</p>
-      </div>
+      <h2 className="text-lg font-semibold mb-4">Pricing</h2>
 
       {!isJobCategory && (
         <>
