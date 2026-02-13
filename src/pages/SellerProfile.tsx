@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
@@ -8,12 +8,13 @@ import SellerReviews from "@/components/SellerReviews";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   MapPin, Star, Shield, Calendar, Package, Phone, MessageCircle,
-  UserPlus, UserMinus, Eye, EyeOff, ExternalLink
+  UserPlus, UserMinus, Eye, EyeOff, ExternalLink, Search
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
@@ -60,6 +61,8 @@ const SellerProfile = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
   useEffect(() => {
     const fetchSellerData = async () => {
@@ -133,6 +136,31 @@ const SellerProfile = () => {
     return seller.account_type === "business" && seller.business_name ? seller.business_name : seller.display_name;
   };
 
+  // Extract unique categories from listings
+  const categories = useMemo(() => {
+    const cats = new Map<string, string>();
+    listings.forEach((l) => {
+      const cat = l.main_categories as any;
+      if (cat?.slug && cat?.name) {
+        cats.set(cat.slug, cat.name);
+      }
+    });
+    return Array.from(cats.entries()).map(([slug, name]) => ({ slug, name }));
+  }, [listings]);
+
+  // Filtered listings
+  const filteredListings = useMemo(() => {
+    let result = listings;
+    if (selectedCategory !== "all") {
+      result = result.filter((l) => (l.main_categories as any)?.slug === selectedCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((l) => l.title.toLowerCase().includes(q));
+    }
+    return result;
+  }, [listings, selectedCategory, searchQuery]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -151,6 +179,7 @@ const SellerProfile = () => {
   if (!seller) return null;
 
   const memberSince = new Date(seller.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const isOwnProfile = user?.id === userId;
 
   return (
     <div className="min-h-screen bg-background">
@@ -160,7 +189,6 @@ const SellerProfile = () => {
       <section className="relative bg-gradient-to-br from-primary/20 via-primary/10 to-background border-b">
         <div className="container mx-auto px-4 pt-8 pb-16 md:pt-12 md:pb-20">
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
-            {/* Avatar */}
             <Avatar className="h-24 w-24 md:h-32 md:w-32 ring-4 ring-card shadow-xl">
               <AvatarImage src={seller.avatar_url || ""} />
               <AvatarFallback className="bg-primary text-primary-foreground text-3xl md:text-4xl font-bold">
@@ -168,7 +196,6 @@ const SellerProfile = () => {
               </AvatarFallback>
             </Avatar>
 
-            {/* Info */}
             <div className="flex-1 text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
                 <h1 className="text-2xl md:text-3xl font-bold text-foreground">{getDisplayName()}</h1>
@@ -199,31 +226,30 @@ const SellerProfile = () => {
               )}
             </div>
 
-            {/* Actions */}
-            <div className="flex flex-wrap items-center gap-2">
-              {user && user.id !== userId && (
-                <>
-                  <Button
-                    variant={isFollowing ? "outline" : "default"}
-                    onClick={toggleFollow}
-                    className="gap-2"
-                  >
-                    {isFollowing ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                    {isFollowing ? "Unfollow" : "Follow"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      if (!user) { setIsAuthModalOpen(true); return; }
-                      navigate(`/messages?user=${userId}`);
-                    }}
-                  >
-                    <MessageCircle className="h-4 w-4 mr-2" />Message
-                  </Button>
-                </>
-              )}
-              <ShareMenu title={getDisplayName()} />
-            </div>
+            {/* Actions - show for everyone except own profile */}
+            {!isOwnProfile && (
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant={isFollowing ? "outline" : "default"}
+                  onClick={toggleFollow}
+                  className="gap-2"
+                >
+                  {isFollowing ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                  {isFollowing ? "Unfollow" : "Follow"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!user) { setIsAuthModalOpen(true); return; }
+                    navigate(`/messages?user=${userId}`);
+                  }}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />Message
+                </Button>
+                <ShareMenu title={getDisplayName()} />
+              </div>
+            )}
+            {isOwnProfile && <ShareMenu title={getDisplayName()} />}
           </div>
         </div>
       </section>
@@ -312,15 +338,47 @@ const SellerProfile = () => {
               </TabsList>
 
               <TabsContent value="listings">
-                {listings.length === 0 ? (
+                {/* Search & Filter Bar */}
+                <div className="flex flex-col sm:flex-row gap-3 mb-5">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search listings..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  {categories.length > 1 && (
+                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                      <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue placeholder="All Categories" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.slug} value={cat.slug}>{cat.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+
+                {filteredListings.length === 0 ? (
                   <div className="bg-card rounded-xl p-12 text-center">
                     <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-1">No active listings</h3>
-                    <p className="text-muted-foreground text-sm">This seller hasn't posted any ads yet.</p>
+                    <h3 className="text-lg font-semibold mb-1">
+                      {listings.length === 0 ? "No active listings" : "No listings match your search"}
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      {listings.length === 0
+                        ? "This seller hasn't posted any ads yet."
+                        : "Try adjusting your search or filter."}
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-                    {listings.map((listing) => (
+                    {filteredListings.map((listing) => (
                       <ProductCard
                         key={listing.id}
                         id={listing.id}
