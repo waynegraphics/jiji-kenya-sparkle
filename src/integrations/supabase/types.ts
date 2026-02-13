@@ -1615,7 +1615,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
-          listing_id: string
+          listing_id: string | null
           payment_reference: string | null
           payment_status: string
           promotion_type_id: string
@@ -1627,7 +1627,7 @@ export type Database = {
           created_at?: string
           expires_at: string
           id?: string
-          listing_id: string
+          listing_id?: string | null
           payment_reference?: string | null
           payment_status?: string
           promotion_type_id: string
@@ -1639,7 +1639,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
-          listing_id?: string
+          listing_id?: string | null
           payment_reference?: string | null
           payment_status?: string
           promotion_type_id?: string
@@ -1669,7 +1669,7 @@ export type Database = {
           created_at: string
           expires_at: string | null
           id: string
-          listing_id: string
+          listing_id: string | null
           payment_reference: string | null
           payment_status: string
           purchased_at: string
@@ -1681,7 +1681,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
-          listing_id: string
+          listing_id?: string | null
           payment_reference?: string | null
           payment_status?: string
           purchased_at?: string
@@ -1693,7 +1693,7 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
-          listing_id?: string
+          listing_id?: string | null
           payment_reference?: string | null
           payment_status?: string
           purchased_at?: string
@@ -3213,6 +3213,22 @@ export type Database = {
       admin_set_account_type: {
         Args: { new_account_type: string; target_user_id: string }
         Returns: undefined
+      }
+      apply_promotion_to_listing: {
+        Args: {
+          p_listing_id: string
+          p_promotion_purchase_id: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
+      apply_tier_to_listing: {
+        Args: {
+          p_listing_id: string
+          p_tier_purchase_id: string
+          p_user_id: string
+        }
+        Returns: boolean
       }
       bump_listing: {
         Args: { p_listing_id: string; p_user_id: string }

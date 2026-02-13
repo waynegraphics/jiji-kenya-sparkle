@@ -2,15 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSellerAddons } from "@/hooks/useSubscriptions";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -24,8 +23,8 @@ import { toast } from "sonner";
 import { 
   Loader2, Plus, Pencil, Trash2, Eye, MapPin, Clock,
   MoreVertical, Zap, Star, TrendingUp, Package,
-  LayoutGrid, List, Search, Filter, AlertTriangle,
-  CheckCircle, XCircle, FileText, Crown, Wallet
+  LayoutGrid, List, Search,
+  CheckCircle, XCircle, AlertTriangle, Crown, Wallet, Megaphone
 } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { CountdownTimer } from "@/components/CountdownTimer";
@@ -59,7 +58,6 @@ const SellerListings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { data: sellerAddons, refetch: refetchAddons } = useSellerAddons(user?.id);
   
   const [listings, setListings] = useState<BaseListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,6 +65,11 @@ const SellerListings = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [listingToDelete, setListingToDelete] = useState<BaseListing | null>(null);
   const [rejectionNoteDialog, setRejectionNoteDialog] = useState<string | null>(null);
+  
+  // Promote/Tier dialog state
+  const [promoteDialogListing, setPromoteDialogListing] = useState<BaseListing | null>(null);
+  const [tierDialogListing, setTierDialogListing] = useState<BaseListing | null>(null);
+  const [applyingId, setApplyingId] = useState<string | null>(null);
   
   // View & filter state
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -110,6 +113,42 @@ const SellerListings = () => {
     enabled: !!user,
   });
 
+  // Fetch unused promotion credits
+  const { data: unusedPromotions = [], refetch: refetchPromotions } = useQuery({
+    queryKey: ["unused-promotions", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("listing_promotions")
+        .select("id, promotion_type_id, promotion_types(name, duration_days, placement)")
+        .eq("user_id", user.id)
+        .is("listing_id", null)
+        .eq("status", "active")
+        .eq("payment_status", "completed");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch unused tier credits
+  const { data: unusedTiers = [], refetch: refetchTiers } = useQuery({
+    queryKey: ["unused-tiers", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("listing_tier_purchases")
+        .select("id, tier_id, listing_tiers(name, badge_color, priority_weight)")
+        .eq("user_id", user.id)
+        .is("listing_id", null)
+        .eq("status", "active")
+        .eq("payment_status", "completed");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
   const handleBump = async (listingId: string) => {
     if (!user) return;
     try {
@@ -124,6 +163,56 @@ const SellerListings = () => {
       fetchListings();
     } catch (error) {
       toast.error("Failed to bump ad");
+    }
+  };
+
+  const handleApplyPromotion = async (promotionPurchaseId: string, listingId: string) => {
+    if (!user) return;
+    setApplyingId(promotionPurchaseId);
+    try {
+      const { data, error } = await supabase.rpc("apply_promotion_to_listing", {
+        p_user_id: user.id,
+        p_promotion_purchase_id: promotionPurchaseId,
+        p_listing_id: listingId,
+      });
+      if (error) throw error;
+      if (data === false) {
+        toast.error("Could not apply promotion. It may have already been used.");
+        return;
+      }
+      toast.success("Promotion applied to your ad!");
+      refetchPromotions();
+      fetchListings();
+    } catch (error) {
+      toast.error("Failed to apply promotion");
+    } finally {
+      setApplyingId(null);
+      setPromoteDialogListing(null);
+    }
+  };
+
+  const handleApplyTier = async (tierPurchaseId: string, listingId: string) => {
+    if (!user) return;
+    setApplyingId(tierPurchaseId);
+    try {
+      const { data, error } = await supabase.rpc("apply_tier_to_listing", {
+        p_user_id: user.id,
+        p_tier_purchase_id: tierPurchaseId,
+        p_listing_id: listingId,
+      });
+      if (error) throw error;
+      if (data === false) {
+        toast.error("Could not apply tier. It may have already been used.");
+        return;
+      }
+      toast.success("Tier applied to your ad!");
+      refetchTiers();
+      fetchListings();
+    } catch (error) {
+      toast.error("Failed to apply tier");
+    } finally {
+      setApplyingId(null);
+      setTierDialogListing(null);
     }
   };
 
@@ -193,6 +282,9 @@ const SellerListings = () => {
     }
   };
 
+  const canPromote = (listing: BaseListing) => listing.status === "active" && !listing.promotion_type_id && unusedPromotions.length > 0;
+  const canApplyTier = (listing: BaseListing) => listing.status === "active" && !listing.tier_id && unusedTiers.length > 0;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -209,12 +301,23 @@ const SellerListings = () => {
           <h2 className="text-2xl font-bold">My Listings</h2>
           <p className="text-muted-foreground">Manage and boost your ads</p>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Bump Wallet */}
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
             <Wallet className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">{profile?.bump_wallet_balance || 0} bumps</span>
           </div>
+          {unusedPromotions.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
+              <Megaphone className="h-4 w-4 text-orange-500" />
+              <span className="text-sm font-medium">{unusedPromotions.length} promos</span>
+            </div>
+          )}
+          {unusedTiers.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
+              <Crown className="h-4 w-4 text-yellow-500" />
+              <span className="text-sm font-medium">{unusedTiers.length} tiers</span>
+            </div>
+          )}
           <Button onClick={() => navigate("/seller-dashboard/post-ad")}>
             <Plus className="h-4 w-4 mr-2" /> Post New Ad
           </Button>
@@ -338,14 +441,33 @@ const SellerListings = () => {
                 {listing.status === "rejected" && listing.rejection_note && (
                   <button onClick={() => setRejectionNoteDialog(listing.rejection_note)}
                     className="text-xs text-red-600 underline mt-1 flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" /> View rejection reason
+                    <AlertTriangle className="h-3 w-3" /> View reason
                   </button>
                 )}
                 <div className="flex gap-1 mt-2">
                   {listing.status === "active" && (
-                    <Button variant="outline" size="sm" className="text-xs h-7" onClick={(e) => { e.stopPropagation(); handleBump(listing.id); }}>
-                      <Zap className="h-3 w-3" />
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-xs h-7">
+                          <MoreVertical className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuItem onClick={() => handleBump(listing.id)}>
+                          <Zap className="h-3 w-3 mr-2" /> Bump Ad
+                        </DropdownMenuItem>
+                        {canPromote(listing) && (
+                          <DropdownMenuItem onClick={() => setPromoteDialogListing(listing)}>
+                            <Megaphone className="h-3 w-3 mr-2" /> Promote Ad
+                          </DropdownMenuItem>
+                        )}
+                        {canApplyTier(listing) && (
+                          <DropdownMenuItem onClick={() => setTierDialogListing(listing)}>
+                            <Crown className="h-3 w-3 mr-2" /> Apply Tier
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => navigate(`/seller-dashboard/edit-ad/${listing.id}`)}>
                     <Pencil className="h-3 w-3" />
@@ -389,6 +511,11 @@ const SellerListings = () => {
                         <Badge variant="outline" className="text-xs">{listing.main_categories.name}</Badge>
                       )}
                     </div>
+                    {listing.listing_tiers && (
+                      <Badge className="mt-2 text-xs" style={{ backgroundColor: listing.listing_tiers.badge_color + '20', color: listing.listing_tiers.badge_color, border: `1px solid ${listing.listing_tiers.badge_color}40` }}>
+                        <Crown className="h-3 w-3 mr-1" /> {listing.listing_tiers.name}
+                      </Badge>
+                    )}
                     {(listing.tier_expires_at || listing.promotion_expires_at) && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {listing.tier_expires_at && (
@@ -417,7 +544,7 @@ const SellerListings = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2 pt-3 mt-3 border-t">
+                  <div className="flex gap-2 pt-3 mt-3 border-t flex-wrap">
                     <Button variant="outline" size="sm" onClick={() => navigate(`/listing/${listing.id}`)}>
                       <Eye className="h-4 w-4 mr-1" /> View
                     </Button>
@@ -425,9 +552,21 @@ const SellerListings = () => {
                       <Pencil className="h-4 w-4 mr-1" /> Edit
                     </Button>
                     {listing.status === "active" && (
-                      <Button variant="outline" size="sm" onClick={() => handleBump(listing.id)}>
-                        <Zap className="h-4 w-4 mr-1" /> Bump
-                      </Button>
+                      <>
+                        <Button variant="outline" size="sm" onClick={() => handleBump(listing.id)}>
+                          <Zap className="h-4 w-4 mr-1" /> Bump
+                        </Button>
+                        {canPromote(listing) && (
+                          <Button variant="outline" size="sm" className="text-orange-600 border-orange-300 hover:bg-orange-50" onClick={() => setPromoteDialogListing(listing)}>
+                            <Megaphone className="h-4 w-4 mr-1" /> Promote
+                          </Button>
+                        )}
+                        {canApplyTier(listing) && (
+                          <Button variant="outline" size="sm" className="text-yellow-600 border-yellow-300 hover:bg-yellow-50" onClick={() => setTierDialogListing(listing)}>
+                            <Crown className="h-4 w-4 mr-1" /> Apply Tier
+                          </Button>
+                        )}
+                      </>
                     )}
                     <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={() => { setListingToDelete(listing); setDeleteDialogOpen(true); }}>
@@ -447,6 +586,85 @@ const SellerListings = () => {
           <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
         </div>
       )}
+
+      {/* Apply Promotion Dialog */}
+      <Dialog open={!!promoteDialogListing} onOpenChange={() => setPromoteDialogListing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Megaphone className="h-5 w-5 text-orange-500" /> Apply Promotion
+            </DialogTitle>
+            <DialogDescription>
+              Choose a promotion credit to apply to "{promoteDialogListing?.title}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[300px] overflow-y-auto">
+            {unusedPromotions.map((promo: any) => (
+              <div key={promo.id} className="flex items-center justify-between p-3 rounded-lg border hover:border-orange-300 transition-colors">
+                <div>
+                  <p className="font-medium text-sm">{promo.promotion_types?.name || "Promotion"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {promo.promotion_types?.duration_days} days • {promo.promotion_types?.placement}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={applyingId === promo.id}
+                  onClick={() => handleApplyPromotion(promo.id, promoteDialogListing!.id)}
+                >
+                  {applyingId === promo.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                </Button>
+              </div>
+            ))}
+            {unusedPromotions.length === 0 && (
+              <div className="text-center py-4">
+                <p className="text-muted-foreground mb-3">No unused promotion credits.</p>
+                <Button variant="outline" onClick={() => navigate("/seller-dashboard/subscription")}>Buy Promotions</Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Apply Tier Dialog */}
+      <Dialog open={!!tierDialogListing} onOpenChange={() => setTierDialogListing(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-yellow-500" /> Apply Tier
+            </DialogTitle>
+            <DialogDescription>
+              Choose a tier credit to apply to "{tierDialogListing?.title}"
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[300px] overflow-y-auto">
+            {unusedTiers.map((tier: any) => (
+              <div key={tier.id} className="flex items-center justify-between p-3 rounded-lg border hover:border-yellow-300 transition-colors">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tier.listing_tiers?.badge_color }} />
+                  <div>
+                    <p className="font-medium text-sm">{tier.listing_tiers?.name || "Tier"}</p>
+                    <p className="text-xs text-muted-foreground">Weight: {tier.listing_tiers?.priority_weight} • 30 days</p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  disabled={applyingId === tier.id}
+                  onClick={() => handleApplyTier(tier.id, tierDialogListing!.id)}
+                >
+                  {applyingId === tier.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                </Button>
+              </div>
+            ))}
+            {unusedTiers.length === 0 && (
+              <div className="text-center py-4">
+                <p className="text-muted-foreground mb-3">No unused tier credits.</p>
+                <Button variant="outline" onClick={() => navigate("/seller-dashboard/subscription")}>Buy Tiers</Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
