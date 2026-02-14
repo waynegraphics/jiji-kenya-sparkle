@@ -116,13 +116,12 @@ const AISearchBar = ({ className = "" }: AISearchBarProps) => {
             </Button>
           )}
           <Button
-            size="sm"
-            className="h-8 gap-1.5"
+            size="icon"
+            className="h-8 w-8"
             onClick={handleAISearch}
             disabled={isProcessing || !query.trim()}
           >
             {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-            Search
           </Button>
         </div>
       </div>
