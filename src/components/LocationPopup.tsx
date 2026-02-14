@@ -20,7 +20,7 @@ const LocationPopup = ({ onSelect, selectedCounty, selectedTown }: LocationPopup
   const [drillCountyName, setDrillCountyName] = useState("");
   const { data: counties = [] } = useCounties();
   const { data: adData } = useCountyAdCounts();
-  const { counts = {}, total = 0 } = adData || {};
+  const { counts = {}, townCounts = {}, total = 0 } = adData || {};
   const { data: towns = [] } = useTowns(drillCountyId || undefined);
 
   const grouped = useMemo(() => {
@@ -163,18 +163,24 @@ const LocationPopup = ({ onSelect, selectedCounty, selectedTown }: LocationPopup
 
                 {filteredTowns.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
-                    {filteredTowns.map((town) => (
-                      <button
-                        key={town.id}
-                        onClick={() => handleSelectTown(town.name)}
-                        className="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted/60 transition-colors rounded-md group"
-                      >
-                        <span className="text-foreground group-hover:text-primary transition-colors">
-                          {town.name}
-                        </span>
-                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </button>
-                    ))}
+                    {filteredTowns.map((town) => {
+                      const townCount = townCounts[drillCountyName]?.[town.name] || 0;
+                      return (
+                        <button
+                          key={town.id}
+                          onClick={() => handleSelectTown(town.name)}
+                          className="w-full flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted/60 transition-colors rounded-md group"
+                        >
+                          <span className="text-foreground group-hover:text-primary transition-colors">
+                            {town.name}
+                          </span>
+                          <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                            {townCount > 0 && <span>{townCount.toLocaleString()} ads</span>}
+                            <ChevronRight className="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-center text-muted-foreground text-sm py-8">
