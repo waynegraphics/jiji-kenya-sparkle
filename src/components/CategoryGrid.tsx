@@ -47,7 +47,7 @@ const CategoryGrid = () => {
       <section className="py-8">
         <div className="container mx-auto px-4">
           <h2 className="text-xl md:text-2xl font-bold text-foreground mb-6">Browse Categories</h2>
-        <div className="grid grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
+        <div className="grid grid-cols-4 md:grid-cols-5 gap-1.5 sm:gap-2 md:gap-4">
             {Array.from({ length: 10 }).map((_, i) => (
               <Skeleton key={i} className="h-36 md:h-44 rounded-2xl" />
             ))}
@@ -61,7 +61,7 @@ const CategoryGrid = () => {
     <section className="py-8">
       <div className="container mx-auto px-4">
         <h2 className="text-xl md:text-2xl font-bold text-foreground mb-6">Browse Categories</h2>
-        <div className="grid grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
+        <div className="grid grid-cols-4 md:grid-cols-5 gap-1.5 sm:gap-2 md:gap-4">
           {categories?.map((category) => {
             const categoryImage = imageMap[category.slug];
             const adCount = counts?.[category.id] || 0;
@@ -75,7 +75,7 @@ const CategoryGrid = () => {
                   background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))",
                 }}
               >
-                <div className="flex flex-col items-center justify-end h-36 md:h-44 p-3 pt-2">
+                <div className="flex flex-col items-center justify-end h-28 md:h-44 p-2 pt-1 md:p-3 md:pt-2">
                   {categoryImage && (
                     <div className="flex-1 flex items-center justify-center w-full">
                       <img
