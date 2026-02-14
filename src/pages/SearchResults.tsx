@@ -15,7 +15,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useMainCategories } from "@/hooks/useCategories";
 import { formatDistanceToNow } from "date-fns";
-import { Search, SlidersHorizontal, X, Grid, List } from "lucide-react";
+import { Search, SlidersHorizontal, X, Grid, List, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { generateListingUrl } from "@/lib/slugify";
 
@@ -65,11 +65,13 @@ const SearchResults = () => {
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [broadenedMessage, setBroadenedMessage] = useState<string | null>(null);
 
   const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
   const fetchListings = async () => {
     setLoading(true);
+    setBroadenedMessage(null);
 
     // Resolve category slug to ID
     let categoryId: string | null = null;
@@ -79,28 +81,29 @@ const SearchResults = () => {
     }
 
     // Build a single combined search string from all terms for fuzzy OR matching
-    // This ensures "iphone 15 plus" also finds "iPhone 14 Plus" or "iPhone 15 Pro Max"
     const searchTerms = [query, make, model, brand].filter(Boolean);
-    // Extract individual words for flexible matching
     const uniqueWords = [...new Set(
       searchTerms.join(" ").toLowerCase().split(/\s+/).filter(w => w.length >= 2)
     )];
 
-    const applyFilters = (q: any) => {
-      // Use OR logic across individual words so partial matches are found
-      // e.g. "iphone 15 plus" matches any listing containing "iphone" OR "15" OR "plus"
-      if (uniqueWords.length > 0) {
-        const orConditions = uniqueWords
-          .map(word => `title.ilike.%${word}%,description.ilike.%${word}%`)
-          .join(",");
-        q = q.or(orConditions);
-      }
-      if (categoryId) q = q.eq("main_category_id", categoryId);
-      if (location) q = q.ilike("location", `%${location}%`);
-      if (minPrice) q = q.gte("price", parseInt(minPrice));
-      if (maxPrice) q = q.lte("price", parseInt(maxPrice));
-      return q;
+    const buildQuery = (words: string[], catId: string | null) => {
+      const applyFilters = (q: any) => {
+        if (words.length > 0) {
+          const orConditions = words
+            .map(word => `title.ilike.%${word}%,description.ilike.%${word}%`)
+            .join(",");
+          q = q.or(orConditions);
+        }
+        if (catId) q = q.eq("main_category_id", catId);
+        if (location) q = q.ilike("location", `%${location}%`);
+        if (minPrice) q = q.gte("price", parseInt(minPrice));
+        if (maxPrice) q = q.lte("price", parseInt(maxPrice));
+        return q;
+      };
+      return applyFilters;
     };
+
+    const applyFilters = buildQuery(uniqueWords, categoryId);
 
     // Count query
     let countQuery = supabase
@@ -110,7 +113,80 @@ const SearchResults = () => {
     countQuery = applyFilters(countQuery);
 
     const { count } = await countQuery;
-    setTotalCount(count || 0);
+    const resultCount = count || 0;
+
+    // If 0 results found, try broadening the search
+    if (resultCount === 0 && uniqueWords.length > 1) {
+      // Strategy: try with fewer words (most significant ones first - longest words tend to be most specific)
+      const sortedWords = [...uniqueWords].sort((a, b) => b.length - a.length);
+      
+      for (let i = 1; i <= Math.min(sortedWords.length - 1, 3); i++) {
+        const broaderWords = sortedWords.slice(0, Math.max(1, sortedWords.length - i));
+        const broaderApply = buildQuery(broaderWords, categoryId);
+        
+        let broaderCount = supabase
+          .from("base_listings")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "active");
+        broaderCount = broaderApply(broaderCount);
+        
+        const { count: bCount } = await broaderCount;
+        
+        if (bCount && bCount > 0) {
+          // Found results with broader search
+          const originalSearch = searchTerms.join(" ");
+          const broaderTerm = broaderWords.join(" ");
+          setBroadenedMessage(`No exact results for "${originalSearch}", showing ${bCount} similar results for "${broaderTerm}"`);
+          setTotalCount(bCount);
+
+          let dataQuery = supabase
+            .from("base_listings")
+            .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id, main_category:main_categories(slug, name)")
+            .eq("status", "active");
+          dataQuery = broaderApply(dataQuery);
+          dataQuery = dataQuery.order("created_at", { ascending: false });
+          const from = (currentPage - 1) * ITEMS_PER_PAGE;
+          dataQuery = dataQuery.range(from, from + ITEMS_PER_PAGE - 1);
+
+          const { data } = await dataQuery;
+          if (data) setListings(data as Listing[]);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Still nothing? Try category-only search
+      if (categoryId) {
+        let catQuery = supabase
+          .from("base_listings")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "active")
+          .eq("main_category_id", categoryId);
+        const { count: catCount } = await catQuery;
+
+        if (catCount && catCount > 0) {
+          const catName = categories?.find(c => c.id === categoryId)?.name || "this category";
+          setBroadenedMessage(`No results for "${searchTerms.join(" ")}", but found ${catCount} other listings in ${catName}`);
+          setTotalCount(catCount);
+
+          let dataQuery = supabase
+            .from("base_listings")
+            .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id, main_category:main_categories(slug, name)")
+            .eq("status", "active")
+            .eq("main_category_id", categoryId)
+            .order("created_at", { ascending: false });
+          const from = (currentPage - 1) * ITEMS_PER_PAGE;
+          dataQuery = dataQuery.range(from, from + ITEMS_PER_PAGE - 1);
+
+          const { data } = await dataQuery;
+          if (data) setListings(data as Listing[]);
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
+    setTotalCount(resultCount);
 
     // Data query
     let queryBuilder = supabase
@@ -203,6 +279,12 @@ const SearchResults = () => {
           <p className="text-muted-foreground">
             {loading ? "Searching..." : `${totalCount} ads found`}
           </p>
+          {broadenedMessage && (
+            <div className="mt-2 bg-secondary/10 border border-secondary/30 rounded-lg px-4 py-2.5 text-sm text-secondary font-medium flex items-center gap-2">
+              <Sparkles className="h-4 w-4 flex-shrink-0" />
+              {broadenedMessage}
+            </div>
+          )}
         </div>
 
         <div className="bg-card rounded-xl p-4 shadow-card mb-6">
