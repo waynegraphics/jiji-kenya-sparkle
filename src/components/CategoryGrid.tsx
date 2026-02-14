@@ -77,11 +77,11 @@ const CategoryGrid = () => {
               >
                 <div className="flex flex-col items-center justify-end h-28 md:h-44 p-2 pt-1 md:p-3 md:pt-2">
                   {categoryImage && (
-                    <div className="flex-1 flex items-center justify-center w-full">
+                    <div className="flex-1 flex items-center justify-center w-full overflow-hidden">
                       <img
                         src={categoryImage}
                         alt={category.name}
-                        className="max-h-20 md:max-h-24 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-300"
+                        className="w-14 h-14 md:w-20 md:h-20 object-contain drop-shadow-lg group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>
                   )}
