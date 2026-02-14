@@ -47,7 +47,7 @@ const CategoryGrid = () => {
       <section className="py-8">
         <div className="container mx-auto px-4">
           <h2 className="text-xl md:text-2xl font-bold text-foreground mb-6">Browse Categories</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+        <div className="grid grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
             {Array.from({ length: 10 }).map((_, i) => (
               <Skeleton key={i} className="h-36 md:h-44 rounded-2xl" />
             ))}
@@ -61,7 +61,7 @@ const CategoryGrid = () => {
     <section className="py-8">
       <div className="container mx-auto px-4">
         <h2 className="text-xl md:text-2xl font-bold text-foreground mb-6">Browse Categories</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+        <div className="grid grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
           {categories?.map((category) => {
             const categoryImage = imageMap[category.slug];
             const adCount = counts?.[category.id] || 0;
