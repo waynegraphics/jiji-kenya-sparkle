@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +33,7 @@ const AjaxSearch = ({ className = "", inputClassName = "", placeholder = "Search
   const [results, setResults] = useState<GroupedResults[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [smartMessage, setSmartMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   const { data: categories } = useMainCategories();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -54,44 +55,104 @@ const AjaxSearch = ({ className = "", inputClassName = "", placeholder = "Search
     if (query.trim().length < 2) {
       setResults([]);
       setIsOpen(false);
+      setSmartMessage(null);
       return;
     }
 
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
+      setSmartMessage(null);
       try {
-        const { data, error } = await supabase
+        const words = query.trim().split(/\s+/).filter(w => w.length >= 2);
+        
+        // Step 1: Exact (AND) search — all words must appear in title
+        let exactQuery = supabase
           .from("base_listings")
           .select("id, title, price, main_category_id, sub_category_id, images")
-          .eq("status", "active")
-          .ilike("title", `%${query.trim()}%`)
+          .eq("status", "active");
+        
+        for (const word of words) {
+          exactQuery = exactQuery.ilike("title", `%${word}%`);
+        }
+        
+        const { data: exactData } = await exactQuery
           .order("created_at", { ascending: false })
           .limit(20);
 
-        if (error || !data) {
+        let finalData = exactData || [];
+        let isBroadened = false;
+        
+        // Step 2: If no exact match & multi-word, broaden with OR and show smart message
+        if (finalData.length === 0 && words.length > 1) {
+          const orConditions = words.map(w => `title.ilike.%${w}%`).join(",");
+          const { data: broadData } = await supabase
+            .from("base_listings")
+            .select("id, title, price, main_category_id, sub_category_id, images")
+            .eq("status", "active")
+            .or(orConditions)
+            .order("created_at", { ascending: false })
+            .limit(20);
+
+          finalData = broadData || [];
+          isBroadened = true;
+          
+          if (finalData.length > 0) {
+            const matchedWords = words.filter(w => 
+              finalData.some(item => item.title?.toLowerCase().includes(w.toLowerCase()))
+            );
+            const unmatchedWords = words.filter(w => 
+              !finalData.some(item => item.title?.toLowerCase().includes(w.toLowerCase()))
+            );
+            
+            if (unmatchedWords.length > 0 && matchedWords.length > 0) {
+              setSmartMessage(
+                `No exact match for "${query.trim()}". Showing ${finalData.length} similar "${matchedWords.join(" ")}" listings — try refining your search.`
+              );
+            } else {
+              setSmartMessage(`No exact match for "${query.trim()}". Showing similar results.`);
+            }
+          } else {
+            setSmartMessage(`No results found for "${query.trim()}". Try different keywords.`);
+            setIsOpen(true);
+            setResults([]);
+            setLoading(false);
+            return;
+          }
+        } else if (finalData.length === 0) {
+          setSmartMessage(`No results found for "${query.trim()}". Try different keywords.`);
+          setIsOpen(true);
           setResults([]);
-          setIsOpen(false);
+          setLoading(false);
           return;
         }
 
         // Group by category
         const grouped: Record<string, { items: SearchResult[]; count: number }> = {};
-        data.forEach((item) => {
+        finalData.forEach((item) => {
           const catId = item.main_category_id;
           if (!grouped[catId]) grouped[catId] = { items: [], count: 0 };
           grouped[catId].items.push(item);
           grouped[catId].count++;
         });
 
-        // Also get total counts per category for this search
         const categoryIds = Object.keys(grouped);
         const countPromises = categoryIds.map(async (catId) => {
-          const { count } = await supabase
+          let countQuery = supabase
             .from("base_listings")
             .select("id", { count: "exact", head: true })
             .eq("status", "active")
-            .eq("main_category_id", catId)
-            .ilike("title", `%${query.trim()}%`);
+            .eq("main_category_id", catId);
+          
+          if (isBroadened) {
+            const orConditions = words.map(w => `title.ilike.%${w}%`).join(",");
+            countQuery = countQuery.or(orConditions);
+          } else {
+            for (const word of words) {
+              countQuery = countQuery.ilike("title", `%${word}%`);
+            }
+          }
+          
+          const { count } = await countQuery;
           return { catId, count: count || grouped[catId].count };
         });
 
@@ -113,7 +174,7 @@ const AjaxSearch = ({ className = "", inputClassName = "", placeholder = "Search
           .sort((a, b) => b.count - a.count);
 
         setResults(groupedResults);
-        setIsOpen(groupedResults.length > 0);
+        setIsOpen(groupedResults.length > 0 || !!smartMessage);
       } catch {
         setResults([]);
       } finally {
@@ -145,12 +206,12 @@ const AjaxSearch = ({ className = "", inputClassName = "", placeholder = "Search
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          onFocus={() => results.length > 0 && setIsOpen(true)}
+          onFocus={() => (results.length > 0 || smartMessage) && setIsOpen(true)}
           className={`pl-12 pr-10 h-12 bg-card text-card-foreground border-border text-base ${inputClassName}`}
         />
         {query && (
           <button
-            onClick={() => { setQuery(""); setIsOpen(false); }}
+            onClick={() => { setQuery(""); setIsOpen(false); setSmartMessage(null); }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4" />
@@ -164,6 +225,12 @@ const AjaxSearch = ({ className = "", inputClassName = "", placeholder = "Search
             <div className="p-4 text-center text-muted-foreground text-sm">Searching...</div>
           ) : (
             <>
+              {smartMessage && (
+                <div className="px-4 py-3 bg-accent/50 border-b border-border flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-muted-foreground leading-relaxed">{smartMessage}</p>
+                </div>
+              )}
               {results.map((group) => (
                 <div key={group.categorySlug} className="border-b border-border last:border-b-0">
                   <button
@@ -207,12 +274,14 @@ const AjaxSearch = ({ className = "", inputClassName = "", placeholder = "Search
                   })}
                 </div>
               ))}
-              <button
-                onClick={handleSubmit}
-                className="w-full px-4 py-3 text-center text-sm font-semibold text-primary hover:bg-muted/30 transition-colors"
-              >
-                See all results for "{query}"
-              </button>
+              {results.length > 0 && (
+                <button
+                  onClick={handleSubmit}
+                  className="w-full px-4 py-3 text-center text-sm font-semibold text-primary hover:bg-muted/30 transition-colors"
+                >
+                  See all results for "{query}"
+                </button>
+              )}
             </>
           )}
         </div>
