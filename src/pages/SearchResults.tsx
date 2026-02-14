@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { trackSearchCategory } from "@/lib/searchHistory";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
@@ -77,7 +78,10 @@ const SearchResults = () => {
     let categoryId: string | null = null;
     if (categorySlug && categorySlug !== "all" && categories) {
       const cat = categories.find(c => c.slug === categorySlug);
-      if (cat) categoryId = cat.id;
+      if (cat) {
+        categoryId = cat.id;
+        trackSearchCategory(cat.id, cat.slug);
+      }
     }
 
     // Build a single combined search string from all terms for fuzzy OR matching

@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import LocationSelector from "@/components/LocationSelector";
 import { useParams, Link } from "react-router-dom";
+import { trackSearchCategory } from "@/lib/searchHistory";
 import { formatDistanceToNow } from "date-fns";
 import { generateListingUrl } from "@/lib/slugify";
 import Header from "@/components/Header";
@@ -80,6 +81,13 @@ const CategoryPage = () => {
   const { data: mainCategory, isLoading: categoryLoading } = useCategoryBySlug(categorySlug);
   const { data: subCategory } = useSubCategoryBySlug(categorySlug, subCategorySlug);
   const { data: subCategories } = useSubCategories(mainCategory?.id);
+
+  // Track category browsing for personalized trending
+  useEffect(() => {
+    if (mainCategory?.id && categorySlug) {
+      trackSearchCategory(mainCategory.id, categorySlug);
+    }
+  }, [mainCategory?.id, categorySlug]);
 
   const filterParams = useMemo(() => ({
     minPrice: filters.minPrice ? parseFloat(filters.minPrice) : undefined,
