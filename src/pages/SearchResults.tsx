@@ -86,76 +86,113 @@ const SearchResults = () => {
       searchTerms.join(" ").toLowerCase().split(/\s+/).filter(w => w.length >= 2)
     )];
 
-    const buildQuery = (words: string[], catId: string | null) => {
-      const applyFilters = (q: any) => {
-        if (words.length > 0) {
-          const orConditions = words
-            .map(word => `title.ilike.%${word}%,description.ilike.%${word}%`)
-            .join(",");
-          q = q.or(orConditions);
-        }
-        if (catId) q = q.eq("main_category_id", catId);
-        if (location) q = q.ilike("location", `%${location}%`);
-        if (minPrice) q = q.gte("price", parseInt(minPrice));
-        if (maxPrice) q = q.lte("price", parseInt(maxPrice));
-        return q;
-      };
-      return applyFilters;
+    const applyBaseFilters = (q: any) => {
+      if (categoryId) q = q.eq("main_category_id", categoryId);
+      if (location) q = q.ilike("location", `%${location}%`);
+      if (minPrice) q = q.gte("price", parseInt(minPrice));
+      if (maxPrice) q = q.lte("price", parseInt(maxPrice));
+      return q;
     };
 
-    const applyFilters = buildQuery(uniqueWords, categoryId);
-
-    // Count query
-    let countQuery = supabase
-      .from("base_listings")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "active");
-    countQuery = applyFilters(countQuery);
-
-    const { count } = await countQuery;
-    const resultCount = count || 0;
-
-    // If 0 results found, try broadening the search
-    if (resultCount === 0 && uniqueWords.length > 1) {
-      // Strategy: try with fewer words (most significant ones first - longest words tend to be most specific)
-      const sortedWords = [...uniqueWords].sort((a, b) => b.length - a.length);
-      
-      for (let i = 1; i <= Math.min(sortedWords.length - 1, 3); i++) {
-        const broaderWords = sortedWords.slice(0, Math.max(1, sortedWords.length - i));
-        const broaderApply = buildQuery(broaderWords, categoryId);
-        
-        let broaderCount = supabase
-          .from("base_listings")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "active");
-        broaderCount = broaderApply(broaderCount);
-        
-        const { count: bCount } = await broaderCount;
-        
-        if (bCount && bCount > 0) {
-          // Found results with broader search
-          const originalSearch = searchTerms.join(" ");
-          const broaderTerm = broaderWords.join(" ");
-          setBroadenedMessage(`No exact results for "${originalSearch}", showing ${bCount} similar results for "${broaderTerm}"`);
-          setTotalCount(bCount);
-
-          let dataQuery = supabase
-            .from("base_listings")
-            .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id, main_category:main_categories(slug, name)")
-            .eq("status", "active");
-          dataQuery = broaderApply(dataQuery);
-          dataQuery = dataQuery.order("created_at", { ascending: false });
-          const from = (currentPage - 1) * ITEMS_PER_PAGE;
-          dataQuery = dataQuery.range(from, from + ITEMS_PER_PAGE - 1);
-
-          const { data } = await dataQuery;
-          if (data) setListings(data as Listing[]);
-          setLoading(false);
-          return;
+    const applyWordFilters = (q: any, words: string[], mode: "and" | "or" = "or") => {
+      if (words.length === 0) return q;
+      if (mode === "and") {
+        // Every word must appear in title OR description
+        for (const word of words) {
+          q = q.or(`title.ilike.%${word}%,description.ilike.%${word}%`);
         }
+      } else {
+        // Any word can match
+        const orConditions = words
+          .map(word => `title.ilike.%${word}%,description.ilike.%${word}%`)
+          .join(",");
+        q = q.or(orConditions);
+      }
+      return q;
+    };
+
+    const selectFields = "id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id, main_category:main_categories(slug, name)";
+
+    // Step 1: Try exact match (all words must be present via AND)
+    if (uniqueWords.length > 1) {
+      let exactCount = supabase
+        .from("base_listings")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active");
+      exactCount = applyBaseFilters(exactCount);
+      exactCount = applyWordFilters(exactCount, uniqueWords, "and");
+
+      const { count: exactResultCount } = await exactCount;
+
+      if (exactResultCount && exactResultCount > 0) {
+        // Exact match found — show normally
+        setTotalCount(exactResultCount);
+
+        let dataQuery = supabase
+          .from("base_listings")
+          .select(selectFields)
+          .eq("status", "active");
+        dataQuery = applyBaseFilters(dataQuery);
+        dataQuery = applyWordFilters(dataQuery, uniqueWords, "and");
+
+        switch (sort) {
+          case "oldest": dataQuery = dataQuery.order("created_at", { ascending: true }); break;
+          case "price_low": dataQuery = dataQuery.order("price", { ascending: true }); break;
+          case "price_high": dataQuery = dataQuery.order("price", { ascending: false }); break;
+          default: dataQuery = dataQuery.order("created_at", { ascending: false });
+        }
+        const from = (currentPage - 1) * ITEMS_PER_PAGE;
+        dataQuery = dataQuery.range(from, from + ITEMS_PER_PAGE - 1);
+
+        const { data } = await dataQuery;
+        if (data) setListings(data as Listing[]);
+        setLoading(false);
+        return;
       }
 
-      // Still nothing? Try category-only search
+      // No exact match — try broader OR search and show smart message
+      let broadCount = supabase
+        .from("base_listings")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active");
+      broadCount = applyBaseFilters(broadCount);
+      broadCount = applyWordFilters(broadCount, uniqueWords, "or");
+
+      const { count: broadResultCount } = await broadCount;
+
+      if (broadResultCount && broadResultCount > 0) {
+        const originalSearch = searchTerms.join(" ");
+        // Find which words matched to build a helpful message
+        const matchedWord = uniqueWords.find(w => w.length >= 3) || uniqueWords[0];
+        const specificTerm = uniqueWords.filter(w => w !== matchedWord).join(" ");
+        setBroadenedMessage(
+          `No exact match for "${originalSearch}". Showing ${broadResultCount} similar ${matchedWord ? `"${matchedWord}"` : ""} listings — would you like to refine your search?`
+        );
+        setTotalCount(broadResultCount);
+
+        let dataQuery = supabase
+          .from("base_listings")
+          .select(selectFields)
+          .eq("status", "active");
+        dataQuery = applyBaseFilters(dataQuery);
+        dataQuery = applyWordFilters(dataQuery, uniqueWords, "or");
+
+        switch (sort) {
+          case "oldest": dataQuery = dataQuery.order("created_at", { ascending: true }); break;
+          case "price_low": dataQuery = dataQuery.order("price", { ascending: true }); break;
+          case "price_high": dataQuery = dataQuery.order("price", { ascending: false }); break;
+          default: dataQuery = dataQuery.order("created_at", { ascending: false });
+        }
+        const from = (currentPage - 1) * ITEMS_PER_PAGE;
+        dataQuery = dataQuery.range(from, from + ITEMS_PER_PAGE - 1);
+
+        const { data } = await dataQuery;
+        if (data) setListings(data as Listing[]);
+        setLoading(false);
+        return;
+      }
+
+      // Still nothing? Try category-only
       if (categoryId) {
         let catQuery = supabase
           .from("base_listings")
@@ -171,7 +208,7 @@ const SearchResults = () => {
 
           let dataQuery = supabase
             .from("base_listings")
-            .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id, main_category:main_categories(slug, name)")
+            .select(selectFields)
             .eq("status", "active")
             .eq("main_category_id", categoryId)
             .order("created_at", { ascending: false });
@@ -184,16 +221,31 @@ const SearchResults = () => {
           return;
         }
       }
+
+      // Absolutely nothing
+      setTotalCount(0);
+      setListings([]);
+      setLoading(false);
+      return;
     }
 
-    setTotalCount(resultCount);
+    // Single word or no words — standard search
+    let countQuery = supabase
+      .from("base_listings")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active");
+    countQuery = applyBaseFilters(countQuery);
+    if (uniqueWords.length > 0) countQuery = applyWordFilters(countQuery, uniqueWords, "or");
 
-    // Data query
+    const { count } = await countQuery;
+    setTotalCount(count || 0);
+
     let queryBuilder = supabase
       .from("base_listings")
-      .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id, main_category:main_categories(slug, name)")
+      .select(selectFields)
       .eq("status", "active");
-    queryBuilder = applyFilters(queryBuilder);
+    queryBuilder = applyBaseFilters(queryBuilder);
+    if (uniqueWords.length > 0) queryBuilder = applyWordFilters(queryBuilder, uniqueWords, "or");
 
     switch (sort) {
       case "oldest": queryBuilder = queryBuilder.order("created_at", { ascending: true }); break;
@@ -203,8 +255,7 @@ const SearchResults = () => {
     }
 
     const from = (currentPage - 1) * ITEMS_PER_PAGE;
-    const to = from + ITEMS_PER_PAGE - 1;
-    queryBuilder = queryBuilder.range(from, to);
+    queryBuilder = queryBuilder.range(from, from + ITEMS_PER_PAGE - 1);
 
     const { data, error } = await queryBuilder;
     if (!error && data) setListings(data as Listing[]);
