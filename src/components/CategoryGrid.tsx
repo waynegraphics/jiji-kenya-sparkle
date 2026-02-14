@@ -86,10 +86,10 @@ const CategoryGrid = () => {
                     </div>
                   )}
                   <div className="text-center mt-auto">
-                    <h3 className="text-sm md:text-base font-bold text-white drop-shadow-md leading-tight">
+                    <h3 className="text-[10px] md:text-base font-bold text-white drop-shadow-md leading-tight">
                       {category.name}
                     </h3>
-                    <p className="text-xs text-white/80 font-medium mt-0.5">
+                    <p className="text-[9px] md:text-xs text-white/80 font-medium mt-0.5">
                       {adCount} {adCount === 1 ? "Ad" : "Ads"}
                     </p>
                   </div>
