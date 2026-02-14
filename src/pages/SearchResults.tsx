@@ -78,14 +78,23 @@ const SearchResults = () => {
       if (cat) categoryId = cat.id;
     }
 
-    // Build individual search terms for better filtering
-    const keywordTerms = [query, make, model, brand].filter(Boolean);
+    // Build a single combined search string from all terms for fuzzy OR matching
+    // This ensures "iphone 15 plus" also finds "iPhone 14 Plus" or "iPhone 15 Pro Max"
+    const searchTerms = [query, make, model, brand].filter(Boolean);
+    // Extract individual words for flexible matching
+    const uniqueWords = [...new Set(
+      searchTerms.join(" ").toLowerCase().split(/\s+/).filter(w => w.length >= 2)
+    )];
 
     const applyFilters = (q: any) => {
-      // Apply each keyword term separately with AND logic
-      keywordTerms.forEach(term => {
-        q = q.or(`title.ilike.%${term}%,description.ilike.%${term}%`);
-      });
+      // Use OR logic across individual words so partial matches are found
+      // e.g. "iphone 15 plus" matches any listing containing "iphone" OR "15" OR "plus"
+      if (uniqueWords.length > 0) {
+        const orConditions = uniqueWords
+          .map(word => `title.ilike.%${word}%,description.ilike.%${word}%`)
+          .join(",");
+        q = q.or(orConditions);
+      }
       if (categoryId) q = q.eq("main_category_id", categoryId);
       if (location) q = q.ilike("location", `%${location}%`);
       if (minPrice) q = q.gte("price", parseInt(minPrice));
