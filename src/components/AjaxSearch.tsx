@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useMainCategories } from "@/hooks/useCategories";
 import { generateListingUrl } from "@/lib/slugify";
+import { trackSearchCategory } from "@/lib/searchHistory";
 
 interface SearchResult {
   id: string;
@@ -235,6 +236,10 @@ const AjaxSearch = ({ className = "", inputClassName = "", placeholder = "Search
                 <div key={group.categorySlug} className="border-b border-border last:border-b-0">
                   <button
                     onClick={() => {
+                      trackSearchCategory(
+                        categories?.find(c => c.slug === group.categorySlug)?.id || "",
+                        group.categorySlug
+                      );
                       navigate(`/search?q=${encodeURIComponent(query.trim())}&category=${group.categorySlug}`);
                       setIsOpen(false);
                     }}
