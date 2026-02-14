@@ -9,6 +9,7 @@ import { useAffiliateClickTracker } from "@/hooks/useAffiliateClickTracker";
 import { Loader2 } from "lucide-react";
 import ScrollToTop from "./components/ScrollToTop";
 import CompareBar from "./components/CompareBar";
+import FloatingAIButton from "./components/FloatingAIButton";
 
 // Critical path - load eagerly
 import Index from "./pages/Index";
@@ -141,6 +142,7 @@ const App = () => (
           </Suspense>
           <ScrollToTop />
           <CompareBar />
+          <FloatingAIButton />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

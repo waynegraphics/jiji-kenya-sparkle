@@ -5,8 +5,6 @@ import FeaturedListings from "@/components/FeaturedListings";
 import SuperchargeSearch from "@/components/SuperchargeSearch";
 import SubmitAdCTA from "@/components/SubmitAdCTA";
 import Footer from "@/components/Footer";
-import FloatingAIButton from "@/components/FloatingAIButton";
-
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
@@ -19,7 +17,6 @@ const Index = () => {
         <SubmitAdCTA />
       </main>
       <Footer />
-      <FloatingAIButton />
     </div>
   );
 };
