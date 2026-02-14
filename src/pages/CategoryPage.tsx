@@ -281,6 +281,7 @@ const CategoryPage = () => {
                         isFeatured={listing.is_featured || false}
                         isUrgent={listing.is_urgent || false}
                         categorySlug={categorySlug}
+                        categoryName={mainCategory?.name}
                       />
                     ))}
                   </div>

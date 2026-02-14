@@ -106,7 +106,7 @@ const SearchResults = () => {
     // Data query
     let queryBuilder = supabase
       .from("base_listings")
-      .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id, main_category:main_categories(slug)")
+      .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_category_id, main_category:main_categories(slug, name)")
       .eq("status", "active");
     queryBuilder = applyFilters(queryBuilder);
 
@@ -357,6 +357,7 @@ const SearchResults = () => {
                     isFavorited={favorites.has(listing.id)}
                     onFavoriteChange={fetchFavorites}
                     categorySlug={listing.main_category?.slug}
+                    categoryName={(listing as any).main_category?.name}
                   />
                 ))}
               </div>
