@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Heart, MapPin, Clock, Phone, MessageCircle, Share2, ChevronLeft,
-  Shield, Star, Eye, AlertTriangle, Flag, ExternalLink, BarChart3
+  Shield, Star, Eye, AlertTriangle, Flag, ExternalLink, BarChart3, Sparkles
 } from "lucide-react";
 import { useCompareStore } from "@/hooks/useCompareStore";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +21,7 @@ import AuthModal from "@/components/AuthModal";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { extractListingId, generateListingUrl } from "@/lib/slugify";
+import { getPreferredCategoryId } from "@/lib/searchHistory";
 
 interface BaseListing {
   id: string; title: string; description: string | null; price: number;
@@ -555,6 +556,7 @@ const ProductDetail = () => {
         })()}
 
         <SimilarAds categoryId={listing.main_category_id} currentId={listing.id} categorySlug={categorySlug} />
+        <RecommendedForYou currentId={listing.id} currentCategoryId={listing.main_category_id} />
       </main>
 
       <Footer />
@@ -589,7 +591,7 @@ const SimilarAds = ({ categoryId, currentId, categorySlug }: { categoryId: strin
   return (
     <div className="mt-10">
       <h2 className="text-xl font-bold mb-4">Similar Ads</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
         {ads.map((ad) => (
           <ProductCard 
             key={ad.id} 
@@ -602,6 +604,68 @@ const SimilarAds = ({ categoryId, currentId, categorySlug }: { categoryId: strin
             isFeatured={ad.is_featured} 
             isUrgent={ad.is_urgent}
             categorySlug={(ad as any).main_category?.slug || categorySlug}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const RecommendedForYou = ({ currentId, currentCategoryId }: { currentId: string; currentCategoryId: string }) => {
+  const [ads, setAds] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      const preferredCategoryId = getPreferredCategoryId();
+      // Only show if user has search history AND it's a different category than current listing
+      if (!preferredCategoryId || preferredCategoryId === currentCategoryId) return;
+
+      setLoading(true);
+      const { data } = await supabase
+        .from("base_listings")
+        .select("*, main_category:main_categories(slug, name)")
+        .eq("main_category_id", preferredCategoryId)
+        .eq("status", "active")
+        .neq("id", currentId)
+        .order("tier_priority", { ascending: false })
+        .order("bumped_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(8);
+      if (data && data.length > 0) setAds(data);
+      setLoading(false);
+    };
+    load();
+  }, [currentId, currentCategoryId]);
+
+  if (ads.length === 0 && !loading) return null;
+
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("en-KE", { style: "currency", currency: "KES", minimumFractionDigits: 0 }).format(price);
+
+  return (
+    <div className="mt-10">
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-xl font-bold">Recommended For You</h2>
+        <span className="flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">
+          <Sparkles className="h-3 w-3" />
+          Based on your searches
+        </span>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+        {ads.map((ad) => (
+          <ProductCard
+            key={ad.id}
+            id={ad.id}
+            title={ad.title}
+            price={formatPrice(ad.price)}
+            location={ad.location}
+            time={formatDistanceToNow(new Date(ad.created_at), { addSuffix: true })}
+            image={ad.images?.[0] || "/placeholder.svg"}
+            isFeatured={ad.is_featured}
+            isUrgent={ad.is_urgent}
+            categorySlug={(ad as any).main_category?.slug}
+            categoryName={(ad as any).main_category?.name}
           />
         ))}
       </div>
