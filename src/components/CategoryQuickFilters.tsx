@@ -117,7 +117,7 @@ const getSubCategoryIcon = (slug: string) => {
   return <Grid className="h-5 w-5" />;
 };
 
-const MOBILE_VISIBLE_COUNT = 5;
+const MOBILE_VISIBLE_COUNT = 0;
 
 interface CategoryQuickFiltersProps {
   categorySlug?: string;
