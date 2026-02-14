@@ -72,7 +72,7 @@ const CategoryGrid = () => {
                 onClick={() => navigate(`/category/${category.slug}`)}
                 className="group cursor-pointer relative rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 style={{
-                  background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))",
+                  background: "linear-gradient(to bottom, hsl(var(--secondary)), hsl(var(--primary)))",
                 }}
               >
                 <div className="flex flex-col items-center justify-end h-28 md:h-44 p-2 pt-1 md:p-3 md:pt-2">
@@ -86,10 +86,10 @@ const CategoryGrid = () => {
                     </div>
                   )}
                   <div className="text-center mt-auto">
-                    <h3 className="text-[10px] md:text-base font-bold text-white drop-shadow-md leading-tight">
+                    <h3 className="text-[9px] md:text-base font-semibold text-white drop-shadow-md leading-tight">
                       {category.name}
                     </h3>
-                    <p className="text-[9px] md:text-xs text-white/80 font-medium mt-0.5">
+                    <p className="text-[8px] md:text-xs text-white/80 font-medium mt-0.5">
                       {adCount} {adCount === 1 ? "Ad" : "Ads"}
                     </p>
                   </div>
