@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -25,8 +25,7 @@ const ProfileSettings = () => {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  // Sync state with profile when it loads
-  useState(() => {
+  useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name);
       setPhone(profile.phone || "");
@@ -34,7 +33,7 @@ const ProfileSettings = () => {
       setBio(profile.bio || "");
       setAvatarUrl(profile.avatar_url || "");
     }
-  });
+  }, [profile]);
 
   if (authLoading) {
     return (

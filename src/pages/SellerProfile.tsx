@@ -279,7 +279,7 @@ const SellerProfile = () => {
                 {seller.whatsapp_number && (
                   <Button
                     variant="outline"
-                    className="w-full border-green-500/50 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20 h-10"
+                    className="w-full border-green-500/50 text-green-600 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-950/20 dark:hover:text-green-400 h-10"
                     onClick={() => {
                       window.open(
                         `https://wa.me/${seller.whatsapp_number!.replace(/\D/g, "")}?text=Hi, I found you on APA Bazaar!`,
