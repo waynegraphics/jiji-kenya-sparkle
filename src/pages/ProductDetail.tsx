@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BentoGallery from "@/components/BentoGallery";
+import { Textarea } from "@/components/ui/textarea";
 import ReportAdDialog from "@/components/ReportAdDialog";
 import ShareMenu from "@/components/ShareMenu";
 import ProductCard from "@/components/ProductCard";
@@ -13,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Heart, MapPin, Clock, Phone, MessageCircle, Share2, ChevronLeft,
-  Shield, Star, Eye, AlertTriangle, Flag, ExternalLink, BarChart3, Sparkles
+  Shield, Star, Eye, AlertTriangle, Flag, ExternalLink, BarChart3, Sparkles, Loader2, Send
 } from "lucide-react";
 import { useCompareStore } from "@/hooks/useCompareStore";
 import { useAuth } from "@/contexts/AuthContext";
@@ -90,6 +91,9 @@ const ProductDetail = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [sidebarPromos, setSidebarPromos] = useState<any[]>([]);
+  const [showChatForm, setShowChatForm] = useState(false);
+  const [chatMessage, setChatMessage] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
   const { addItem, items: compareItems, canAdd } = useCompareStore();
 
   useEffect(() => {
@@ -417,17 +421,62 @@ const ProductDetail = () => {
                   onClick={() => {
                     if (!user) { setIsAuthModalOpen(true); return; }
                     if (user.id === listing.user_id) { toast.info("You can't message yourself"); return; }
-                    navigate(`/messages?user=${listing.user_id}&listing=${listing.id}`);
+                    setChatMessage(`Hi, I'm interested in "${listing.title}". Is it still available?`);
+                    setShowChatForm(true);
                   }}
                 >
                   <MessageCircle className="h-4 w-4 mr-2" />
                   Start chat
                 </Button>
 
+                {showChatForm && user && user.id !== listing.user_id && (
+                  <div className="mt-3 p-3 bg-muted/50 rounded-lg border space-y-2">
+                    <Textarea
+                      placeholder={`Hi, I'm interested in "${listing.title}"...`}
+                      value={chatMessage}
+                      onChange={(e) => setChatMessage(e.target.value)}
+                      rows={3}
+                      className="resize-none text-sm"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        disabled={sendingMessage || !chatMessage.trim()}
+                        onClick={async () => {
+                          if (!chatMessage.trim()) return;
+                          setSendingMessage(true);
+                          const messageContent = chatMessage.trim();
+                          const { error } = await supabase.from("messages").insert({
+                            sender_id: user.id,
+                            receiver_id: listing.user_id,
+                            content: messageContent,
+                            message_type: "text",
+                          });
+                          setSendingMessage(false);
+                          if (error) {
+                            toast.error("Failed to send message");
+                          } else {
+                            toast.success("Message sent!");
+                            setChatMessage("");
+                            setShowChatForm(false);
+                          }
+                        }}
+                      >
+                        {sendingMessage ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+                        Send
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setShowChatForm(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {seller?.whatsapp_number && (
-                  <Button
+                <Button
                     variant="outline"
-                    className="w-full border-green-500/50 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20 h-11"
+                    className="w-full border-green-500/50 text-green-600 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-950/20 dark:hover:text-green-400 h-11"
                     onClick={() => {
                       if (!user) { setIsAuthModalOpen(true); return; }
                       window.open(`https://wa.me/${seller.whatsapp_number!.replace(/\D/g, "")}?text=Hi, I'm interested in your listing: ${listing.title}`, "_blank");
