@@ -17,7 +17,7 @@ interface AuthModalProps {
 }
 
 const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) => {
-  const [activeTab, setActiveTab] = useState<"login" | "register">(defaultTab);
+  const [activeTab, setActiveTab] = useState<"login" | "register" | "forgot">(defaultTab);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -134,10 +134,46 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold">
-            {activeTab === "login" ? "Welcome Back" : "Create Account"}
+            {activeTab === "login" ? "Welcome Back" : activeTab === "register" ? "Create Account" : "Reset Password"}
           </DialogTitle>
         </DialogHeader>
 
+        {activeTab === "forgot" ? (
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setIsLoading(true);
+            try {
+              const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`,
+              });
+              if (error) {
+                toast.error(error.message);
+              } else {
+                toast.success("Password reset link sent! Check your email.");
+                setActiveTab("login");
+                setEmail("");
+              }
+            } finally {
+              setIsLoading(false);
+            }
+          }} className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">Enter your email and we'll send you a link to reset your password.</p>
+            <div className="space-y-2">
+              <Label htmlFor="resetEmail">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input id="resetEmail" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
+              </div>
+            </div>
+            <Button type="submit" className="w-full bg-primary hover:bg-apa-green-dark" disabled={isLoading}>
+              {isLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Sending...</> : "Send Reset Link"}
+            </Button>
+            <p className="text-center text-sm text-muted-foreground">
+              <button type="button" className="text-primary font-medium hover:underline" onClick={() => setActiveTab("login")}>Back to login</button>
+            </p>
+          </form>
+        ) : (
+        <>
         {/* Tabs */}
         <div className="flex bg-muted rounded-lg p-1 mb-4">
           <button
@@ -241,7 +277,12 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              {activeTab === "login" && (
+                <button type="button" className="text-xs text-primary hover:underline" onClick={() => setActiveTab("forgot")}>Forgot password?</button>
+              )}
+            </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -353,6 +394,8 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
               Apply as a seller
             </button>
           </p>
+        )}
+        </>
         )}
       </DialogContent>
     </Dialog>
