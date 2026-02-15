@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Shield, Lock, Mail, User, Eye, EyeOff } from "lucide-react";
+import { Shield, Lock, Mail, User, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const TeamLogin = () => {
@@ -126,7 +126,16 @@ const TeamLogin = () => {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="text-slate-300">Password</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password" className="text-slate-300">Password</Label>
+                      <button
+                        type="button"
+                        className="text-xs text-primary hover:underline"
+                        onClick={() => setActiveTab("forgot")}
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
                       <Input
@@ -204,6 +213,49 @@ const TeamLogin = () => {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Registering..." : "Register"}
                   </Button>
+                </form>
+              </TabsContent>
+
+              <TabsContent value="forgot" className="mt-4">
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  setIsLoading(true);
+                  try {
+                    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                      redirectTo: `${window.location.origin}/reset-password`,
+                    });
+                    if (error) throw error;
+                    toast({ title: "Reset link sent!", description: "Check your email for the password reset link." });
+                    setActiveTab("login");
+                    setEmail("");
+                  } catch (error: any) {
+                    toast({ title: "Error", description: error.message, variant: "destructive" });
+                  } finally {
+                    setIsLoading(false);
+                  }
+                }} className="space-y-4">
+                  <p className="text-sm text-slate-400 text-center">Enter your email and we'll send you a reset link.</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="forgot-email" className="text-slate-300">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                      <Input
+                        id="forgot-email"
+                        type="email"
+                        placeholder="team@apabazaar.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Sending...</> : "Send Reset Link"}
+                  </Button>
+                  <p className="text-center">
+                    <button type="button" className="text-sm text-primary hover:underline" onClick={() => setActiveTab("login")}>Back to login</button>
+                  </p>
                 </form>
               </TabsContent>
             </Tabs>
