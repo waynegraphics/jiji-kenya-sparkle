@@ -3306,7 +3306,48 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_seller_profiles: {
+        Row: {
+          account_type: string | null
+          avatar_url: string | null
+          bio: string | null
+          business_name: string | null
+          created_at: string | null
+          display_name: string | null
+          is_verified: boolean | null
+          location: string | null
+          rating: number | null
+          total_reviews: number | null
+          user_id: string | null
+        }
+        Insert: {
+          account_type?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          business_name?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          is_verified?: boolean | null
+          location?: string | null
+          rating?: number | null
+          total_reviews?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          account_type?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          business_name?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          is_verified?: boolean | null
+          location?: string | null
+          rating?: number | null
+          total_reviews?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_bump_credits: {
