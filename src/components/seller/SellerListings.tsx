@@ -24,7 +24,7 @@ import {
   Loader2, Plus, Pencil, Trash2, Eye, MapPin, Clock,
   MoreVertical, Zap, Star, TrendingUp, Package,
   LayoutGrid, List, Search,
-  CheckCircle, XCircle, AlertTriangle, Crown, Wallet, Megaphone
+  CheckCircle, XCircle, AlertTriangle, Crown, Wallet, Megaphone, MinusCircle
 } from "lucide-react";
 import Pagination from "@/components/Pagination";
 import { CountdownTimer } from "@/components/CountdownTimer";
@@ -45,6 +45,7 @@ interface BaseListing {
   images: string[];
   rejection_note: string | null;
   tier_id: string | null;
+  tier_purchase_id: string | null;
   tier_priority: number;
   tier_expires_at: string | null;
   promotion_type_id: string | null;
@@ -52,6 +53,15 @@ interface BaseListing {
   bumped_at: string | null;
   main_categories?: { name: string; slug: string } | null;
   listing_tiers?: { name: string; badge_label: string | null; badge_color: string } | null;
+}
+
+interface TierPurchaseWithSlots {
+  id: string;
+  tier_id: string;
+  expires_at: string | null;
+  listing_tiers: { name: string; badge_color: string; priority_weight: number; max_ads: number } | null;
+  used_count: number;
+  max_ads: number;
 }
 
 const SellerListings = () => {
@@ -70,6 +80,7 @@ const SellerListings = () => {
   const [promoteDialogListing, setPromoteDialogListing] = useState<BaseListing | null>(null);
   const [tierDialogListing, setTierDialogListing] = useState<BaseListing | null>(null);
   const [applyingId, setApplyingId] = useState<string | null>(null);
+  const [removingTierId, setRemovingTierId] = useState<string | null>(null);
   
   // View & filter state
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -131,23 +142,47 @@ const SellerListings = () => {
     enabled: !!user,
   });
 
-  // Fetch unused tier credits
-  const { data: unusedTiers = [], refetch: refetchTiers } = useQuery({
-    queryKey: ["unused-tiers", user?.id],
-    queryFn: async () => {
+  // Fetch tier purchases with slot usage (per-set model)
+  const { data: tierPurchases = [], refetch: refetchTiers } = useQuery({
+    queryKey: ["tier-purchases-with-slots", user?.id],
+    queryFn: async (): Promise<TierPurchaseWithSlots[]> => {
       if (!user) return [];
-      const { data, error } = await supabase
+      // Get all active tier purchases for this user
+      const { data: purchases, error } = await supabase
         .from("listing_tier_purchases")
-        .select("id, tier_id, listing_tiers(name, badge_color, priority_weight)")
+        .select("id, tier_id, expires_at, listing_tiers(name, badge_color, priority_weight, max_ads)")
         .eq("user_id", user.id)
-        .is("listing_id", null)
         .eq("status", "active")
         .eq("payment_status", "completed");
       if (error) throw error;
-      return data || [];
+      if (!purchases) return [];
+
+      // For each purchase, count how many listings use it
+      const results: TierPurchaseWithSlots[] = [];
+      for (const p of purchases) {
+        const { count } = await supabase
+          .from("base_listings")
+          .select("id", { count: "exact", head: true })
+          .eq("tier_purchase_id", p.id);
+        
+        const tierData = p.listing_tiers as any;
+        const maxAds = tierData?.max_ads || 1;
+        results.push({
+          id: p.id,
+          tier_id: p.tier_id,
+          expires_at: p.expires_at,
+          listing_tiers: tierData,
+          used_count: count || 0,
+          max_ads: maxAds,
+        });
+      }
+      return results;
     },
     enabled: !!user,
   });
+
+  // Filter to only purchases with available slots
+  const availableTierPurchases = tierPurchases.filter(tp => tp.used_count < tp.max_ads);
 
   const handleBump = async (listingId: string) => {
     if (!user) return;
@@ -202,7 +237,7 @@ const SellerListings = () => {
       });
       if (error) throw error;
       if (data === false) {
-        toast.error("Could not apply tier. It may have already been used.");
+        toast.error("Could not apply tier. Max ads limit reached or listing already has a tier.");
         return;
       }
       toast.success("Tier applied to your ad!");
@@ -213,6 +248,29 @@ const SellerListings = () => {
     } finally {
       setApplyingId(null);
       setTierDialogListing(null);
+    }
+  };
+
+  const handleRemoveTier = async (listingId: string) => {
+    if (!user) return;
+    setRemovingTierId(listingId);
+    try {
+      const { data, error } = await supabase.rpc("remove_tier_from_listing", {
+        p_user_id: user.id,
+        p_listing_id: listingId,
+      });
+      if (error) throw error;
+      if (data === false) {
+        toast.error("Could not remove tier from this listing.");
+        return;
+      }
+      toast.success("Tier removed. Slot freed up!");
+      refetchTiers();
+      fetchListings();
+    } catch (error) {
+      toast.error("Failed to remove tier");
+    } finally {
+      setRemovingTierId(null);
     }
   };
 
@@ -283,7 +341,11 @@ const SellerListings = () => {
   };
 
   const canPromote = (listing: BaseListing) => listing.status === "active" && !listing.promotion_type_id && unusedPromotions.length > 0;
-  const canApplyTier = (listing: BaseListing) => listing.status === "active" && !listing.tier_id && unusedTiers.length > 0;
+  const canApplyTier = (listing: BaseListing) => listing.status === "active" && !listing.tier_id && availableTierPurchases.length > 0;
+  const canRemoveTier = (listing: BaseListing) => listing.status === "active" && listing.tier_id && listing.tier_purchase_id;
+
+  // Total available tier slots across all purchases
+  const totalTierSlots = tierPurchases.reduce((sum, tp) => sum + (tp.max_ads - tp.used_count), 0);
 
   if (isLoading) {
     return (
@@ -312,10 +374,10 @@ const SellerListings = () => {
               <span className="text-sm font-medium">{unusedPromotions.length} promos</span>
             </div>
           )}
-          {unusedTiers.length > 0 && (
+          {tierPurchases.length > 0 && (
             <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
               <Crown className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium">{unusedTiers.length} tiers</span>
+              <span className="text-sm font-medium">{totalTierSlots} tier slots</span>
             </div>
           )}
           <Button onClick={() => navigate("/seller-dashboard/post-ad")}>
@@ -444,30 +506,30 @@ const SellerListings = () => {
                     <AlertTriangle className="h-3 w-3" /> View reason
                   </button>
                 )}
-                <div className="flex gap-1 mt-2">
+                <div className="flex gap-1 mt-2 flex-wrap">
                   {listing.status === "active" && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-xs h-7">
-                          <MoreVertical className="h-3 w-3" />
+                    <>
+                      <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => handleBump(listing.id)}>
+                        <Zap className="h-3 w-3 mr-1" /> Bump
+                      </Button>
+                      {canPromote(listing) && (
+                        <Button variant="outline" size="sm" className="text-xs h-7 text-orange-600 border-orange-300" onClick={() => setPromoteDialogListing(listing)}>
+                          <Megaphone className="h-3 w-3" />
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start">
-                        <DropdownMenuItem onClick={() => handleBump(listing.id)}>
-                          <Zap className="h-3 w-3 mr-2" /> Bump Ad
-                        </DropdownMenuItem>
-                        {canPromote(listing) && (
-                          <DropdownMenuItem onClick={() => setPromoteDialogListing(listing)}>
-                            <Megaphone className="h-3 w-3 mr-2" /> Promote Ad
-                          </DropdownMenuItem>
-                        )}
-                        {canApplyTier(listing) && (
-                          <DropdownMenuItem onClick={() => setTierDialogListing(listing)}>
-                            <Crown className="h-3 w-3 mr-2" /> Apply Tier
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      )}
+                      {canApplyTier(listing) && (
+                        <Button variant="outline" size="sm" className="text-xs h-7 text-yellow-600 border-yellow-300" onClick={() => setTierDialogListing(listing)}>
+                          <Crown className="h-3 w-3" />
+                        </Button>
+                      )}
+                      {canRemoveTier(listing) && (
+                        <Button variant="outline" size="sm" className="text-xs h-7 text-red-500 border-red-200"
+                          disabled={removingTierId === listing.id}
+                          onClick={() => handleRemoveTier(listing.id)}>
+                          {removingTierId === listing.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <MinusCircle className="h-3 w-3" />}
+                        </Button>
+                      )}
+                    </>
                   )}
                   <Button variant="outline" size="sm" className="flex-1 text-xs h-7" onClick={() => navigate(`/seller-dashboard/edit-ad/${listing.id}`)}>
                     <Pencil className="h-3 w-3" />
@@ -566,6 +628,13 @@ const SellerListings = () => {
                             <Crown className="h-4 w-4 mr-1" /> Apply Tier
                           </Button>
                         )}
+                        {canRemoveTier(listing) && (
+                          <Button variant="outline" size="sm" className="text-red-500 border-red-200 hover:bg-red-50"
+                            disabled={removingTierId === listing.id}
+                            onClick={() => handleRemoveTier(listing.id)}>
+                            {removingTierId === listing.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <><MinusCircle className="h-4 w-4 mr-1" /> Remove Tier</>}
+                          </Button>
+                        )}
                       </>
                     )}
                     <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -634,31 +703,34 @@ const SellerListings = () => {
               <Crown className="h-5 w-5 text-yellow-500" /> Apply Tier
             </DialogTitle>
             <DialogDescription>
-              Choose a tier credit to apply to "{tierDialogListing?.title}"
+              Choose a tier to apply to "{tierDialogListing?.title}"
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 max-h-[300px] overflow-y-auto">
-            {unusedTiers.map((tier: any) => (
-              <div key={tier.id} className="flex items-center justify-between p-3 rounded-lg border hover:border-yellow-300 transition-colors">
+            {availableTierPurchases.map((tp) => (
+              <div key={tp.id} className="flex items-center justify-between p-3 rounded-lg border hover:border-yellow-300 transition-colors">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tier.listing_tiers?.badge_color }} />
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tp.listing_tiers?.badge_color }} />
                   <div>
-                    <p className="font-medium text-sm">{tier.listing_tiers?.name || "Tier"}</p>
-                    <p className="text-xs text-muted-foreground">Weight: {tier.listing_tiers?.priority_weight} • 30 days</p>
+                    <p className="font-medium text-sm">{tp.listing_tiers?.name || "Tier"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {tp.used_count}/{tp.max_ads} slots used • Weight: {tp.listing_tiers?.priority_weight}
+                    </p>
                   </div>
                 </div>
                 <Button
                   size="sm"
-                  disabled={applyingId === tier.id}
-                  onClick={() => handleApplyTier(tier.id, tierDialogListing!.id)}
+                  disabled={applyingId === tp.id}
+                  onClick={() => handleApplyTier(tp.id, tierDialogListing!.id)}
                 >
-                  {applyingId === tier.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                  {applyingId === tp.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
                 </Button>
               </div>
             ))}
-            {unusedTiers.length === 0 && (
+            {availableTierPurchases.length === 0 && (
               <div className="text-center py-4">
-                <p className="text-muted-foreground mb-3">No unused tier credits.</p>
+                <p className="text-muted-foreground mb-3">No tier credits with available slots.</p>
+                <p className="text-xs text-muted-foreground mb-3">You can remove a tier from an existing listing to free up a slot.</p>
                 <Button variant="outline" onClick={() => navigate("/seller-dashboard/subscription")}>Buy Tiers</Button>
               </div>
             )}

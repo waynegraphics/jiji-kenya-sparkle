@@ -490,6 +490,7 @@ export type Database = {
           tier_expires_at: string | null
           tier_id: string | null
           tier_priority: number
+          tier_purchase_id: string | null
           title: string
           updated_at: string | null
           user_id: string
@@ -522,6 +523,7 @@ export type Database = {
           tier_expires_at?: string | null
           tier_id?: string | null
           tier_priority?: number
+          tier_purchase_id?: string | null
           title: string
           updated_at?: string | null
           user_id: string
@@ -554,6 +556,7 @@ export type Database = {
           tier_expires_at?: string | null
           tier_id?: string | null
           tier_priority?: number
+          tier_purchase_id?: string | null
           title?: string
           updated_at?: string | null
           user_id?: string
@@ -586,6 +589,13 @@ export type Database = {
             columns: ["tier_id"]
             isOneToOne: false
             referencedRelation: "listing_tiers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "base_listings_tier_purchase_id_fkey"
+            columns: ["tier_purchase_id"]
+            isOneToOne: false
+            referencedRelation: "listing_tier_purchases"
             referencedColumns: ["id"]
           },
         ]
@@ -3359,6 +3369,10 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       mask_phone: { Args: { phone_number: string }; Returns: string }
+      remove_tier_from_listing: {
+        Args: { p_listing_id: string; p_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       addon_type: "bumping" | "featured" | "promotion"
