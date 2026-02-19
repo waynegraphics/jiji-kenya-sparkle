@@ -25,15 +25,24 @@ const SellerSubscriptionDashboard = () => {
   const { data: userCredits } = useQuery({
     queryKey: ["user-credits-summary", user?.id],
     queryFn: async () => {
-      if (!user) return { bumpBalance: 0, unusedTiers: 0, unusedPromos: 0 };
-      const [profileRes, tiersRes, promosRes] = await Promise.all([
+      if (!user) return { bumpBalance: 0, tierSlots: 0, unusedPromos: 0 };
+      const [profileRes, tierPurchasesRes, promosRes] = await Promise.all([
         supabase.from("profiles").select("bump_wallet_balance").eq("user_id", user.id).single(),
-        supabase.from("listing_tier_purchases").select("id", { count: "exact" }).eq("user_id", user.id).is("listing_id", null).eq("status", "active").eq("payment_status", "completed"),
+        supabase.from("listing_tier_purchases").select("id, tier_id, listing_tiers(max_ads)").eq("user_id", user.id).eq("status", "active").eq("payment_status", "completed"),
         supabase.from("listing_promotions").select("id", { count: "exact" }).eq("user_id", user.id).is("listing_id", null).eq("status", "active").eq("payment_status", "completed"),
       ]);
+      // Calculate total available tier slots
+      let totalSlots = 0;
+      if (tierPurchasesRes.data) {
+        for (const p of tierPurchasesRes.data) {
+          const maxAds = (p.listing_tiers as any)?.max_ads || 1;
+          const { count } = await supabase.from("base_listings").select("id", { count: "exact", head: true }).eq("tier_purchase_id", p.id);
+          totalSlots += Math.max(0, maxAds - (count || 0));
+        }
+      }
       return {
         bumpBalance: profileRes.data?.bump_wallet_balance || 0,
-        unusedTiers: tiersRes.count || 0,
+        tierSlots: totalSlots,
         unusedPromos: promosRes.count || 0,
       };
     },
@@ -156,8 +165,8 @@ const SellerSubscriptionDashboard = () => {
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-lg bg-yellow-500/10"><Crown className="h-5 w-5 text-yellow-600" /></div>
             <div>
-              <p className="text-2xl font-bold">{userCredits?.unusedTiers || 0}</p>
-              <p className="text-sm text-muted-foreground">Unused Tier Credits</p>
+              <p className="text-2xl font-bold">{userCredits?.tierSlots || 0}</p>
+              <p className="text-sm text-muted-foreground">Available Tier Slots</p>
             </div>
           </CardContent>
         </Card>

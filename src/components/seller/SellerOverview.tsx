@@ -54,9 +54,8 @@ const SellerOverview = () => {
             .eq("receiver_id", user.id),
           supabase
             .from("listing_tier_purchases")
-            .select("id", { count: "exact" })
+            .select("id, tier_id, listing_tiers(max_ads)")
             .eq("user_id", user.id)
-            .is("listing_id", null)
             .eq("status", "active")
             .eq("payment_status", "completed"),
           supabase
@@ -80,7 +79,15 @@ const SellerOverview = () => {
         const activeTiers = listings.filter(l => l.tier_id && l.tier_expires_at && new Date(l.tier_expires_at) > now).length;
         const activePromotions = listings.filter(l => l.promotion_type_id && l.promotion_expires_at && new Date(l.promotion_expires_at) > now).length;
         const bumpBalance = profileRes.data?.bump_wallet_balance || 0;
-        const unusedTierCredits = unusedTiersRes.count || 0;
+        // Calculate available tier slots (per-set model)
+        let unusedTierCredits = 0;
+        if (unusedTiersRes.data) {
+          for (const p of unusedTiersRes.data) {
+            const maxAds = (p.listing_tiers as any)?.max_ads || 1;
+            const { count } = await supabase.from("base_listings").select("id", { count: "exact", head: true }).eq("tier_purchase_id", p.id);
+            unusedTierCredits += Math.max(0, maxAds - (count || 0));
+          }
+        }
         const unusedPromotionCredits = unusedPromosRes.count || 0;
 
         setStats({
