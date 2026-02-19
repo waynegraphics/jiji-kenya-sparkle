@@ -2509,6 +2509,27 @@ export type Database = {
           },
         ]
       }
+      rate_limit_tracker: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          identifier: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          id?: string
+          identifier: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          identifier?: string
+        }
+        Relationships: []
+      }
       reports: {
         Row: {
           admin_notes: string | null
@@ -3376,6 +3397,15 @@ export type Database = {
       }
       bump_listing: {
         Args: { p_listing_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      check_rate_limit: {
+        Args: {
+          p_action: string
+          p_identifier: string
+          p_max_requests?: number
+          p_window_minutes?: number
+        }
         Returns: boolean
       }
       create_notification: {

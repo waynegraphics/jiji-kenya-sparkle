@@ -102,7 +102,7 @@ const ProductCard = ({
 
       {/* Image Container */}
       <div className="relative aspect-[4/3] overflow-hidden">
-        <img src={image} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+        <img src={image} alt={title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
         
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">

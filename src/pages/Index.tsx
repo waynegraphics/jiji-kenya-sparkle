@@ -5,9 +5,12 @@ import FeaturedListings from "@/components/FeaturedListings";
 import SuperchargeSearch from "@/components/SuperchargeSearch";
 import SubmitAdCTA from "@/components/SubmitAdCTA";
 import Footer from "@/components/Footer";
+import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/JsonLd";
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
+      <OrganizationJsonLd />
+      <WebSiteJsonLd />
       <Header />
       <main>
         <HeroBanner />

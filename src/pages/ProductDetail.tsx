@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { extractListingId, generateListingUrl } from "@/lib/slugify";
 import { getPreferredCategoryId } from "@/lib/searchHistory";
+import { ProductJsonLd } from "@/components/JsonLd";
 
 interface BaseListing {
   id: string; title: string; description: string | null; price: number;
@@ -325,6 +326,11 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <ProductJsonLd 
+        listing={listing} 
+        categoryName={categoryName} 
+        sellerName={seller ? (seller.business_name || seller.display_name) : undefined} 
+      />
       <Header />
       <main className="container mx-auto py-6 px-4">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors">
