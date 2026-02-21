@@ -76,13 +76,14 @@ Deno.serve(async (req) => {
   if (listings) {
     for (const listing of listings) {
       const catSlug = (listing as any).main_category?.slug;
-      const slug = listing.title
+      const titleSlug = listing.title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "")
         .substring(0, 60);
+      const shortId = listing.id.replace(/-/g, "").slice(0, 8);
       const url = catSlug
-        ? `/listing/${catSlug}/${slug}-${listing.id}`
+        ? `/listing/${catSlug}/${titleSlug}-${shortId}`
         : `/listing/${listing.id}`;
       xml += `
   <url>
