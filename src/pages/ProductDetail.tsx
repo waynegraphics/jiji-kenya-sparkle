@@ -75,11 +75,10 @@ const ProductDetail = () => {
   const params = useParams<{ category?: string; slug?: string; id?: string }>();
   const navigate = useNavigate();
   
-  // Extract listing ID from URL (supports both old and new formats)
-  // New format: /listing/category/title-slug-id
-  // Old format: /listing/id
-  // Always try to extract from pathname as it handles both formats
-  const listingId = params.id || extractListingId(window.location.pathname);
+  // Extract listing ID from URL (supports old full-UUID and new 8-char short ID formats)
+  const extractedId = params.id || extractListingId(window.location.pathname);
+  const isShortId = extractedId ? extractedId.length === 8 : false;
+  const listingId = extractedId;
   const { user } = useAuth();
   const [listing, setListing] = useState<BaseListing | null>(null);
   const [categoryDetails, setCategoryDetails] = useState<Record<string, any>>({});
@@ -107,9 +106,25 @@ const ProductDetail = () => {
       }
       
       try {
-        // Fetch base listing first (critical path)
-        const { data: baseData, error: baseError } = await supabase
-          .from("base_listings").select("*").eq("id", listingId).single();
+        // Fetch base listing - support both full UUID and 8-char short ID prefix
+        let baseData: any = null;
+        let baseError: any = null;
+
+        if (isShortId) {
+          // Short ID: search by ID prefix using LIKE
+          const { data, error } = await supabase
+            .from("base_listings").select("*")
+            .like("id", `${listingId}%`)
+            .limit(1)
+            .single();
+          baseData = data;
+          baseError = error;
+        } else {
+          const { data, error } = await supabase
+            .from("base_listings").select("*").eq("id", listingId).single();
+          baseData = data;
+          baseError = error;
+        }
 
         if (baseError || !baseData) {
         const { data: oldData, error: oldError } = await supabase
@@ -134,6 +149,7 @@ const ProductDetail = () => {
 
         // Set listing immediately for faster display
         setListing(baseData as BaseListing);
+        const resolvedId = baseData.id; // Always use full UUID for subsequent queries
         
         const userId = baseData.user_id;
         const mainCategoryId = baseData.main_category_id;
@@ -155,7 +171,7 @@ const ProductDetail = () => {
           // Favorite status (only if user is logged in)
           user 
             ? supabase.from("favorites")
-                .select("id").eq("user_id", user.id).eq("listing_id", listingId).maybeSingle()
+                .select("id").eq("user_id", user.id).eq("listing_id", resolvedId).maybeSingle()
             : Promise.resolve({ data: null, error: null })
         ]);
 
@@ -185,7 +201,7 @@ const ProductDetail = () => {
           .select("id, title, price, images, location, created_at, promotion_type_id")
           .eq("status", "active")
           .not("promotion_type_id", "is", null)
-          .neq("id", listingId)
+          .neq("id", resolvedId)
           .limit(3)
           .then(({ data: sidebarData }) => {
             if (sidebarData && sidebarData.length > 0) {
@@ -204,7 +220,7 @@ const ProductDetail = () => {
           .then(undefined, console.error);
 
         // Increment views in background (fire-and-forget, non-blocking)
-        supabase.rpc("increment_listing_views", { p_listing_id: listingId })
+        supabase.rpc("increment_listing_views", { p_listing_id: resolvedId })
           .then(undefined, (err: unknown) => {
             console.error("Error incrementing views:", err);
           });
@@ -271,13 +287,47 @@ const ProductDetail = () => {
     }
   };
 
-  // Update URL to SEO-friendly format if needed (redirect old format to new)
+  // Update URL to SEO-friendly format and set canonical/meta tags
   useEffect(() => {
-    if (listing && categorySlug && !params.slug && params.id) {
-      const newUrl = generateListingUrl(listing.id, categorySlug, listing.title);
-      if (window.location.pathname !== newUrl) {
-        window.history.replaceState({}, "", newUrl);
+    if (listing && categorySlug) {
+      const canonicalPath = generateListingUrl(listing.id, categorySlug, listing.title);
+      const canonicalUrl = `${window.location.origin}${canonicalPath}`;
+      
+      // Redirect old UUID format to new clean URL
+      if (!params.slug && params.id) {
+        if (window.location.pathname !== canonicalPath) {
+          window.history.replaceState({}, "", canonicalPath);
+        }
       }
+
+      // Set canonical link
+      let link = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+      if (!link) { link = document.createElement("link"); link.rel = "canonical"; document.head.appendChild(link); }
+      link.href = canonicalUrl;
+
+      // Set meta tags
+      document.title = `${listing.title} - KES ${listing.price.toLocaleString()} | APA Bazaar`;
+      const setMeta = (name: string, content: string) => {
+        let el = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement;
+        if (!el) { el = document.createElement("meta"); el.name = name; document.head.appendChild(el); }
+        el.content = content;
+      };
+      const setOg = (property: string, content: string) => {
+        let el = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
+        if (!el) { el = document.createElement("meta"); el.setAttribute("property", property); document.head.appendChild(el); }
+        el.content = content;
+      };
+      const desc = listing.description?.slice(0, 155) || `${listing.title} for sale in ${listing.location}`;
+      setMeta("description", desc);
+      setOg("og:title", listing.title);
+      setOg("og:description", desc);
+      setOg("og:url", canonicalUrl);
+      setOg("og:type", "product");
+      if (listing.images?.[0]) setOg("og:image", listing.images[0]);
+
+      return () => {
+        document.querySelector('link[rel="canonical"]')?.remove();
+      };
     }
   }, [listing, categorySlug, params.slug, params.id]);
 

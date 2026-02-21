@@ -14,38 +14,53 @@ export function slugify(text: string): string {
 }
 
 /**
- * Generate a listing URL with category and title slug
+ * Generate a short 8-char ID from a UUID for clean SEO URLs
  */
-export function generateListingUrl(id: string, categorySlug: string, title: string): string {
-  const titleSlug = slugify(title);
-  return `/listing/${categorySlug}/${titleSlug}-${id}`;
+function shortId(uuid: string): string {
+  return uuid.replace(/-/g, '').slice(0, 8);
 }
 
 /**
- * Extract listing ID from URL (handles both old and new formats)
+ * Generate a listing URL with category and title slug
+ * Format: /listing/category/title-slug-shortid
+ */
+export function generateListingUrl(id: string, categorySlug: string, title: string): string {
+  const titleSlug = slugify(title);
+  return `/listing/${categorySlug}/${titleSlug}-${shortId(id)}`;
+}
+
+/**
+ * Extract listing short ID from URL slug
+ * Returns the 8-char hex suffix from the slug
+ */
+export function extractShortId(slug: string): string | null {
+  // Match 8 hex chars at the end of the slug
+  const match = slug.match(/([0-9a-f]{8})$/i);
+  return match ? match[1] : null;
+}
+
+/**
+ * Extract listing ID from URL (handles old UUID format, new short ID format, and legacy)
  */
 export function extractListingId(urlPath: string): string | null {
-  // UUID pattern: 8-4-4-4-12 hex characters
-  const uuidPattern = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
-  
-  // New format: /listing/category/title-slug-{uuid}
-  // Extract UUID from the end of the path
-  const newFormatMatch = urlPath.match(/\/listing\/[^/]+\/.+-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
-  if (newFormatMatch && newFormatMatch[1]) {
-    return newFormatMatch[1];
-  }
-  
-  // Old format: /listing/{uuid}
-  const oldFormatMatch = urlPath.match(/\/listing\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
-  if (oldFormatMatch && oldFormatMatch[1]) {
-    return oldFormatMatch[1];
-  }
-  
-  // Fallback: try to find any UUID in the path (for edge cases)
-  const fallbackMatch = urlPath.match(uuidPattern);
-  if (fallbackMatch && fallbackMatch[1]) {
-    return fallbackMatch[1];
-  }
-  
+  // Full UUID pattern
+  const uuidPattern = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+
+  // Legacy format with full UUID in slug: /listing/category/title-slug-{full-uuid}
+  const legacyFullUuid = urlPath.match(/\/listing\/[^/]+\/.+-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+  if (legacyFullUuid) return legacyFullUuid[1];
+
+  // Old format: /listing/{full-uuid}
+  const oldFormat = urlPath.match(/\/listing\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+  if (oldFormat) return oldFormat[1];
+
+  // New short format: /listing/category/title-slug-{8hex}
+  const shortFormat = urlPath.match(/\/listing\/[^/]+\/.+-([0-9a-f]{8})$/i);
+  if (shortFormat) return shortFormat[1]; // Returns 8-char short ID
+
+  // Fallback: any UUID in path
+  const fallback = urlPath.match(uuidPattern);
+  if (fallback) return fallback[0];
+
   return null;
 }
