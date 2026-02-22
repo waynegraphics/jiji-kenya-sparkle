@@ -3327,7 +3327,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      safe_profiles: {
+        Row: {
+          account_type: string | null
+          avatar_url: string | null
+          bio: string | null
+          bump_wallet_balance: number | null
+          business_name: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          is_verified: boolean | null
+          location: string | null
+          phone: string | null
+          rating: number | null
+          total_reviews: number | null
+          updated_at: string | null
+          user_id: string | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          account_type?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          bump_wallet_balance?: number | null
+          business_name?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          location?: string | null
+          phone?: never
+          rating?: number | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          whatsapp_number?: never
+        }
+        Update: {
+          account_type?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          bump_wallet_balance?: number | null
+          business_name?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          is_verified?: boolean | null
+          location?: string | null
+          phone?: never
+          rating?: number | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          whatsapp_number?: never
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_bump_credits: {
