@@ -69,7 +69,7 @@ const SellerProfile = () => {
       if (!userId) return;
 
       const [profileResult, listingsResult, followerResult] = await Promise.allSettled([
-        supabase.from("safe_profiles").select("display_name, phone, whatsapp_number, location, avatar_url, bio, rating, total_reviews, is_verified, created_at, account_type, business_name").eq("user_id", userId).single(),
+        supabase.from("safe_profiles").select("display_name, phone, whatsapp_number, location, avatar_url, bio, rating, total_reviews, is_verified, created_at, account_type, business_name").eq("user_id", userId).maybeSingle(),
         supabase.from("base_listings")
           .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_categories(slug, name)")
           .eq("user_id", userId).eq("status", "active")
