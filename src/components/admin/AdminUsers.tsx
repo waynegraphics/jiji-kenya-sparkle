@@ -202,7 +202,13 @@ const AdminUsers = () => {
     return sub?.subscription_packages?.name || null;
   };
 
+  // Get user IDs that have roles (admin/moderator) - they belong in Team section
+  const roleUserIds = new Set(userRoles?.map(r => r.user_id) || []);
+
   const filteredUsers = users?.filter(user => {
+    // Exclude users who have admin/moderator roles - they appear in Team
+    if (roleUserIds.has(user.user_id)) return false;
+
     const email = userEmails?.[user.user_id] || "";
     const matchesSearch = 
       user.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
