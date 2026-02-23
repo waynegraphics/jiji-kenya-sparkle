@@ -1,18 +1,24 @@
 import { forwardRef } from "react";
-import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, Loader2 } from "lucide-react";
+import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, Linkedin, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
+
+const TikTokIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.75a8.18 8.18 0 004.76 1.52v-3.4a4.85 4.85 0 01-1-.18z" />
+  </svg>
+);
 
 const useFooterSettings = () => {
   return useQuery({
     queryKey: ["footer-settings"],
     queryFn: async () => {
       const keys = [
-        "contact_email", "contact_phone", "contact_address",
+        "contact_email", "contact_phone", "contact_address", "contact_whatsapp",
         "copyright_text", "support_email",
-        "social_facebook", "social_twitter", "social_instagram", "social_youtube", "social_tiktok",
+        "social_facebook", "social_twitter", "social_instagram", "social_youtube", "social_tiktok", "social_linkedin",
       ];
       const { data } = await supabase
         .from("platform_settings")
@@ -27,12 +33,18 @@ const useFooterSettings = () => {
   });
 };
 
+const formatWhatsAppUrl = (number: string) => {
+  const cleaned = number.replace(/[^0-9]/g, "");
+  return `https://wa.me/${cleaned}`;
+};
+
 const Footer = forwardRef<HTMLElement, object>((_, ref) => {
   const { data: settings } = useFooterSettings();
 
   const phone = settings?.contact_phone || "+254 700 000 000";
   const email = settings?.contact_email || settings?.support_email || "support@apabazaar.co.ke";
   const address = settings?.contact_address || "Nairobi, Kenya";
+  const whatsapp = settings?.contact_whatsapp || "";
   const copyright = settings?.copyright_text || `© ${new Date().getFullYear()} APA Bazaar. All rights reserved.`;
 
   const socials = [
@@ -40,6 +52,8 @@ const Footer = forwardRef<HTMLElement, object>((_, ref) => {
     { key: "social_twitter", icon: Twitter, label: "X (Twitter)" },
     { key: "social_instagram", icon: Instagram, label: "Instagram" },
     { key: "social_youtube", icon: Youtube, label: "YouTube" },
+    { key: "social_tiktok", icon: TikTokIcon, label: "TikTok" },
+    { key: "social_linkedin", icon: Linkedin, label: "LinkedIn" },
   ].filter((s) => settings?.[s.key]);
 
   return (
@@ -58,12 +72,18 @@ const Footer = forwardRef<HTMLElement, object>((_, ref) => {
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-primary shrink-0" />
-                <a href={`tel:${phone}`} className="hover:text-foreground transition-colors">{phone}</a>
+                <a href={`tel:${phone.replace(/\s/g, "")}`} className="hover:text-foreground transition-colors">{phone}</a>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary shrink-0" />
                 <a href={`mailto:${email}`} className="hover:text-foreground transition-colors">{email}</a>
               </li>
+              {whatsapp && (
+                <li className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4 text-primary shrink-0" />
+                  <a href={formatWhatsAppUrl(whatsapp)} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">{whatsapp}</a>
+                </li>
+              )}
               <li className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <span>{address}</span>
@@ -111,7 +131,7 @@ const Footer = forwardRef<HTMLElement, object>((_, ref) => {
             {socials.length > 0 && (
               <div className="mt-6">
                 <h4 className="font-semibold text-foreground mb-3 text-sm uppercase tracking-wider">Follow Us</h4>
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 flex-wrap">
                   {socials.map((s) => (
                     <a
                       key={s.key}
