@@ -141,21 +141,21 @@ const QuickLinks = () => {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                "Electronics",
-                "Fashion",
-                "Phones & Tablets",
-                "Vehicles",
-                "Property",
-                "Furniture",
-                "Jobs",
-                "Services",
+                { name: "Electronics", slug: "electronics" },
+                { name: "Fashion", slug: "fashion" },
+                { name: "Phones & Tablets", slug: "phones-tablets" },
+                { name: "Vehicles", slug: "vehicles" },
+                { name: "Property", slug: "property" },
+                { name: "Furniture & Appliances", slug: "furniture-appliances" },
+                { name: "Jobs", slug: "jobs" },
+                { name: "Services", slug: "services" },
               ].map((category) => (
                 <Link
-                  key={category}
-                  to={`/search?q=${encodeURIComponent(category)}`}
+                  key={category.slug}
+                  to={`/category/${category.slug}`}
                   className="text-sm text-muted-foreground hover:text-primary transition-colors text-center p-3 rounded-lg hover:bg-muted/50"
                 >
-                  {category}
+                  {category.name}
                 </Link>
               ))}
             </div>
