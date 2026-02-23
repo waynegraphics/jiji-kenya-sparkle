@@ -1128,6 +1128,285 @@ psql -h localhost -p 5432 -U postgres -d postgres -c "SELECT count(*) FROM base_
 
 ---
 
+## 13. Logs & Monitoring Migration
+
+### 13.1 Database Logs (PostgreSQL)
+
+Self-hosted Supabase automatically logs all PostgreSQL activity. Configure log retention:
+
+```bash
+# Edit PostgreSQL config in Docker
+docker exec -it supabase-db bash -c "cat >> /etc/postgresql/postgresql.conf << 'EOF'
+
+# Logging configuration
+logging_collector = on
+log_directory = '/var/log/postgresql'
+log_filename = 'postgresql-%Y-%m-%d.log'
+log_rotation_age = 1d
+log_rotation_size = 100MB
+log_min_duration_statement = 1000   # Log queries taking >1s
+log_statement = 'mod'               # Log INSERT/UPDATE/DELETE
+log_connections = on
+log_disconnections = on
+EOF"
+
+# Restart database
+docker compose restart supabase-db
+```
+
+### 13.2 Auth Logs (GoTrue)
+
+Auth logs are output by the GoTrue container. View and persist them:
+
+```bash
+# View live auth logs
+docker compose logs -f supabase-auth
+
+# Persist auth logs to file
+docker compose logs supabase-auth > /opt/backups/logs/auth_$(date +%Y%m%d).log
+```
+
+Configure GoTrue log level in `.env`:
+
+```env
+GOTRUE_LOG_LEVEL=info    # Options: debug, info, warn, error
+```
+
+### 13.3 Edge Function Logs
+
+If using Deno standalone (Option A from Section 6):
+
+```bash
+# Logs are captured by systemd journal
+journalctl -u edge-functions -f
+
+# Export logs
+journalctl -u edge-functions --since "2026-02-01" --until "2026-02-28" > /opt/backups/logs/edge_feb2026.log
+```
+
+If using Supabase Edge Runtime (Option B):
+
+```bash
+docker compose logs -f supabase-functions
+```
+
+### 13.4 API Gateway / Network Logs (Kong)
+
+Kong logs all API requests (equivalent to Lovable Cloud network logs):
+
+```bash
+# View API request logs
+docker compose logs -f supabase-kong
+
+# These include:
+# - HTTP method, path, status code
+# - Response time
+# - Client IP
+# - Auth token presence
+```
+
+### 13.5 Storage Logs
+
+```bash
+docker compose logs -f supabase-storage
+```
+
+### 13.6 Realtime Logs
+
+```bash
+docker compose logs -f supabase-realtime
+```
+
+### 13.7 Centralized Log Management (Recommended)
+
+For production, set up centralized logging:
+
+```bash
+# Option A: Loki + Grafana (lightweight)
+# Add to docker-compose.override.yml:
+cat > /opt/supabase/supabase/docker/docker-compose.override.yml << 'EOF'
+services:
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki-data:/loki
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=your_grafana_password
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  loki-data:
+  grafana-data:
+EOF
+
+docker compose up -d loki grafana
+```
+
+```bash
+# Option B: Simple log rotation with logrotate
+cat > /etc/logrotate.d/supabase << 'EOF'
+/opt/backups/logs/*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+}
+EOF
+```
+
+### 13.8 Automated Log Export Cron
+
+```bash
+cat > /opt/scripts/export-logs.sh << 'SCRIPT'
+#!/bin/bash
+set -e
+LOG_DIR="/opt/backups/logs"
+DATE=$(date +%Y%m%d)
+mkdir -p "$LOG_DIR"
+
+docker compose -f /opt/supabase/supabase/docker/docker-compose.yml logs --since 24h supabase-auth > "$LOG_DIR/auth_${DATE}.log" 2>&1
+docker compose -f /opt/supabase/supabase/docker/docker-compose.yml logs --since 24h supabase-kong > "$LOG_DIR/api_${DATE}.log" 2>&1
+docker compose -f /opt/supabase/supabase/docker/docker-compose.yml logs --since 24h supabase-db > "$LOG_DIR/db_${DATE}.log" 2>&1
+docker compose -f /opt/supabase/supabase/docker/docker-compose.yml logs --since 24h supabase-storage > "$LOG_DIR/storage_${DATE}.log" 2>&1
+
+# Compress logs older than 7 days
+find "$LOG_DIR" -name "*.log" -mtime +7 -exec gzip {} \;
+# Delete compressed logs older than 90 days
+find "$LOG_DIR" -name "*.log.gz" -mtime +90 -delete
+
+echo "✅ Logs exported: ${DATE}"
+SCRIPT
+
+chmod +x /opt/scripts/export-logs.sh
+
+# Add to cron (daily at 4 AM)
+echo "0 4 * * * /opt/scripts/export-logs.sh >> /var/log/log-export.log 2>&1" >> /etc/crontab
+```
+
+---
+
+## 14. Secrets Migration
+
+### 14.1 Current Secrets Inventory
+
+| Secret | Purpose | Where Used |
+|--------|---------|-----------|
+| `SUPABASE_URL` | API endpoint | Edge functions |
+| `SUPABASE_ANON_KEY` | Public API key | Frontend + Edge functions |
+| `SUPABASE_SERVICE_ROLE_KEY` | Admin API key (⚠️ private) | Edge functions only |
+| `SUPABASE_DB_URL` | Direct DB connection | Edge functions |
+| `SUPABASE_PUBLISHABLE_KEY` | Same as anon key | Frontend |
+| `LOVABLE_API_KEY` | AI features | Edge functions |
+
+### 14.2 Secrets on Self-Hosted VPS
+
+On a self-hosted VPS, secrets are managed as environment variables:
+
+```bash
+# Create secrets file (restricted permissions)
+cat > /opt/supabase/.secrets << 'EOF'
+SUPABASE_URL=https://api.yourdomain.com
+SUPABASE_ANON_KEY=your-new-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-new-service-role-key
+SUPABASE_DB_URL=postgresql://postgres:your_password@localhost:5432/postgres
+LOVABLE_API_KEY=your-lovable-api-key
+EOF
+
+# Secure the file
+chmod 600 /opt/supabase/.secrets
+chown root:root /opt/supabase/.secrets
+```
+
+Load in systemd services:
+
+```ini
+# In edge-functions.service
+[Service]
+EnvironmentFile=/opt/supabase/.secrets
+```
+
+> ⚠️ **NEVER** commit `.secrets` to git. Add it to `.gitignore`.
+
+---
+
+## 15. Realtime Migration
+
+### 15.1 Realtime Tables
+
+The following tables use Supabase Realtime for live updates:
+
+```sql
+-- Verify which tables have realtime enabled
+SELECT * FROM supabase_realtime.subscription;
+```
+
+### 15.2 Enable Realtime on Self-Hosted
+
+```sql
+-- Re-enable realtime for required tables
+ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+```
+
+### 15.3 Verify Realtime Works
+
+```bash
+# Check realtime container is healthy
+docker compose logs supabase-realtime | tail -20
+
+# Test WebSocket connection
+# Open browser console on your deployed site:
+# You should see realtime events when messages/notifications are created
+```
+
+---
+
+## 16. User Roles & Admin Access
+
+### 16.1 Verify Admin Roles Migrated
+
+```sql
+-- Check user_roles table
+SELECT ur.user_id, ur.role, p.display_name, au.email
+FROM user_roles ur
+JOIN profiles p ON p.user_id = ur.user_id
+JOIN auth.users au ON au.id = ur.user_id
+ORDER BY ur.role;
+```
+
+### 16.2 Expected Admin Accounts
+
+| Email | Role | Purpose |
+|-------|------|---------|
+| `waynegraphicsdesigns@gmail.com` | Super Admin | Primary admin |
+| `ahem58@gmail.com` | Admin | Secondary admin |
+
+### 16.3 Security Functions Verification
+
+```sql
+-- Test is_admin function
+SELECT is_admin('admin-user-uuid-here');  -- Should return true
+
+-- Test has_role function  
+SELECT has_role('admin-user-uuid-here', 'admin');  -- Should return true
+
+-- Verify safe_profiles view works
+SELECT * FROM safe_profiles LIMIT 5;
+-- Phone/WhatsApp should be NULL for non-owner/non-admin queries
+```
+
+---
+
 ## Important Notes
 
 1. **Zero Frontend Code Changes**: By self-hosting Supabase, the `@supabase/supabase-js` client works identically — only the URL and keys change in `.env`.
@@ -1141,6 +1420,10 @@ psql -h localhost -p 5432 -U postgres -d postgres -c "SELECT count(*) FROM base_
 5. **AI Features**: The `LOVABLE_API_KEY` secret is needed for AI-powered features (search, listing generation, price suggestions). Ensure it's set in edge function environment variables.
 
 6. **Monitoring**: Consider adding uptime monitoring (UptimeRobot, Hetrixtools) and server monitoring (Netdata, Grafana).
+
+7. **Logs**: All log types from Lovable Cloud (DB, Auth, Edge Functions, API/Network, Storage) have equivalents via Docker container logs. Use Grafana/Loki for a dashboard experience similar to Lovable Cloud logs.
+
+8. **Secrets Security**: On VPS, secrets are stored as environment files with `chmod 600`. Never expose `SERVICE_ROLE_KEY` in frontend code.
 
 ---
 
