@@ -168,8 +168,16 @@ const SocialAuthSettings = () => {
 // ── Contact & Email Settings ──
 const ContactEmailSettings = () => {
   const supportEmail = usePlatformSetting("support_email", "support@apabazaar.co.ke");
+  const contactEmail = usePlatformSetting("contact_email");
   const contactPhone = usePlatformSetting("contact_phone");
   const contactAddress = usePlatformSetting("contact_address");
+  const contactWhatsapp = usePlatformSetting("contact_whatsapp");
+  const socialFacebook = usePlatformSetting("social_facebook");
+  const socialTwitter = usePlatformSetting("social_twitter");
+  const socialInstagram = usePlatformSetting("social_instagram");
+  const socialYoutube = usePlatformSetting("social_youtube");
+  const socialTiktok = usePlatformSetting("social_tiktok");
+  const socialLinkedin = usePlatformSetting("social_linkedin");
   const smtpHost = usePlatformSetting("smtp_host");
   const smtpPort = usePlatformSetting("smtp_port", "587");
   const smtpUser = usePlatformSetting("smtp_user");
@@ -184,11 +192,15 @@ const ContactEmailSettings = () => {
   const handleSave = async () => {
     setSaving(true);
     await Promise.all([
-      supportEmail.save(supportEmail.value), contactPhone.save(contactPhone.value),
-      contactAddress.save(contactAddress.value), smtpHost.save(smtpHost.value),
-      smtpPort.save(smtpPort.value), smtpUser.save(smtpUser.value),
-      smtpPass.save(smtpPass.value), smtpFrom.save(smtpFrom.value),
-      smtpFromName.save(smtpFromName.value),
+      supportEmail.save(supportEmail.value), contactEmail.save(contactEmail.value),
+      contactPhone.save(contactPhone.value), contactAddress.save(contactAddress.value),
+      contactWhatsapp.save(contactWhatsapp.value),
+      socialFacebook.save(socialFacebook.value), socialTwitter.save(socialTwitter.value),
+      socialInstagram.save(socialInstagram.value), socialYoutube.save(socialYoutube.value),
+      socialTiktok.save(socialTiktok.value), socialLinkedin.save(socialLinkedin.value),
+      smtpHost.save(smtpHost.value), smtpPort.save(smtpPort.value),
+      smtpUser.save(smtpUser.value), smtpPass.save(smtpPass.value),
+      smtpFrom.save(smtpFrom.value), smtpFromName.save(smtpFromName.value),
     ]);
     setSaving(false);
   };
@@ -196,15 +208,32 @@ const ContactEmailSettings = () => {
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader><CardTitle className="flex items-center gap-2"><Phone className="h-5 w-5" />Contact Information</CardTitle><CardDescription>Public contact details displayed on the site</CardDescription></CardHeader>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Phone className="h-5 w-5" />Contact Information</CardTitle><CardDescription>Public contact details displayed on the site (footer, contact page, etc.)</CardDescription></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2"><Label>Support Email</Label><Input value={supportEmail.value} onChange={(e) => supportEmail.setValue(e.target.value)} placeholder="support@example.com" /></div>
+            <div className="space-y-2"><Label>Contact Email (public)</Label><Input value={contactEmail.value} onChange={(e) => contactEmail.setValue(e.target.value)} placeholder="info@example.com" /></div>
             <div className="space-y-2"><Label>Contact Phone</Label><Input value={contactPhone.value} onChange={(e) => contactPhone.setValue(e.target.value)} placeholder="+254 700 000 000" /></div>
+            <div className="space-y-2"><Label>WhatsApp Number</Label><Input value={contactWhatsapp.value} onChange={(e) => contactWhatsapp.setValue(e.target.value)} placeholder="+254 700 000 000" /></div>
           </div>
           <div className="space-y-2"><Label>Physical Address</Label><Textarea value={contactAddress.value} onChange={(e) => contactAddress.setValue(e.target.value)} placeholder="Nairobi, Kenya" rows={2} /></div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Globe className="h-5 w-5" />Social Media Links</CardTitle><CardDescription>Add your social media profile URLs — they will appear in the footer</CardDescription></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Facebook URL</Label><Input value={socialFacebook.value} onChange={(e) => socialFacebook.setValue(e.target.value)} placeholder="https://facebook.com/yourpage" /></div>
+            <div className="space-y-2"><Label>X (Twitter) URL</Label><Input value={socialTwitter.value} onChange={(e) => socialTwitter.setValue(e.target.value)} placeholder="https://x.com/yourhandle" /></div>
+            <div className="space-y-2"><Label>Instagram URL</Label><Input value={socialInstagram.value} onChange={(e) => socialInstagram.setValue(e.target.value)} placeholder="https://instagram.com/yourhandle" /></div>
+            <div className="space-y-2"><Label>YouTube URL</Label><Input value={socialYoutube.value} onChange={(e) => socialYoutube.setValue(e.target.value)} placeholder="https://youtube.com/@yourchannel" /></div>
+            <div className="space-y-2"><Label>TikTok URL</Label><Input value={socialTiktok.value} onChange={(e) => socialTiktok.setValue(e.target.value)} placeholder="https://tiktok.com/@yourhandle" /></div>
+            <div className="space-y-2"><Label>LinkedIn URL</Label><Input value={socialLinkedin.value} onChange={(e) => socialLinkedin.setValue(e.target.value)} placeholder="https://linkedin.com/company/yourcompany" /></div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader><CardTitle className="flex items-center gap-2"><Mail className="h-5 w-5" />SMTP / Email Settings</CardTitle><CardDescription>Configure outgoing email for notifications</CardDescription></CardHeader>
         <CardContent className="space-y-4">
