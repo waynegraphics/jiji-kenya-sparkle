@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Link } from "react-router-dom";
 import {
   Check, Star, Zap, TrendingUp, Crown, Package, ArrowRight,
-  Shield, Clock, BarChart3, Megaphone, ChevronDown, ChevronUp
+  Shield, Clock, BarChart3, Megaphone, ChevronDown, ChevronUp, BookOpen
 } from "lucide-react";
 
 const Pricing = () => {
@@ -79,9 +80,14 @@ const Pricing = () => {
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             Grow Your Business
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             Choose from flexible subscription plans, boost individual ads with tiers, bump listings to the top, or get premium placements.
           </p>
+          <Link to="/pricing-details">
+            <Button variant="outline" size="lg" className="gap-2">
+              <BookOpen className="h-4 w-4" /> Full Pricing & Features Guide
+            </Button>
+          </Link>
         </div>
 
         {/* ─── PILLAR 1: Subscription Packages ─── */}
@@ -349,6 +355,15 @@ const Pricing = () => {
                 )}
               </div>
             ))}
+          </div>
+
+          <div className="text-center mt-8">
+            <p className="text-muted-foreground mb-3">Need more details about how everything works?</p>
+            <Link to="/pricing-details">
+              <Button variant="outline" className="gap-2">
+                <BookOpen className="h-4 w-4" /> Read Full Pricing Guide <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </main>
