@@ -35,6 +35,7 @@ interface SellerProfileData {
   created_at: string;
   account_type: string;
   business_name: string | null;
+  user_number: number | null;
 }
 
 interface Listing {
@@ -69,7 +70,7 @@ const SellerProfile = () => {
       if (!userId) return;
 
       const [profileResult, listingsResult, followerResult] = await Promise.allSettled([
-        supabase.from("safe_profiles").select("display_name, phone, whatsapp_number, location, avatar_url, bio, rating, total_reviews, is_verified, created_at, account_type, business_name").eq("user_id", userId).maybeSingle(),
+        supabase.from("profiles").select("display_name, phone, whatsapp_number, location, avatar_url, bio, rating, total_reviews, is_verified, created_at, account_type, business_name, user_number").eq("user_id", userId).maybeSingle(),
         supabase.from("base_listings")
           .select("id, title, price, location, images, is_featured, is_urgent, created_at, main_categories(slug, name)")
           .eq("user_id", userId).eq("status", "active")
@@ -207,6 +208,11 @@ const SellerProfile = () => {
               </div>
 
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground mt-2">
+                {seller.user_number && (
+                  <span className="flex items-center gap-1 font-medium text-foreground">
+                    ID: {String(seller.user_number).padStart(2, '0')}
+                  </span>
+                )}
                 {seller.location && (
                   <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{seller.location}</span>
                 )}

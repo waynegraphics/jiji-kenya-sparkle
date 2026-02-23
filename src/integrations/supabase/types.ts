@@ -2356,6 +2356,7 @@ export type Database = {
           total_reviews: number | null
           updated_at: string
           user_id: string
+          user_number: number
           whatsapp_number: string | null
         }
         Insert: {
@@ -2374,6 +2375,7 @@ export type Database = {
           total_reviews?: number | null
           updated_at?: string
           user_id: string
+          user_number?: number
           whatsapp_number?: string | null
         }
         Update: {
@@ -2392,6 +2394,7 @@ export type Database = {
           total_reviews?: number | null
           updated_at?: string
           user_id?: string
+          user_number?: number
           whatsapp_number?: string | null
         }
         Relationships: []
