@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageHero from "@/components/PageHero";
-import { Mail, Phone, MapPin, Send, MessageSquare, Loader2 } from "lucide-react";
+import { Mail, Phone, MapPin, Send, MessageSquare, Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,7 +16,7 @@ const useContactSettings = () => {
   return useQuery({
     queryKey: ["contact-settings"],
     queryFn: async () => {
-      const keys = ["contact_email", "contact_phone", "contact_address", "support_email"];
+      const keys = ["contact_email", "contact_phone", "contact_address", "contact_whatsapp", "support_email"];
       const { data } = await supabase
         .from("platform_settings")
         .select("key, value")
@@ -42,6 +42,7 @@ const ContactUs = () => {
   const phone = settings?.contact_phone || "+254 700 000 000";
   const email = settings?.contact_email || settings?.support_email || "support@apabazaar.co.ke";
   const address = settings?.contact_address || "Nairobi, Kenya";
+  const whatsapp = settings?.contact_whatsapp || "";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,6 +128,22 @@ const ContactUs = () => {
                 <p className="text-foreground">{address}</p>
                 <p className="text-xs text-muted-foreground mt-1">By appointment only</p>
               </div>
+
+              {whatsapp && (
+                <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <MessageCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">WhatsApp</h3>
+                      <p className="text-sm text-muted-foreground">Chat with us on WhatsApp</p>
+                    </div>
+                  </div>
+                  <a href={`https://wa.me/${whatsapp.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">{whatsapp}</a>
+                  <p className="text-xs text-muted-foreground mt-1">Available during business hours</p>
+                </div>
+              )}
             </div>
 
             {/* Contact Form */}
