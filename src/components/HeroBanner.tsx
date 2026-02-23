@@ -38,7 +38,7 @@ const HeroBanner = () => {
           <Tabs defaultValue="classic" className="w-full">
             <TabsList className="grid w-48 grid-cols-2 mx-auto mb-3 bg-card/20">
               <TabsTrigger value="classic" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">🔍 Classic</TabsTrigger>
-              <TabsTrigger value="smart" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">✨ Smart</TabsTrigger>
+              <TabsTrigger value="smart" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">🧠 Smart</TabsTrigger>
             </TabsList>
             <div className="flex gap-2 items-center">
               <LocationPopup
@@ -66,7 +66,7 @@ const HeroBanner = () => {
           <Tabs defaultValue="classic" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-2 bg-card/20">
               <TabsTrigger value="classic" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">🔍 Classic</TabsTrigger>
-              <TabsTrigger value="smart" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">✨ Smart Search</TabsTrigger>
+              <TabsTrigger value="smart" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">🧠 Smart Search</TabsTrigger>
             </TabsList>
             <TabsContent value="smart" className="mt-0">
               <AISearchBar />
