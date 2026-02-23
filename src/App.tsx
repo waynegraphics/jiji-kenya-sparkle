@@ -27,6 +27,7 @@ const SellerProfile = lazy(() => import("./pages/SellerProfile"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const SellerDashboard = lazy(() => import("./pages/SellerDashboard"));
 const Pricing = lazy(() => import("./pages/Pricing"));
+const PricingDetails = lazy(() => import("./pages/PricingDetails"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const VerifiedSellers = lazy(() => import("./pages/VerifiedSellers"));
@@ -107,6 +108,7 @@ const App = () => (
             
             <Route path="/seller-dashboard/*" element={<SellerDashboard />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/pricing-details" element={<PricingDetails />} />
             <Route path="/checkout/:type/:id" element={<Checkout />} />
             <Route path="/checkout/:type/:id/:tierId" element={<Checkout />} />
             <Route path="/category/:categorySlug" element={<CategoryPage />} />
