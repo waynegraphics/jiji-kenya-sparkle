@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { Link } from "react-router-dom";
-import { Home, ChevronRight, Sparkles } from "lucide-react";
+import { Home, ChevronRight, BrainCircuit } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,

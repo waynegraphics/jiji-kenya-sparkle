@@ -6,7 +6,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { getPreferredCategoryId } from "@/lib/searchHistory";
-import { Sparkles } from "lucide-react";
+import { BrainCircuit } from "lucide-react";
 
 interface ListingTier {
   name: string;
@@ -168,7 +168,7 @@ const FeaturedListings = () => {
             <h2 className="text-xl md:text-2xl font-bold text-foreground">Trending Ads</h2>
             {isPersonalized && (
               <span className="flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">
-                <Sparkles className="h-3 w-3" />
+                <BrainCircuit className="h-3 w-3" />
                 For You
               </span>
             )}

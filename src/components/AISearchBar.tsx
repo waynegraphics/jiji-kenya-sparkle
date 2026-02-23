@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Search, Sparkles, X, Loader2 } from "lucide-react";
+import { Search, BrainCircuit, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +95,7 @@ const AISearchBar = ({ className = "" }: AISearchBarProps) => {
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       <div className="relative">
-        <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
+        <BrainCircuit className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
         <Input
           type="text"
           placeholder='Try: "Toyota Fielder 2012 under 1M in Nairobi"'
@@ -130,7 +130,7 @@ const AISearchBar = ({ className = "" }: AISearchBarProps) => {
       {aiResult && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 p-4">
           <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="h-4 w-4 text-primary" />
+            <BrainCircuit className="h-4 w-4 text-primary" />
             <span className="text-sm font-semibold">AI understood your search</span>
             <Badge variant="secondary" className="text-xs">
               {Math.round((aiResult.confidence as number || 0) * 100)}% confident
