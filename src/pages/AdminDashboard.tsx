@@ -29,6 +29,7 @@ import AdminAISettings from "@/components/admin/AdminAISettings";
 import AdminCommunications from "@/components/admin/AdminCommunications";
 import AdminNotificationCenter from "@/components/admin/AdminNotificationCenter";
 import AdminFormFields from "@/components/admin/AdminFormFields";
+import AdminReviews from "@/components/admin/AdminReviews";
 
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -93,6 +94,7 @@ const AdminDashboard = () => {
     if (path.includes('/bump-packages')) return 'Bump Packages';
     if (path.includes('/promotions')) return 'Promotions';
     if (path.includes('/support')) return 'Support Tickets';
+    if (path.includes('/reviews')) return 'Review Moderation';
     if (path.includes('/reports')) return 'Reports & Moderation';
     if (path.includes('/messaging')) return 'Messaging';
     if (path.includes('/settings')) return 'System Settings';
@@ -170,6 +172,7 @@ const AdminDashboard = () => {
                 <Route path="promotions" element={<AdminPromotions />} />
                 {hasPermission("view_support") && <Route path="support/*" element={<AdminSupport />} />}
                 {hasPermission("view_reports") && <Route path="reports" element={<AdminReports />} />}
+                <Route path="reviews" element={<AdminReviews />} />
                 <Route path="messaging" element={<AdminMessaging />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="verifications" element={<AdminVerifications />} />

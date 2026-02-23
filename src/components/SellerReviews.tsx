@@ -12,6 +12,7 @@ interface Review {
   reviewer_id: string;
   rating: number;
   comment: string | null;
+  status: string;
   created_at: string;
   reviewer_name?: string;
   reviewer_avatar?: string | null;
@@ -110,7 +111,7 @@ const SellerReviews = ({ sellerId }: SellerReviewsProps) => {
         if (error.code === "23505") toast.error("You already reviewed this seller");
         else toast.error("Failed to submit review");
       } else {
-        toast.success("Review submitted!");
+        toast.success("Review submitted! It will be visible after admin approval.");
       }
     }
 
@@ -143,7 +144,7 @@ const SellerReviews = ({ sellerId }: SellerReviewsProps) => {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold">Reviews ({reviews.length})</h3>
+      <h3 className="text-lg font-semibold">Reviews ({reviews.filter(r => r.status === 'approved' || (user && r.reviewer_id === user.id)).length})</h3>
 
       {/* Write review form */}
       {user && user.id !== sellerId && (
@@ -177,7 +178,7 @@ const SellerReviews = ({ sellerId }: SellerReviewsProps) => {
       ) : (
         <div className="space-y-4">
           {reviews.map((review) => (
-            <div key={review.id} className="border-b pb-4 last:border-0">
+            <div key={review.id} className={`border-b pb-4 last:border-0 ${review.status === 'pending' ? 'opacity-70' : ''}`}>
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-sm font-bold">
                   {review.reviewer_avatar ? (
@@ -214,7 +215,10 @@ const SellerReviews = ({ sellerId }: SellerReviewsProps) => {
               {review.comment && (
                 <p className="text-sm text-muted-foreground ml-11">{review.comment}</p>
               )}
-            </div>
+              {review.status === 'pending' && user && review.reviewer_id === user.id && (
+                <p className="text-xs text-muted-foreground ml-11 mt-1 italic">⏳ Awaiting admin approval</p>
+              )}
+             </div>
           ))}
         </div>
       )}

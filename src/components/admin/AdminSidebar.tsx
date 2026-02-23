@@ -15,7 +15,7 @@ import {
   LayoutDashboard, Users, FileText, FolderTree, Package, 
   MessageSquare, LifeBuoy, Flag, Settings, Shield, ShieldCheck,
   UsersRound, Link2, Activity, ListChecks, Crown, Zap, TrendingUp,
-  BookOpen, Briefcase, Brain, Mail, FormInput
+  BookOpen, Briefcase, Brain, Mail, FormInput, Star
 } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 import { useAdminCounts } from "@/hooks/useAdminCounts";
@@ -49,6 +49,7 @@ const AdminSidebar = () => {
     { title: "Promotions", url: `${basePath}/promotions`, icon: TrendingUp, permission: null, countKey: null },
     { title: "Support", url: `${basePath}/support`, icon: LifeBuoy, permission: "view_support", countKey: "support" as const },
     { title: "Reports", url: `${basePath}/reports`, icon: Flag, permission: "view_reports", countKey: "reports" as const },
+    { title: "Reviews", url: `${basePath}/reviews`, icon: Star, permission: null, countKey: "reviews" as const },
     { title: "Messaging", url: `${basePath}/messaging`, icon: MessageSquare, permission: null, countKey: null },
     { title: "Verifications", url: `${basePath}/verifications`, icon: ShieldCheck, permission: null, countKey: "verifications" as const },
     { title: "Communications", url: `${basePath}/communications`, icon: Mail, permission: null, countKey: null },

@@ -12,6 +12,7 @@ export const useAdminCounts = () => {
         { count: pendingReports },
         { count: pendingCustomValues },
         { count: pendingApplications },
+        { count: pendingReviews },
       ] = await Promise.all([
         supabase.from("base_listings").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("seller_verifications").select("*", { count: "exact", head: true }).eq("status", "pending"),
@@ -19,6 +20,7 @@ export const useAdminCounts = () => {
         supabase.from("reports").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("custom_field_values").select("*", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("career_applications").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("reviews").select("*", { count: "exact", head: true }).eq("status", "pending"),
       ]);
 
       return {
@@ -28,6 +30,7 @@ export const useAdminCounts = () => {
         reports: pendingReports || 0,
         customValues: pendingCustomValues || 0,
         careers: pendingApplications || 0,
+        reviews: pendingReviews || 0,
       };
     },
     refetchInterval: 30000,
