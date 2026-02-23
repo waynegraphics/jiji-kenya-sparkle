@@ -151,7 +151,7 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ onSearch }, ref) => {
             </nav>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2 md:gap-2">
+            <div className="flex items-center gap-3 md:gap-2">
               {/* Mobile search toggle */}
               <Button
                 variant="ghost"

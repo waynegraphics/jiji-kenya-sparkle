@@ -27,7 +27,7 @@ const categories = [
     description: "Discover the latest phones, tablets, and accessories — from flagship brands to budget-friendly options.",
     cta: "Explore wide range of Phones",
     image: phonesImg,
-    slug: "phones",
+    slug: "phones-tablets",
   },
   {
     title: "Fashion",
@@ -48,7 +48,7 @@ const categories = [
     description: "Transform your space with quality furniture, home décor, and household items from trusted sellers.",
     cta: "Explore wide range of Furniture",
     image: furnitureImg,
-    slug: "furniture",
+    slug: "furniture-appliances",
   },
 ];
 

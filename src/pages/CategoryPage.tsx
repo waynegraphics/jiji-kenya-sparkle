@@ -270,13 +270,13 @@ const CategoryPage = () => {
             </div>
 
             {listingsLoading ? (
-              <div className={viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4" : "space-y-3"}>
+              <div className={viewMode === "grid" ? "grid grid-cols-2 xl:grid-cols-3 gap-4" : "space-y-3"}>
                 {[...Array(6)].map((_, i) => <Skeleton key={i} className={viewMode === "grid" ? "h-64 rounded-xl" : "h-28 rounded-xl"} />)}
               </div>
             ) : listingsData?.listings && listingsData.listings.length > 0 ? (
               <>
                 {viewMode === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
                     {listingsData.listings.map((listing) => (
                       <ProductCard
                         key={listing.id}
