@@ -111,14 +111,16 @@ const ProductDetail = () => {
         let baseError: any = null;
 
         if (isShortId) {
-          // Short ID: search by ID prefix using LIKE
-          const { data, error } = await supabase
+          // Short ID is first 8 hex chars of UUID. Construct UUID range for prefix match.
+          const lo = `${listingId}-0000-0000-0000-000000000000`;
+          const hi = `${listingId}-ffff-ffff-ffff-ffffffffffff`;
+          const { data: matches, error } = await supabase
             .from("base_listings").select("*")
-            .like("id", `${listingId}%`)
-            .limit(1)
-            .single();
-          baseData = data;
-          baseError = error;
+            .gte("id", lo)
+            .lte("id", hi)
+            .limit(1);
+          baseData = matches && matches.length > 0 ? matches[0] : null;
+          baseError = error || (!baseData ? { message: 'not found' } : null);
         } else {
           const { data, error } = await supabase
             .from("base_listings").select("*").eq("id", listingId).single();
