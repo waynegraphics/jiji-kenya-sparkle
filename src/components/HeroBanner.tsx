@@ -1,4 +1,4 @@
-import { Shield, Sparkles, HeadphonesIcon, CheckCircle } from "lucide-react";
+import { Shield, BrainCircuit, HeadphonesIcon, CheckCircle } from "lucide-react";
 import AjaxSearch from "./AjaxSearch";
 import AISearchBar from "./AISearchBar";
 import LocationPopup from "./LocationPopup";
@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const features = [
   { icon: Shield, title: "Safe & Secure", description: "Verified sellers" },
-  { icon: Sparkles, title: "AI-Powered Search", description: "Smart results for you" },
+  { icon: BrainCircuit, title: "AI-Powered Search", description: "Smart results for you" },
   { icon: HeadphonesIcon, title: "24/7 Support", description: "Always here to help" },
   { icon: CheckCircle, title: "Trusted Platform", description: "Thousands of verified ads" },
 ];

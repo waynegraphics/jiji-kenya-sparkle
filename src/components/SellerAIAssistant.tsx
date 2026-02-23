@@ -3,7 +3,7 @@ import { useAIAssistant } from "@/hooks/useAIAssistant";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Loader2, X, Wand2, DollarSign, FileText, Lightbulb } from "lucide-react";
+import { BrainCircuit, Loader2, X, Wand2, DollarSign, FileText, Lightbulb } from "lucide-react";
 
 interface SellerAIAssistantProps {
   category: string;
@@ -56,7 +56,7 @@ const SellerAIAssistant = ({
           className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground"
           onClick={() => setIsOpen(true)}
         >
-          <Sparkles className="h-6 w-6" />
+          <BrainCircuit className="h-6 w-6" />
         </Button>
       </div>
     );
@@ -68,7 +68,7 @@ const SellerAIAssistant = ({
       <CardHeader className="pb-3 shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
+            <BrainCircuit className="h-4 w-4 text-primary" />
             AI Listing Assistant
           </CardTitle>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setIsOpen(false); setResult(null); }}>

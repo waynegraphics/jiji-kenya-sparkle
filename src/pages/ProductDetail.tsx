@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Heart, MapPin, Clock, Phone, MessageCircle, Share2, ChevronLeft,
-  Shield, Star, Eye, AlertTriangle, Flag, ExternalLink, BarChart3, Sparkles, Loader2, Send
+  Shield, Star, Eye, AlertTriangle, Flag, ExternalLink, BarChart3, BrainCircuit, Loader2, Send
 } from "lucide-react";
 import { useCompareStore } from "@/hooks/useCompareStore";
 import { useAuth } from "@/contexts/AuthContext";
@@ -753,7 +753,7 @@ const RecommendedForYou = ({ currentId, currentCategoryId }: { currentId: string
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-xl font-bold">Recommended For You</h2>
         <span className="flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">
-          <Sparkles className="h-3 w-3" />
+          <BrainCircuit className="h-3 w-3" />
           Based on your searches
         </span>
       </div>

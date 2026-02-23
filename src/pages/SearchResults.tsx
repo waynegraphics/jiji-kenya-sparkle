@@ -16,7 +16,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useMainCategories } from "@/hooks/useCategories";
 import { formatDistanceToNow } from "date-fns";
-import { Search, SlidersHorizontal, X, Grid, List, Sparkles } from "lucide-react";
+import { Search, SlidersHorizontal, X, Grid, List, BrainCircuit } from "lucide-react";
 import { Link } from "react-router-dom";
 import { generateListingUrl } from "@/lib/slugify";
 
@@ -336,7 +336,7 @@ const SearchResults = () => {
           </p>
           {broadenedMessage && (
             <div className="mt-2 bg-secondary/10 border border-secondary/30 rounded-lg px-4 py-2.5 text-sm text-secondary font-medium flex items-center gap-2">
-              <Sparkles className="h-4 w-4 flex-shrink-0" />
+              <BrainCircuit className="h-4 w-4 flex-shrink-0" />
               {broadenedMessage}
             </div>
           )}
