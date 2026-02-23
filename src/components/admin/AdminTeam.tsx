@@ -313,7 +313,7 @@ const AdminTeam = () => {
                   <TableCell className="text-sm text-muted-foreground">{member.email}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      {member.roles.map((role: string) => (
+                      {(member.roles || []).map((role: string) => (
                         <Badge key={role} className={getRoleColor(role)}>
                           {role.charAt(0).toUpperCase() + role.slice(1)}
                         </Badge>
