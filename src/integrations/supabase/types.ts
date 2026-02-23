@@ -2585,30 +2585,36 @@ export type Database = {
       }
       reviews: {
         Row: {
+          admin_notes: string | null
           comment: string | null
           created_at: string
           id: string
           rating: number
           reviewer_id: string
           seller_id: string
+          status: string
           updated_at: string
         }
         Insert: {
+          admin_notes?: string | null
           comment?: string | null
           created_at?: string
           id?: string
           rating: number
           reviewer_id: string
           seller_id: string
+          status?: string
           updated_at?: string
         }
         Update: {
+          admin_notes?: string | null
           comment?: string | null
           created_at?: string
           id?: string
           rating?: number
           reviewer_id?: string
           seller_id?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []
