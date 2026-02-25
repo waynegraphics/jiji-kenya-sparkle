@@ -217,46 +217,142 @@ You should see these services running:
 
 ### 3.4 Export Database from Lovable Cloud
 
-Get your database connection string from Lovable Cloud settings, then:
+> ⚠️ **Lovable Cloud Limitation:** You do NOT have access to a database connection string or `pg_dump`. Instead, export your data using the **SQL Editor** in the Lovable Cloud panel, which outputs CSV files per table.
+
+#### Step 1: Export Schema (DDL)
+
+Run this query in the Lovable Cloud SQL Editor to get your full schema DDL:
+
+```sql
+SELECT 
+  'CREATE TABLE IF NOT EXISTS ' || schemaname || '.' || tablename || ' ();' as ddl
+FROM pg_tables 
+WHERE schemaname = 'public'
+ORDER BY tablename;
+```
+
+> 💡 **Better approach:** Your schema is already defined in your `supabase/migrations/` folder in the GitHub repo. Apply all migration files in order to your self-hosted Supabase to recreate the exact schema, functions, triggers, and RLS policies:
 
 ```bash
-# Option A: Full dump (schema + data + functions + triggers + RLS)
-pg_dump "postgresql://postgres.[project-id]:[password]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres" \
-  --no-owner \
-  --no-privileges \
-  --schema=public \
-  --format=custom \
-  --file=jijkenya_backup.dump
+# On your VPS, after setting up self-hosted Supabase:
+cd /opt/app
+for f in supabase/migrations/*.sql; do
+  echo "Applying: $f"
+  psql -h localhost -p 5432 -U postgres -d postgres -f "$f"
+done
+```
 
-# Option B: Plain SQL (readable, good for review)
-pg_dump "postgresql://postgres.[project-id]:[password]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres" \
-  --no-owner \
-  --no-privileges \
-  --schema=public \
-  --format=plain \
-  --file=jijkenya_backup.sql
+#### Step 2: Export Table Data as CSV
+
+For each table, run in the Lovable Cloud SQL Editor and use the **Export** button to download CSV:
+
+```sql
+-- Export each table one by one:
+SELECT * FROM base_listings;
+SELECT * FROM profiles;
+SELECT * FROM vehicle_listings;
+SELECT * FROM property_listings;
+SELECT * FROM job_listings;
+SELECT * FROM electronics_listings;
+-- ... repeat for all tables listed in Section 3.6
+```
+
+> 📝 **Note:** The SQL Editor may have a row limit. For large tables, use pagination:
+> ```sql
+> SELECT * FROM base_listings ORDER BY created_at LIMIT 1000 OFFSET 0;
+> SELECT * FROM base_listings ORDER BY created_at LIMIT 1000 OFFSET 1000;
+> -- Continue until no more rows
+> ```
+
+#### Step 3: Export Database Functions
+
+Run this in the SQL Editor to get all function definitions:
+
+```sql
+SELECT pg_get_functiondef(oid) || ';' as function_def
+FROM pg_proc
+WHERE pronamespace = 'public'::regnamespace
+ORDER BY proname;
+```
+
+Copy the output and save as `functions_export.sql`.
+
+#### Step 4: Export RLS Policies
+
+```sql
+SELECT 
+  'CREATE POLICY "' || policyname || '" ON ' || schemaname || '.' || tablename ||
+  ' FOR ' || cmd ||
+  CASE WHEN qual IS NOT NULL THEN ' USING (' || qual || ')' ELSE '' END ||
+  CASE WHEN with_check IS NOT NULL THEN ' WITH CHECK (' || with_check || ')' ELSE '' END ||
+  ';' as policy_ddl
+FROM pg_policies 
+WHERE schemaname = 'public'
+ORDER BY tablename, policyname;
+```
+
+Copy the output and save as `rls_policies.sql`.
+
+#### Step 5: Export Triggers
+
+```sql
+SELECT pg_get_triggerdef(oid) || ';' as trigger_def
+FROM pg_trigger
+WHERE tgrelid IN (
+  SELECT oid FROM pg_class WHERE relnamespace = 'public'::regnamespace
+)
+AND NOT tgisinternal
+ORDER BY tgname;
 ```
 
 ### 3.5 Import Database to Self-Hosted Supabase
 
+#### Option A: Apply Migrations from GitHub Repo (Recommended)
+
+Your GitHub repo already contains all schema definitions in `supabase/migrations/`. This is the cleanest approach:
+
 ```bash
-# Get the database container IP or use localhost with exposed port
-# Default Supabase Docker exposes PostgreSQL on port 5432
+cd /opt/app
 
-# Restore the dump
-pg_restore \
-  -h localhost \
-  -p 5432 \
-  -U postgres \
-  -d postgres \
-  --no-owner \
-  --no-privileges \
-  --schema=public \
-  jijkenya_backup.dump
-
-# If using plain SQL format instead:
-psql -h localhost -p 5432 -U postgres -d postgres -f jijkenya_backup.sql
+# Apply all migrations in order
+for f in $(ls supabase/migrations/*.sql | sort); do
+  echo "Applying migration: $f"
+  psql -h localhost -p 5432 -U postgres -d postgres -f "$f"
+done
 ```
+
+#### Option B: Import Functions & Policies from SQL Editor Export
+
+```bash
+# If you exported functions and policies separately:
+psql -h localhost -p 5432 -U postgres -d postgres -f functions_export.sql
+psql -h localhost -p 5432 -U postgres -d postgres -f rls_policies.sql
+```
+
+#### Import CSV Data
+
+For each CSV file exported from the SQL Editor:
+
+```bash
+# Import CSV files into tables
+# Make sure tables exist first (via migrations above)
+
+psql -h localhost -p 5432 -U postgres -d postgres -c "
+  COPY base_listings FROM '/path/to/base_listings.csv' WITH (FORMAT csv, HEADER true);
+"
+
+psql -h localhost -p 5432 -U postgres -d postgres -c "
+  COPY profiles FROM '/path/to/profiles.csv' WITH (FORMAT csv, HEADER true);
+"
+
+# Repeat for each table...
+```
+
+> 💡 **Tip:** If COPY fails due to column ordering, use a helper script:
+> ```bash
+> # For each CSV, import with explicit column mapping
+> psql -h localhost -p 5432 -U postgres -d postgres -c "\copy base_listings FROM '/path/to/base_listings.csv' CSV HEADER"
+> ```
 
 ### 3.6 Verify Database Integrity
 
@@ -414,7 +510,56 @@ All RLS policies are included in the `pg_dump` and will be restored automaticall
 
 ### 4.2 Export Storage Files
 
-Create a migration script `export-storage.js`:
+> ⚠️ **Lovable Cloud Limitation:** You do NOT have access to the `SERVICE_ROLE_KEY`, so the programmatic export script won't work for private buckets. Use the methods below instead.
+
+#### Method A: Download Public Files via URL (Listings & Blog)
+
+For **public** buckets (`listings`, `blog`), files are accessible via direct URLs. First, get the file list from the SQL Editor:
+
+```sql
+-- Get all storage file paths
+SELECT bucket_id, name, created_at
+FROM storage.objects
+WHERE bucket_id IN ('listings', 'blog')
+ORDER BY bucket_id, name;
+```
+
+Then download them using the public URL pattern:
+
+```bash
+mkdir -p storage-export/listings storage-export/blog
+
+# Public files can be downloaded directly:
+# Pattern: https://pookcecmoirdsavrgcmb.supabase.co/storage/v1/object/public/{bucket}/{path}
+
+# Example using wget with a file list:
+while IFS= read -r filepath; do
+  wget -q "https://pookcecmoirdsavrgcmb.supabase.co/storage/v1/object/public/listings/$filepath" \
+    -O "storage-export/listings/$filepath"
+done < listings_files.txt
+```
+
+#### Method B: Download from Lovable Cloud Storage Panel (All Buckets)
+
+For **private** buckets (`verifications`, `resumes`, `messages`):
+
+1. Open the **Lovable Cloud** panel → **Storage** section
+2. Navigate to each bucket
+3. Download files manually (or in batches if the UI supports it)
+4. Organize them locally in the same folder structure:
+
+```
+storage-export/
+├── listings/
+├── blog/
+├── verifications/
+├── resumes/
+└── messages/
+```
+
+#### Method C: Export Using Anon Key (Public Buckets Only)
+
+For public buckets, you can use the anon key:
 
 ```javascript
 const { createClient } = require("@supabase/supabase-js");
@@ -423,10 +568,10 @@ const path = require("path");
 
 const supabase = createClient(
   "https://pookcecmoirdsavrgcmb.supabase.co",
-  "YOUR_SERVICE_ROLE_KEY" // Use service role key for full access
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBvb2tjZWNtb2lyZHNhdnJnY21iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5MDA2NzQsImV4cCI6MjA4NTQ3NjY3NH0.YzM6kMu9T4GLZWWQ5C9GZfYfz0gxBB7lNrDlrQnpy8g"
 );
 
-const BUCKETS = ["listings", "blog", "verifications", "resumes", "messages"];
+const PUBLIC_BUCKETS = ["listings", "blog"];
 
 async function exportBucket(bucketName) {
   console.log(`\n📦 Exporting bucket: ${bucketName}`);
@@ -445,7 +590,7 @@ async function exportBucket(bucketName) {
   fs.mkdirSync(outputDir, { recursive: true });
 
   for (const file of files) {
-    if (file.id === null) continue; // Skip folders
+    if (file.id === null) continue;
     
     try {
       const { data, error: dlError } = await supabase.storage
@@ -467,14 +612,12 @@ async function exportBucket(bucketName) {
 }
 
 async function main() {
-  console.log("🚀 Starting storage export...\n");
-  
-  for (const bucket of BUCKETS) {
+  console.log("🚀 Starting public storage export...\n");
+  for (const bucket of PUBLIC_BUCKETS) {
     await exportBucket(bucket);
   }
-  
-  console.log("\n✅ Storage export complete!");
-  console.log(`📁 Files saved to: ${path.resolve("./storage-export")}`);
+  console.log("\n✅ Public storage export complete!");
+  console.log("⚠️  Private buckets (verifications, resumes, messages) must be downloaded manually from the Lovable Cloud Storage panel.");
 }
 
 main();
@@ -607,18 +750,41 @@ CREATE POLICY "Users upload resumes" ON storage.objects
 
 ### 5.1 Auth Users Export
 
-Supabase stores users in `auth.users`. Export them:
+> ⚠️ **Lovable Cloud Limitation:** You do NOT have access to `pg_dump` or the database connection string. Use the SQL Editor to export auth user data.
+
+#### Export via SQL Editor
+
+Run these queries in the Lovable Cloud SQL Editor and export the results as CSV:
+
+```sql
+-- Export auth users (contains hashed passwords - they'll work as-is on import)
+SELECT id, instance_id, aud, role, email, encrypted_password, 
+       email_confirmed_at, invited_at, confirmation_token, confirmation_sent_at,
+       recovery_token, recovery_sent_at, email_change_token_new, email_change,
+       email_change_sent_at, last_sign_in_at, raw_app_meta_data, raw_user_meta_data,
+       is_super_admin, created_at, updated_at, phone, phone_confirmed_at,
+       phone_change, phone_change_token, phone_change_sent_at, 
+       email_change_token_current, email_change_confirm_status, banned_until,
+       reauthentication_token, reauthentication_sent_at, is_sso_user, deleted_at,
+       is_anonymous
+FROM auth.users;
+
+-- Export auth identities
+SELECT id, user_id, identity_data, provider, provider_id, 
+       last_sign_in_at, created_at, updated_at
+FROM auth.identities;
+```
+
+#### Import Auth Users to Self-Hosted Supabase
+
+Save the exported CSVs, then import:
 
 ```bash
-pg_dump "postgresql://postgres.[project-id]:[password]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres" \
-  --no-owner \
-  --no-privileges \
-  --schema=auth \
-  --table=auth.users \
-  --table=auth.identities \
-  --data-only \
-  --format=plain \
-  --file=auth_users_export.sql
+# Import users
+psql -h localhost -p 5432 -U postgres -d postgres -c "\copy auth.users FROM '/path/to/auth_users.csv' CSV HEADER"
+
+# Import identities  
+psql -h localhost -p 5432 -U postgres -d postgres -c "\copy auth.identities FROM '/path/to/auth_identities.csv' CSV HEADER"
 ```
 
 ### 5.2 Import Auth Users
