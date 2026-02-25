@@ -16,7 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { format } from "date-fns";
 
 const PROVIDERS = [
-  { value: "gemini", label: "Google Gemini (Default)", requiresKey: false },
+  { value: "gemini", label: "Google Gemini (Default - Lovable AI)", requiresKey: false },
+  { value: "google", label: "Google Gemini (Own API Key)", requiresKey: true },
   { value: "openai", label: "OpenAI", requiresKey: true },
   { value: "claude", label: "Claude", requiresKey: true },
 ];
@@ -27,6 +28,12 @@ const MODELS: Record<string, { value: string; label: string }[]> = {
     { value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash (Balanced)" },
     { value: "google/gemini-2.5-pro", label: "Gemini 2.5 Pro (Best)" },
     { value: "google/gemini-3-pro-preview", label: "Gemini 3 Pro (Next-gen)" },
+  ],
+  google: [
+    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Fast)" },
+    { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro (Best)" },
+    { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
+    { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
   ],
   openai: [
     { value: "openai/gpt-5-nano", label: "GPT-5 Nano (Fast)" },
@@ -50,6 +57,7 @@ const AdminAISettings = () => {
     enable_seo_optimization: true,
     openai_api_key: "",
     claude_api_key: "",
+    google_api_key: "",
   });
 
   const { data: settings, isLoading } = useQuery({
@@ -104,6 +112,7 @@ const AdminAISettings = () => {
         enable_seo_optimization: settings.enable_seo_optimization ?? true,
         openai_api_key: settings.openai_api_key || "",
         claude_api_key: settings.claude_api_key || "",
+        google_api_key: (settings as any).google_api_key || "",
       });
     }
   }, [settings]);
@@ -122,6 +131,7 @@ const AdminAISettings = () => {
           enable_seo_optimization: formData.enable_seo_optimization,
           openai_api_key: formData.openai_api_key || null,
           claude_api_key: formData.claude_api_key || null,
+          google_api_key: formData.google_api_key || null,
           updated_at: new Date().toISOString(),
         })
         .eq("id", settings!.id);
@@ -185,6 +195,19 @@ const AdminAISettings = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {currentProvider?.requiresKey && formData.provider === "google" && (
+                <div className="space-y-2">
+                  <Label>Google AI API Key</Label>
+                  <Input
+                    type="password"
+                    value={formData.google_api_key}
+                    onChange={(e) => setFormData(prev => ({ ...prev, google_api_key: e.target.value }))}
+                    placeholder="AIza..."
+                  />
+                  <p className="text-xs text-muted-foreground">Get your API key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google AI Studio</a></p>
+                </div>
+              )}
 
               {currentProvider?.requiresKey && formData.provider === "openai" && (
                 <div className="space-y-2">
