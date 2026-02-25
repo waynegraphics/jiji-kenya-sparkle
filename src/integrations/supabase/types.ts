@@ -350,6 +350,7 @@ export type Database = {
           enable_seller_assistant: boolean
           enable_seo_optimization: boolean
           enable_smart_search: boolean
+          google_api_key: string | null
           id: string
           model: string
           openai_api_key: string | null
@@ -364,6 +365,7 @@ export type Database = {
           enable_seller_assistant?: boolean
           enable_seo_optimization?: boolean
           enable_smart_search?: boolean
+          google_api_key?: string | null
           id?: string
           model?: string
           openai_api_key?: string | null
@@ -378,6 +380,7 @@ export type Database = {
           enable_seller_assistant?: boolean
           enable_seo_optimization?: boolean
           enable_smart_search?: boolean
+          google_api_key?: string | null
           id?: string
           model?: string
           openai_api_key?: string | null
