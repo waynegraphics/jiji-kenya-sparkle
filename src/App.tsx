@@ -146,7 +146,6 @@ const App = () => (
           <div className="pb-16 lg:pb-0" />
           <MobileBottomNav />
           <CompareBar />
-          <FloatingAIButton />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
