@@ -578,10 +578,10 @@ const ProductDetail = () => {
               {/* ─── Left: Main Content ─── */}
               <div className="lg:col-span-2 space-y-6">
                 <div className="bg-card rounded-xl p-6 shadow-card">
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{listing.title}</h1>
-                  <p className="text-3xl font-bold text-primary mb-1">
+                  <h1 className="text-lg md:text-3xl font-bold text-foreground mb-2">{listing.title}</h1>
+                  <p className="text-xl md:text-3xl font-bold text-primary mb-1">
                     {formatPrice(listing.price)}
-                    {listing.is_negotiable && <span className="text-sm font-normal text-muted-foreground ml-2">Negotiable</span>}
+                    {listing.is_negotiable && <span className="text-xs md:text-sm font-normal text-muted-foreground ml-2">Negotiable</span>}
                   </p>
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mt-4">
                     <div className="flex items-center gap-1"><MapPin className="h-4 w-4" />{listing.location}</div>

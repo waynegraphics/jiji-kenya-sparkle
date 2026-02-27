@@ -133,9 +133,16 @@ const BentoGallery = ({ images, title, isFeatured, isUrgent }: BentoGalleryProps
         {displayImages.length > 1 && (
           <button
             onClick={() => openLightbox(0)}
-            className="absolute bottom-3 right-3 bg-card/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-card transition-colors"
+            className="absolute bottom-3 right-3 bg-card/90 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-card transition-colors flex items-center gap-1.5"
           >
-            Show all {displayImages.length} photos
+            {isMobile ? (
+              <>
+                <Camera className="h-4 w-4" />
+                <span>+{displayImages.length - 1}</span>
+              </>
+            ) : (
+              `Show all ${displayImages.length} photos`
+            )}
           </button>
         )}
       </div>
