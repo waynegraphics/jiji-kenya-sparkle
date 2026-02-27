@@ -9,6 +9,7 @@ import { useAffiliateClickTracker } from "@/hooks/useAffiliateClickTracker";
 import { Loader2 } from "lucide-react";
 import CompareBar from "./components/CompareBar";
 import FloatingAIButton from "./components/FloatingAIButton";
+import MobileBottomNav from "./components/MobileBottomNav";
 
 // Critical path - load eagerly
 import Index from "./pages/Index";
@@ -143,6 +144,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           </Suspense>
+          <div className="pb-16 lg:pb-0" />
+          <MobileBottomNav />
           <CompareBar />
           <FloatingAIButton />
         </BrowserRouter>
