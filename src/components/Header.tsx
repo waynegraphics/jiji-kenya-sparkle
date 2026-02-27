@@ -151,7 +151,15 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ onSearch }, ref) => {
             </nav>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-3 md:gap-2">
+             <div className="flex items-center gap-3 md:gap-2">
+              {/* Mobile SELL button */}
+              <Button
+                className="lg:hidden relative bg-gradient-to-r from-secondary via-secondary to-secondary/90 text-secondary-foreground font-bold shadow-lg rounded-lg px-3 py-2 text-sm overflow-hidden group"
+                onClick={() => user ? navigate("/seller-dashboard/post-ad") : openAuthModal("register")}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                SELL
+              </Button>
 
               {/* Desktop Actions */}
               <div className="hidden lg:flex items-center gap-2">

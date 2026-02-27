@@ -8,7 +8,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { useAffiliateClickTracker } from "@/hooks/useAffiliateClickTracker";
 import { Loader2 } from "lucide-react";
 import CompareBar from "./components/CompareBar";
-import FloatingAIButton from "./components/FloatingAIButton";
 import MobileBottomNav from "./components/MobileBottomNav";
 
 // Critical path - load eagerly
