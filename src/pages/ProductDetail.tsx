@@ -590,9 +590,10 @@ const ProductDetail = () => {
                   </div>
                 </div>
 
-                {/* Seller card on mobile — right after title */}
-                <div className="lg:hidden">
+                {/* Seller card + promoted ads on mobile */}
+                <div className="lg:hidden space-y-4">
                   {sellerCard}
+                  <SidebarPromotionSlot promos={sidebarPromos} categorySlug={categorySlug} />
                 </div>
 
                 <PremiumFeatureDisplay 
