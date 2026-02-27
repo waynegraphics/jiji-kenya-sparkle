@@ -8,7 +8,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { useAffiliateClickTracker } from "@/hooks/useAffiliateClickTracker";
 import { Loader2 } from "lucide-react";
 import CompareBar from "./components/CompareBar";
-import FloatingAIButton from "./components/FloatingAIButton";
 import MobileBottomNav from "./components/MobileBottomNav";
 
 // Critical path - load eagerly
@@ -147,7 +146,6 @@ const App = () => (
           <div className="pb-16 lg:pb-0" />
           <MobileBottomNav />
           <CompareBar />
-          <FloatingAIButton />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
