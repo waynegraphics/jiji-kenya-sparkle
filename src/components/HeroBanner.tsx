@@ -6,10 +6,10 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const features = [
-  { icon: Shield, title: "Safe & Secure", description: "Verified sellers" },
-  { icon: BrainCircuit, title: "AI-Powered Search", description: "Smart results for you" },
-  { icon: HeadphonesIcon, title: "24/7 Support", description: "Always here to help" },
-  { icon: CheckCircle, title: "Trusted Platform", description: "Thousands of verified ads" },
+  { icon: Shield, title: "Safe & Secure" },
+  { icon: BrainCircuit, title: "AI-Powered Search" },
+  { icon: HeadphonesIcon, title: "24/7 Support" },
+  { icon: CheckCircle, title: "Trusted Platform" },
 ];
 
 const HeroBanner = () => {
