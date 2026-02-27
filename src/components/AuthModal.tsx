@@ -234,12 +234,6 @@ const AuthModal = ({ isOpen, onClose, defaultTab = "login" }: AuthModalProps) =>
                     <p className="text-xs text-muted-foreground">List & sell items</p>
                   </button>
                 </div>
-                {accountType === "seller" && (
-                  <div className="flex items-start gap-2 p-2 bg-secondary/10 rounded-md text-xs text-muted-foreground">
-                    <Info className="h-3.5 w-3.5 mt-0.5 text-secondary flex-shrink-0" />
-                    <span>Sellers need to complete ID verification and pay a one-time registration fee of <strong className="text-foreground">KES 250</strong> before posting listings.</span>
-                  </div>
-                )}
               </div>
 
               <div className="space-y-2">
