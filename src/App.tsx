@@ -144,6 +144,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           </Suspense>
+          <div className="pb-16 lg:pb-0" />
+          <MobileBottomNav />
           <CompareBar />
           <FloatingAIButton />
         </BrowserRouter>
