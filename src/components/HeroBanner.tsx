@@ -88,9 +88,6 @@ const HeroBanner = () => {
               <h3 className="font-semibold text-primary-foreground text-sm">
                 {feature.title}
               </h3>
-              <p className="text-primary-foreground/70 text-xs mt-1">
-                {feature.description}
-              </p>
             </div>
           ))}
         </div>
