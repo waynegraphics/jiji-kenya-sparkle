@@ -152,16 +152,6 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ onSearch }, ref) => {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-3 md:gap-2">
-              {/* Mobile search toggle */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden text-primary hover:bg-primary/10 rounded-lg h-9 w-9"
-                onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-              >
-                {isMobileSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
-              </Button>
-
               {/* Mobile SELL button */}
               <Button
                 className="lg:hidden relative bg-gradient-to-r from-secondary via-secondary to-secondary/90 text-secondary-foreground font-bold shadow-lg rounded-lg px-3 py-2 text-sm overflow-hidden group"

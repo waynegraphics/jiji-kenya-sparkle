@@ -57,23 +57,25 @@ const HeroBanner = () => {
         </div>
 
         {/* Mobile Search + Location */}
-        <div className="md:hidden max-w-lg mx-auto mb-6 space-y-2 px-2">
-          <LocationPopup
-            onSelect={handleLocationSelect}
-            selectedCounty={selectedCounty}
-            selectedTown={selectedTown}
-          />
+        <div className="md:hidden max-w-lg mx-auto mb-6 px-2">
           <Tabs defaultValue="classic" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-2 bg-card/20">
               <TabsTrigger value="classic" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">🔍 Classic</TabsTrigger>
               <TabsTrigger value="smart" className="text-xs text-primary-foreground data-[state=active]:bg-card/40">🧠 Smart Search</TabsTrigger>
             </TabsList>
-            <TabsContent value="smart" className="mt-0">
-              <AISearchBar />
-            </TabsContent>
-            <TabsContent value="classic" className="mt-0">
-              <AjaxSearch inputClassName="h-10 rounded-lg" />
-            </TabsContent>
+            <div className="flex gap-1.5 items-center">
+              <LocationPopup
+                onSelect={handleLocationSelect}
+                selectedCounty={selectedCounty}
+                selectedTown={selectedTown}
+              />
+              <TabsContent value="smart" className="flex-1 mt-0">
+                <AISearchBar />
+              </TabsContent>
+              <TabsContent value="classic" className="flex-1 mt-0">
+                <AjaxSearch inputClassName="h-9 rounded-lg text-sm" />
+              </TabsContent>
+            </div>
           </Tabs>
         </div>
 
