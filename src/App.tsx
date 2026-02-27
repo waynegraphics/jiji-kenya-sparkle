@@ -7,7 +7,6 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { useAffiliateClickTracker } from "@/hooks/useAffiliateClickTracker";
 import { Loader2 } from "lucide-react";
-import ScrollToTop from "./components/ScrollToTop";
 import CompareBar from "./components/CompareBar";
 import FloatingAIButton from "./components/FloatingAIButton";
 
@@ -144,7 +143,6 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
           </Suspense>
-          <ScrollToTop />
           <CompareBar />
           <FloatingAIButton />
         </BrowserRouter>
