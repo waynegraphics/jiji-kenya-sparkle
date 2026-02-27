@@ -338,12 +338,6 @@ const Header = forwardRef<HTMLDivElement, HeaderProps>(({ onSearch }, ref) => {
             </div>
           </div>
 
-          {/* Mobile search overlay */}
-          {isMobileSearchOpen && (
-            <div className="md:hidden py-2 pb-3 animate-in slide-in-from-top-2 duration-200">
-              <AjaxSearch inputClassName="h-10 rounded-lg" />
-            </div>
-          )}
         </div>
       </header>
 
