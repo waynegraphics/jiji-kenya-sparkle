@@ -77,20 +77,6 @@ const HeroBanner = () => {
           </Tabs>
         </div>
 
-        {/* Feature Pills */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 max-w-4xl mx-auto">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="bg-card/10 backdrop-blur-sm rounded-xl p-4 text-center hover:bg-card/20 transition-colors"
-            >
-              <feature.icon className="h-8 w-8 text-secondary mx-auto mb-2" />
-              <h3 className="font-semibold text-primary-foreground text-sm">
-                {feature.title}
-              </h3>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );
