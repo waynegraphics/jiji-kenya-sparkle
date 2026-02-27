@@ -128,7 +128,7 @@ const AISearchBar = ({ className = "" }: AISearchBarProps) => {
 
       {/* AI Parsed Result Preview */}
       {aiResult && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 p-4">
+        <div className="fixed md:absolute left-2 right-2 md:left-0 md:right-0 md:top-full mt-1 bg-card border border-border rounded-lg shadow-xl z-50 p-4">
           <div className="flex items-center gap-2 mb-3">
             <BrainCircuit className="h-4 w-4 text-primary" />
             <span className="text-sm font-semibold">AI understood your search</span>

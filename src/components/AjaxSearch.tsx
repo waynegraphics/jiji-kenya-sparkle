@@ -221,7 +221,7 @@ const AjaxSearch = ({ className = "", inputClassName = "", placeholder = "Search
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 max-h-[400px] overflow-y-auto">
+        <div className="fixed md:absolute left-2 right-2 md:left-0 md:right-0 md:top-full mt-1 bg-card border border-border rounded-lg shadow-xl z-50 max-h-[400px] overflow-y-auto">
           {loading ? (
             <div className="p-4 text-center text-muted-foreground text-sm">Searching...</div>
           ) : (
