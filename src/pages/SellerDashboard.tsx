@@ -63,7 +63,7 @@ const SellerDashboard = () => {
     if (path.includes('/support')) return 'Support';
     if (path.includes('/notifications')) return 'Notifications';
     if (path.includes('/settings')) return 'Settings';
-    return 'Dashboard';
+    return 'Overview';
   };
 
   const showAdminSwitch = isSuperAdmin || isTeamMember;
@@ -129,7 +129,7 @@ const SellerDashboard = () => {
               </Button>
             </div>
           </header>
-          <main className="flex-1 p-2 sm:p-4 md:p-6 overflow-x-hidden overflow-y-auto">
+          <main className="flex-1 p-2 sm:p-4 md:p-6 overflow-x-hidden overflow-y-auto pb-20 lg:pb-6">
             <div className="max-w-6xl mx-auto w-full">
               <Routes>
                 <Route index element={<SellerOverview />} />
