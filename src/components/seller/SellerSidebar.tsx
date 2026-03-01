@@ -190,7 +190,7 @@ export function SellerSidebar() {
               {!affiliate && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip={collapsed ? "Become Affiliate" : undefined}>
-                    <Link to="/affiliate/apply" className="flex items-center gap-3">
+                    <Link to="/affiliate/apply" onClick={handleNavClick} className="flex items-center gap-3">
                       <Link2 className="h-4 w-4" />
                       {!collapsed && <span>Become an Affiliate</span>}
                     </Link>
