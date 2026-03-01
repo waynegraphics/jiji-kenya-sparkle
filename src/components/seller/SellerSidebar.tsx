@@ -154,7 +154,7 @@ export function SellerSidebar() {
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={active} tooltip={collapsed ? item.title : undefined}>
-                      <Link to={item.url} className={`flex items-center gap-3 ${active ? "bg-primary/10 text-primary" : ""}`}>
+                      <Link to={item.url} onClick={handleNavClick} className={`flex items-center gap-3 ${active ? "bg-primary/10 text-primary" : ""}`}>
                         <div className="relative flex-shrink-0">
                           <item.icon className="h-4 w-4" />
                           {badgeCount > 0 && collapsed && (
