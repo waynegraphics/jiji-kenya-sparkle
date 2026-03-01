@@ -153,44 +153,44 @@ const SellerBilling = () => {
           ) : (
             <div className="space-y-4">
               {transactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <CreditCard className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">
-                        {transaction.subscription_id ? "Subscription" : "Add-on"} Purchase
-                      </p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>{format(new Date(transaction.created_at), "MMM dd, yyyy HH:mm")}</span>
-                        {transaction.mpesa_receipt_number && (
-                          <>
-                            <span>•</span>
-                            <span className="font-mono text-xs">
-                              {transaction.mpesa_receipt_number}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                 <div
+                   key={transaction.id}
+                   className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                 >
+                   <div className="flex items-center gap-4 flex-1 min-w-0">
+                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                       <CreditCard className="h-5 w-5 text-primary" />
+                     </div>
+                     <div className="min-w-0">
+                       <p className="font-medium">
+                         {transaction.subscription_id ? "Subscription" : "Add-on"} Purchase
+                       </p>
+                       <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
+                         <span>{format(new Date(transaction.created_at), "MMM dd, yyyy HH:mm")}</span>
+                         {transaction.mpesa_receipt_number && (
+                           <>
+                             <span>•</span>
+                             <span className="font-mono text-xs">
+                               {transaction.mpesa_receipt_number}
+                             </span>
+                           </>
+                         )}
+                       </div>
+                     </div>
+                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="font-semibold">
-                        {transaction.currency} {transaction.amount.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {transaction.phone_number}
-                      </p>
-                    </div>
-                    {getStatusBadge(transaction.status)}
-                  </div>
-                </div>
+                   <div className="flex items-center justify-between sm:justify-end gap-3 pl-14 sm:pl-0">
+                     <div className="sm:text-right">
+                       <p className="font-semibold">
+                         {transaction.currency} {transaction.amount.toLocaleString()}
+                       </p>
+                       <p className="text-xs text-muted-foreground">
+                         {transaction.phone_number}
+                       </p>
+                     </div>
+                     {getStatusBadge(transaction.status)}
+                   </div>
+                 </div>
               ))}
             </div>
           )}

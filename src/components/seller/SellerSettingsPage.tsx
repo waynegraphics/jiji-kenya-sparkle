@@ -181,7 +181,7 @@ const SellerSettingsPage = () => {
           <Card>
             <CardHeader><CardTitle>Profile Information</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div className="relative">
                   <Avatar className="h-20 w-20">
                     <AvatarImage src={avatarUrl} />
