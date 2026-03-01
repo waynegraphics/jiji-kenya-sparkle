@@ -73,14 +73,10 @@ const SellerDashboard = () => {
       <div className="min-h-screen flex w-full bg-background">
         <SellerSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-14 border-b bg-card flex items-center justify-between px-2 sm:px-4 sticky top-0 z-10">
-             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-               <SidebarTrigger className="h-9 w-9" />
-               <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm min-w-0">
-                 <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors hidden sm:block"><Home className="h-4 w-4" /></Link>
-                 <span className="text-muted-foreground hidden sm:inline">/</span>
-                 <span className="font-medium truncate">{getPageTitle()}</span>
-               </nav>
+          <header className="h-auto min-h-[56px] border-b bg-card flex items-center justify-between px-2 sm:px-4 sticky top-0 z-10 py-2">
+             <div className="flex items-center gap-2 min-w-0">
+               <SidebarTrigger className="h-9 w-9 flex-shrink-0" />
+               <span className="font-medium text-sm truncate">{getPageTitle()}</span>
              </div>
             <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
               <Link to="/seller-dashboard/favorites">
