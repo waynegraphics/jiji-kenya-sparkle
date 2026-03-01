@@ -83,6 +83,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
           <AffiliateTracker />
+          <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Index />} />

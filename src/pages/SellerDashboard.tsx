@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, Routes, Route, useLocation } from "react-router-dom";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import SellerSidebar from "@/components/seller/SellerSidebar";
 import SellerOverview from "@/components/seller/SellerOverview";
 import SellerSubscriptionDashboard from "@/components/seller/SellerSubscriptionDashboard";
