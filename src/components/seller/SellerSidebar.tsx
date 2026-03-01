@@ -117,7 +117,7 @@ export function SellerSidebar() {
         
         {/* Quick Action */}
         <div className={`p-3 ${collapsed ? "px-2" : ""}`}>
-          <Link to="/seller-dashboard/post-ad">
+          <Link to="/seller-dashboard/post-ad" onClick={handleNavClick}>
             <button className={`w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-lg py-2.5 px-4 hover:bg-primary/90 transition-colors ${collapsed ? "px-2" : ""}`}>
               <Plus className="h-4 w-4" />
               {!collapsed && <span className="font-medium">Post New Ad</span>}
