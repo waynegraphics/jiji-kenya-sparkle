@@ -17,7 +17,7 @@ import SellerSettingsPage from "@/components/seller/SellerSettingsPage";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Shield, Heart, Bell, MessageCircle, LogOut } from "lucide-react";
+import { Home, Shield, Heart, Bell, MessageCircle, LogOut, Menu, X } from "lucide-react";
 import { useIsSuperAdmin } from "@/hooks/useTeamMember";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useNotifications } from "@/hooks/useNotifications";

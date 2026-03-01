@@ -9,6 +9,7 @@ import { useAffiliateClickTracker } from "@/hooks/useAffiliateClickTracker";
 import { Loader2 } from "lucide-react";
 import CompareBar from "./components/CompareBar";
 import MobileBottomNav from "./components/MobileBottomNav";
+import ScrollToTop from "./components/ScrollToTop";
 
 // Critical path - load eagerly
 import Index from "./pages/Index";
