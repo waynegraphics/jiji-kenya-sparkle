@@ -74,14 +74,14 @@ const SellerDashboard = () => {
         <SellerSidebar />
         <div className="flex-1 flex flex-col">
           <header className="h-14 border-b bg-card flex items-center justify-between px-2 sm:px-4 sticky top-0 z-10">
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-              <SidebarTrigger />
-              <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm min-w-0">
-                <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors hidden sm:block"><Home className="h-4 w-4" /></Link>
-                <span className="text-muted-foreground hidden sm:inline">/</span>
-                <span className="font-medium truncate hidden sm:inline">{getPageTitle()}</span>
-              </nav>
-            </div>
+             <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+               <SidebarTrigger className="h-9 w-9" />
+               <nav className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm min-w-0">
+                 <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors hidden sm:block"><Home className="h-4 w-4" /></Link>
+                 <span className="text-muted-foreground hidden sm:inline">/</span>
+                 <span className="font-medium truncate">{getPageTitle()}</span>
+               </nav>
+             </div>
             <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
               <Link to="/seller-dashboard/favorites">
                 <Button variant="ghost" size="icon" className="relative h-8 w-8 sm:h-9 sm:w-9">
