@@ -208,7 +208,7 @@ export function SellerSidebar() {
               {affiliate?.status === "approved" && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={currentPath.startsWith("/affiliate")} tooltip={collapsed ? "Affiliate Dashboard" : undefined}>
-                    <Link to="/affiliate/dashboard" className="flex items-center gap-3">
+                    <Link to="/affiliate/dashboard" onClick={handleNavClick} className="flex items-center gap-3">
                       <Link2 className="h-4 w-4" />
                       {!collapsed && <span>Affiliate Dashboard</span>}
                     </Link>
