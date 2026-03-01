@@ -53,13 +53,21 @@ const menuItems = [
 ];
 
 export function SellerSidebar() {
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
   const { data: limits } = useSubscriptionLimits();
   const { user } = useAuth();
   const collapsed = state === "collapsed";
   const unreadMessages = useUnreadMessages();
+  const { unreadCount: unreadNotifications } = useNotifications();
+  const isMobile = useIsMobile();
+
+  const handleNavClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
   const { unreadCount: unreadNotifications } = useNotifications();
 
   const { data: affiliate } = useQuery({
