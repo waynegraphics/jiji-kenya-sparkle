@@ -68,7 +68,6 @@ export function SellerSidebar() {
       setOpenMobile(false);
     }
   };
-  const { unreadCount: unreadNotifications } = useNotifications();
 
   const { data: affiliate } = useQuery({
     queryKey: ["my-affiliate-status", user?.id],
