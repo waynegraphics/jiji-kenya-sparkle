@@ -78,13 +78,13 @@ const SellerNotifications = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Notifications</h2>
           <p className="text-muted-foreground">Stay updated on your activity</p>
         </div>
         {unreadCount > 0 && (
-          <Button variant="outline" size="sm" onClick={markAllAsRead} className="gap-2">
+          <Button variant="outline" size="sm" onClick={markAllAsRead} className="gap-2 w-full sm:w-auto">
             <CheckCheck className="h-4 w-4" />
             Mark all read
           </Button>

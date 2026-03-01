@@ -169,12 +169,12 @@ const SellerSupport = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
         <div>
           <h2 className="text-2xl font-bold">Support Tickets</h2>
           <p className="text-muted-foreground">Get help from our support team</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)}>
+        <Button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           New Ticket
         </Button>

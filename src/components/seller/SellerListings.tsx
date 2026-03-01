@@ -358,12 +358,12 @@ const SellerListings = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold">My Listings</h2>
           <p className="text-muted-foreground">Manage and boost your ads</p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
             <Wallet className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium">{profile?.bump_wallet_balance || 0} bumps</span>
@@ -380,7 +380,7 @@ const SellerListings = () => {
               <span className="text-sm font-medium">{totalTierSlots} tier slots</span>
             </div>
           )}
-          <Button onClick={() => navigate("/seller-dashboard/post-ad")}>
+          <Button onClick={() => navigate("/seller-dashboard/post-ad")} className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" /> Post New Ad
           </Button>
         </div>

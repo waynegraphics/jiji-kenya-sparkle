@@ -100,12 +100,12 @@ const SellerSubscriptionDashboard = () => {
       {/* Current Subscription */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2"><Package className="h-5 w-5" />Current Subscription</CardTitle>
               <CardDescription>Your active plan and usage</CardDescription>
             </div>
-            <Link to="/pricing"><Button variant="outline" size="sm">View All Plans <ArrowRight className="h-3 w-3 ml-1" /></Button></Link>
+            <Link to="/pricing"><Button variant="outline" size="sm" className="w-full sm:w-auto">View All Plans <ArrowRight className="h-3 w-3 ml-1" /></Button></Link>
           </div>
         </CardHeader>
         <CardContent>

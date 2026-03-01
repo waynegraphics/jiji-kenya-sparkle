@@ -168,12 +168,12 @@ const SellerSettingsPage = () => {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Account Settings</h2>
 
-      <Tabs defaultValue="profile">
-        <TabsList>
-          <TabsTrigger value="profile"><Settings className="h-4 w-4 mr-2" />Profile</TabsTrigger>
-          <TabsTrigger value="account"><Building2 className="h-4 w-4 mr-2" />Account Type</TabsTrigger>
-          <TabsTrigger value="security"><Lock className="h-4 w-4 mr-2" />Security</TabsTrigger>
-          <TabsTrigger value="danger"><Trash2 className="h-4 w-4 mr-2" />Account</TabsTrigger>
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="w-full flex flex-wrap h-auto gap-1 p-1">
+          <TabsTrigger value="profile" className="flex-1 min-w-[100px] text-xs sm:text-sm"><Settings className="h-4 w-4 mr-1 sm:mr-2" /><span className="hidden sm:inline">Profile</span><span className="sm:hidden">Profile</span></TabsTrigger>
+          <TabsTrigger value="account" className="flex-1 min-w-[100px] text-xs sm:text-sm"><Building2 className="h-4 w-4 mr-1 sm:mr-2" /><span className="hidden sm:inline">Account Type</span><span className="sm:hidden">Account</span></TabsTrigger>
+          <TabsTrigger value="security" className="flex-1 min-w-[100px] text-xs sm:text-sm"><Lock className="h-4 w-4 mr-1 sm:mr-2" /><span className="hidden sm:inline">Security</span><span className="sm:hidden">Security</span></TabsTrigger>
+          <TabsTrigger value="danger" className="flex-1 min-w-[100px] text-xs sm:text-sm"><Trash2 className="h-4 w-4 mr-1 sm:mr-2" /><span className="hidden sm:inline">Account</span><span className="sm:hidden">Delete</span></TabsTrigger>
         </TabsList>
 
         {/* Profile Tab */}
@@ -181,7 +181,7 @@ const SellerSettingsPage = () => {
           <Card>
             <CardHeader><CardTitle>Profile Information</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div className="relative">
                   <Avatar className="h-20 w-20">
                     <AvatarImage src={avatarUrl} />
