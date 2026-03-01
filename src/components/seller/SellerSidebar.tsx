@@ -97,15 +97,22 @@ export function SellerSidebar() {
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent>
-        {/* Logo */}
+        {/* Logo + Close */}
         <div className={`p-3 border-b ${collapsed ? "px-2" : ""}`}>
-          <Link to="/" className="flex items-center gap-2">
-            {collapsed ? (
-              <img src={logo} alt="Apa Bazaar" className="h-8 w-8 object-contain" />
-            ) : (
-              <img src={logo} alt="Apa Bazaar" className="h-10 w-auto object-contain" />
+          <div className="flex items-center justify-between">
+            <Link to="/" onClick={handleNavClick} className="flex items-center gap-2">
+              {collapsed ? (
+                <img src={logo} alt="Apa Bazaar" className="h-8 w-8 object-contain" />
+              ) : (
+                <img src={logo} alt="Apa Bazaar" className="h-10 w-auto object-contain" />
+              )}
+            </Link>
+            {!collapsed && isMobile && (
+              <button onClick={() => setOpenMobile(false)} className="p-1.5 rounded-md hover:bg-muted transition-colors">
+                <X className="h-5 w-5" />
+              </button>
             )}
-          </Link>
+          </div>
         </div>
         
         {/* Quick Action */}
