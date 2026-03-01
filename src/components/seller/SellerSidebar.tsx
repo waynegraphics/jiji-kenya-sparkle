@@ -26,7 +26,8 @@ import {
   Bell,
   Link2,
   MessageCircle,
-  Heart
+  Heart,
+  X
 } from "lucide-react";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 import { Badge } from "@/components/ui/badge";
