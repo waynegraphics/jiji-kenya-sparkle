@@ -10,6 +10,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 import logo from "@/assets/logo.png";
 import { 
   LayoutDashboard, 
@@ -25,7 +26,8 @@ import {
   Bell,
   Link2,
   MessageCircle,
-  Heart
+  Heart,
+  X
 } from "lucide-react";
 import { useSubscriptionLimits } from "@/hooks/useSubscriptionLimits";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +53,7 @@ const menuItems = [
 ];
 
 export function SellerSidebar() {
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
   const { data: limits } = useSubscriptionLimits();
@@ -59,6 +61,13 @@ export function SellerSidebar() {
   const collapsed = state === "collapsed";
   const unreadMessages = useUnreadMessages();
   const { unreadCount: unreadNotifications } = useNotifications();
+  const isMobile = useIsMobile();
+
+  const handleNavClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   const { data: affiliate } = useQuery({
     queryKey: ["my-affiliate-status", user?.id],
@@ -88,20 +97,27 @@ export function SellerSidebar() {
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
       <SidebarContent>
-        {/* Logo */}
+        {/* Logo + Close */}
         <div className={`p-3 border-b ${collapsed ? "px-2" : ""}`}>
-          <Link to="/" className="flex items-center gap-2">
-            {collapsed ? (
-              <img src={logo} alt="Apa Bazaar" className="h-8 w-8 object-contain" />
-            ) : (
-              <img src={logo} alt="Apa Bazaar" className="h-10 w-auto object-contain" />
+          <div className="flex items-center justify-between">
+            <Link to="/" onClick={handleNavClick} className="flex items-center gap-2">
+              {collapsed ? (
+                <img src={logo} alt="Apa Bazaar" className="h-8 w-8 object-contain" />
+              ) : (
+                <img src={logo} alt="Apa Bazaar" className="h-10 w-auto object-contain" />
+              )}
+            </Link>
+            {!collapsed && isMobile && (
+              <button onClick={() => setOpenMobile(false)} className="p-1.5 rounded-md hover:bg-muted transition-colors">
+                <X className="h-5 w-5" />
+              </button>
             )}
-          </Link>
+          </div>
         </div>
         
         {/* Quick Action */}
         <div className={`p-3 ${collapsed ? "px-2" : ""}`}>
-          <Link to="/seller-dashboard/post-ad">
+          <Link to="/seller-dashboard/post-ad" onClick={handleNavClick}>
             <button className={`w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-lg py-2.5 px-4 hover:bg-primary/90 transition-colors ${collapsed ? "px-2" : ""}`}>
               <Plus className="h-4 w-4" />
               {!collapsed && <span className="font-medium">Post New Ad</span>}
@@ -138,7 +154,7 @@ export function SellerSidebar() {
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={active} tooltip={collapsed ? item.title : undefined}>
-                      <Link to={item.url} className={`flex items-center gap-3 ${active ? "bg-primary/10 text-primary" : ""}`}>
+                      <Link to={item.url} onClick={handleNavClick} className={`flex items-center gap-3 ${active ? "bg-primary/10 text-primary" : ""}`}>
                         <div className="relative flex-shrink-0">
                           <item.icon className="h-4 w-4" />
                           {badgeCount > 0 && collapsed && (
@@ -174,7 +190,7 @@ export function SellerSidebar() {
               {!affiliate && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip={collapsed ? "Become Affiliate" : undefined}>
-                    <Link to="/affiliate/apply" className="flex items-center gap-3">
+                    <Link to="/affiliate/apply" onClick={handleNavClick} className="flex items-center gap-3">
                       <Link2 className="h-4 w-4" />
                       {!collapsed && <span>Become an Affiliate</span>}
                     </Link>
@@ -192,7 +208,7 @@ export function SellerSidebar() {
               {affiliate?.status === "approved" && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={currentPath.startsWith("/affiliate")} tooltip={collapsed ? "Affiliate Dashboard" : undefined}>
-                    <Link to="/affiliate/dashboard" className="flex items-center gap-3">
+                    <Link to="/affiliate/dashboard" onClick={handleNavClick} className="flex items-center gap-3">
                       <Link2 className="h-4 w-4" />
                       {!collapsed && <span>Affiliate Dashboard</span>}
                     </Link>
