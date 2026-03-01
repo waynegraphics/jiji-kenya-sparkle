@@ -153,13 +153,13 @@ const SellerOverview = () => {
       </Dialog>
 
       {/* Welcome Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Dashboard Overview</h2>
-          <p className="text-muted-foreground">Welcome back! Here's what's happening.</p>
+          <h2 className="text-2xl font-bold">Overview</h2>
+          <p className="text-muted-foreground text-sm">Welcome back! Here's what's happening.</p>
         </div>
         <Link to="/seller-dashboard/post-ad">
-          <Button><Plus className="h-4 w-4 mr-2" />Post New Ad</Button>
+          <Button className="w-full sm:w-auto"><Plus className="h-4 w-4 mr-2" />Post New Ad</Button>
         </Link>
       </div>
 

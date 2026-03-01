@@ -63,7 +63,7 @@ const SellerDashboard = () => {
     if (path.includes('/support')) return 'Support';
     if (path.includes('/notifications')) return 'Notifications';
     if (path.includes('/settings')) return 'Settings';
-    return 'Dashboard';
+    return 'Overview';
   };
 
   const showAdminSwitch = isSuperAdmin || isTeamMember;
